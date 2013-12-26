@@ -4,8 +4,10 @@ make
 
 rm -rf ext/
 mkdir -p ext/newlib/Release
+mkdir -p ext/bootstrap-3.0.3
 
 cp -R *.html *.js *.json ext/
+cp -R bootstrap-3.0.3 ext/
 cp -R out/newlib/Release/*.nmf ext/newlib/Release
 
 for arch in arm x86_32 x86_64

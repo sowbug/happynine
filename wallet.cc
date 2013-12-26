@@ -39,7 +39,7 @@ public:
   std::string to_hex(const unsigned char* bytes, size_t len) {
     std::stringstream out;
 
-
+    for (size_t i = 0; i < len; i++) {
       out << std::setw(2) << std::hex << std::setfill('0') <<
         static_cast<unsigned int>(bytes[i]);
     }
