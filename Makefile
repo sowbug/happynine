@@ -1,10 +1,3 @@
-# Copyright (c) 2013 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
-
-# GNU Makefile based on shared rules provided by the Native Client SDK.
-# See README.Makefiles for more details.
-
 VALID_TOOLCHAINS := newlib glibc pnacl
 
 NACL_SDK_ROOT ?= $(abspath $(CURDIR)/../..)i
