@@ -12,7 +12,7 @@ OUTBASE = out
 include $(NACL_SDK_ROOT)/tools/common.mk
 
 TARGET = wallet
-LIBS = $(DEPS) ppapi_cpp ppapi pthread tomcrypt jsoncpp
+LIBS = $(DEPS) ppapi_cpp ppapi pthread crypto jsoncpp
 
 CFLAGS = -Wall
 

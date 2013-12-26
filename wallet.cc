@@ -9,13 +9,15 @@
 // when mutating property values that are exposed to both the browser and the
 /// NaCl module.
 
+#include <iomanip>
+#include <iostream>
 #include <sstream>
 
 #include "json/reader.h"
+#include "openssl/sha.h"
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
-#include "tomcrypt.h"
 
 /// The Instance class.  One of these exists for each instance of your NaCl
 /// module on the web page.  The browser will ask the Module object to create
@@ -37,24 +39,25 @@ public:
   std::string to_hex(const unsigned char* bytes, size_t len) {
     std::stringstream out;
 
-    for (size_t i = 0; i < len; i++) {
-      out << std::hex << static_cast<unsigned int>(bytes[i]);
+
+      out << std::setw(2) << std::hex << std::setfill('0') <<
+        static_cast<unsigned int>(bytes[i]);
     }
 
     return out.str();
   }
 
   virtual pp::Var HandleSHA256(const Json::Value& root) {
-    hash_state md;
-    sha256_init(&md);
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
 
     const std::string value = root.get("value", "UTF-8").asString();
-    sha256_process(&md,
-                   reinterpret_cast<const unsigned char*>(value.c_str()),
-                   value.length());
 
-    unsigned char hash[32];
-    sha256_done(&md, hash);
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256,
+                  reinterpret_cast<const unsigned char*>(value.c_str()),
+                  value.length());
+    SHA256_Final(hash, &sha256);
 
     return pp::Var(to_hex(hash, 32));
   }
