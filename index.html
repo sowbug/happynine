@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <title>Bitcoin Wallet</title>
+  <script type="text/javascript" src="common.js"></script>
+  <script type="text/javascript" src="wallet.js"></script>
+</head>
+
+<body data-name="wallet"
+      data-tools="newlib glibc pnacl"
+      data-configs="Release Debug"
+      data-path="{tc}/{config}">
+  <h1>Bitcoin Wallet</h1>
+  <h2>Status: <code id="statusField">NO-STATUS</code></h2>
+  <div id="listener"></div>
+
+  <textarea id="sha256-input">correct horse battery staple</textarea>
+  <button id="sha256-button">Calculate</button>
+  <input readonly="readonly" id="sha256-output" size="64" />
+
+  <div id="log" style="-webkit-user-select: initial"></div>
+</body>
+</html>

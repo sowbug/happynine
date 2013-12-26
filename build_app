@@ -1,0 +1,17 @@
+#!/bin/bash
+
+make
+
+rm -rf ext/
+mkdir -p ext/newlib/Release
+
+cp -R *.html *.js *.json ext/
+cp -R out/newlib/Release/*.nmf ext/newlib/Release
+
+for arch in arm x86_32 x86_64
+do
+ cp -R out/newlib/Release/wallet_$arch.nexe ext/newlib/Release
+done
+
+rm -f app.zip
+zip -r app.zip ext/
