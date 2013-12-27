@@ -17,8 +17,9 @@ public:
   : pp::Instance(instance) {}
   virtual ~HDWalletDispatcherInstance() {}
 
-  std::string to_hex(const unsigned char* bytes, size_t len) {
+  std::string to_hex(const bytes_t bytes) {
     std::stringstream out;
+    size_t len = bytes.size();
 
     for (size_t i = 0; i < len; i++) {
       out << std::setw(2) << std::hex << std::setfill('0') <<
@@ -40,14 +41,15 @@ public:
                   reinterpret_cast<const unsigned char*>(value.c_str()),
                   value.length());
     SHA256_Final(hash, &sha256);
+    bytes_t hash_bytes(hash, hash + SHA256_DIGEST_LENGTH);
 
-    result["hash"] = to_hex(hash, 32);
+    result["hash"] = to_hex(hash_bytes);
 
     return true;
   }
 
-  virtual bool HandleCreateMasterKey(const Json::Value& args,
-                                     Json::Value& result) {
+  virtual bool HandleCreateWallet(const Json::Value& args,
+                                  Json::Value& result) {
     const unsigned char seed[16] = { 0x00, 0x01, 0x02, 0x03, 0x04,
                                      0x05, 0x06, 0x07, 0x08, 0x09,
                                      0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
@@ -57,9 +59,10 @@ public:
     MasterKey master_key(seed_bytes);
     Wallet wallet(master_key);
 
-    result["secret_key"] = to_hex(&master_key.secret_key()[0], 32);
-    result["chain_code"] = to_hex(&master_key.chain_code()[0], 32);
-    result["public_key"] = to_hex(&wallet.public_key()[0], 33);
+    result["secret_key"] = to_hex(master_key.secret_key());
+    result["chain_code"] = to_hex(master_key.chain_code());
+    result["public_key"] = to_hex(wallet.public_key());
+    result["fingerprint"] = to_hex(wallet.fingerprint());
 
     return true;
   }
@@ -85,8 +88,8 @@ public:
     if (command == "sha256") {
       handled = HandleSHA256(root, result);
     }
-    if (command == "create-master-key") {
-      handled = HandleCreateMasterKey(root, result);
+    if (command == "create-wallet") {
+      handled = HandleCreateWallet(root, result);
     }
     if (handled) {
       result["command"] = command;

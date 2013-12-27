@@ -1,6 +1,8 @@
 #include "wallet.h"
 
 #include "bigint.h"
+#include "openssl/ripemd.h"
+#include "openssl/sha.h"
 #include "secp256k1.h"
 
 Wallet::Wallet(const MasterKey& master_key) :
@@ -29,4 +31,21 @@ void Wallet::set_key(const bytes_t& new_key) {
   } else {
     public_key_ = key_;
   }
+  update_fingerprint();
+}
+
+void Wallet::update_fingerprint() {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &public_key_[0], 33);
+  SHA256_Final(hash, &sha256);
+
+  unsigned char ripemd_hash[RIPEMD160_DIGEST_LENGTH];
+  RIPEMD160_CTX ripemd;
+  RIPEMD160_Init(&ripemd);
+  RIPEMD160_Update(&ripemd, hash, SHA256_DIGEST_LENGTH);
+  RIPEMD160_Final(ripemd_hash, &ripemd);
+
+  fingerprint_ = bytes_t(ripemd_hash, ripemd_hash + 4);
 }

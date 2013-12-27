@@ -8,28 +8,20 @@ function handleMessage(message) {
     case "sha256":
         document.querySelector("#sha256-output").value = message_object.hash;
         break;
-    case "create-master-key":
-        document.querySelector("#master-key-output").value =
-            message_object.secret_key + " " +
-            message_object.chain_code + " " +
-            message_object.public_key;
+    case "create-wallet":
+        document.querySelector("#secret-key").value = message_object.secret_key;
+        document.querySelector("#chain-code").value = message_object.chain_code;
+        document.querySelector("#public-key").value = message_object.public_key;
+        document.querySelector("#fingerprint").value = message_object.fingerprint;
         break;
     }
 }
 
 window.onload = function() {
-    document.querySelector('#sha256-button').onclick = function() {
+    document.querySelector('#generate-wallet').onclick = function() {
         var message = {
-            'command': 'sha256',
-            'value': document.querySelector("#sha256-input").value
-        };
-        common.naclModule.postMessage(JSON.stringify(message));
-    };
-
-    document.querySelector('#master-key-button').onclick = function() {
-        var message = {
-            'command': 'create-master-key',
-            'seed': document.querySelector("#master-key-input").value
+            'command': 'create-wallet',
+            'seed': document.querySelector("#seed").value
         };
         common.naclModule.postMessage(JSON.stringify(message));
     };
