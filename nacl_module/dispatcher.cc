@@ -1,7 +1,9 @@
 #include "wallet.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <stdint.h>
 
@@ -24,7 +26,7 @@ public:
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
 
-    const std::string value = args.get("value", "UTF-8").asString();
+    const std::string value = args.get("value", "").asString();
 
     SHA256_Init(&sha256);
     SHA256_Update(&sha256,
@@ -38,38 +40,53 @@ public:
     return true;
   }
 
-  virtual bool HandleCreateWallet(const Json::Value& args,
-                                  Json::Value& result) {
-    const unsigned char seed[16] = { 0x00, 0x01, 0x02, 0x03, 0x04,
-                                     0x05, 0x06, 0x07, 0x08, 0x09,
-                                     0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
-                                     0x0f };
-    const bytes_t seed_bytes(seed, &seed[16]);
-    // args.get("seed", "UTF-8").asString()
+  virtual bool HandleGetWallet(const Json::Value& args,
+                               Json::Value& result) {
+    const std::string seed_hex = args.get("seed_hex", "").asString();
+    bytes_t seed_bytes(seed_hex.size() / 2);
+    unhexlify(&seed_hex[0],
+              &seed_hex[0] + seed_hex.size(),
+              &seed_bytes[0]);
+
+    const std::string wallet_name = args.get("wallet", "m").asString();
+    std::istringstream iss(wallet_name);
+    std::string token;
+    std::vector<std::string> wallet_name_parts;
+    while (std::getline(iss, token, '/')) {
+      wallet_name_parts.push_back(token);
+    }
+
     MasterKey master_key(seed_bytes);
     Wallet wallet(master_key);
+    for (size_t i = 1; i < wallet_name_parts.size(); ++i) {
+      std::string part = wallet_name_parts[i];
+      uint32_t n = strtol(&part[0], NULL, 10);
+      if (part.rfind('\'') != std::string::npos) {
+        n += 0x80000000;
+      }
+      wallet.GetChildNode(n, wallet);
+    }
 
-    MasterKey child_master_key;
-    Wallet child_wallet(child_master_key);
-    wallet.GetChildNode(0x80000000, child_wallet);
-
-    Wallet child_wallet_one(child_master_key);
-    child_wallet.GetChildNode(1, child_wallet_one);
-
-    result["secret_key"] = to_hex(master_key.secret_key());
-    result["chain_code"] = to_hex(master_key.chain_code());
-    result["public_key"] = to_hex(master_key.public_key());
+    result["secret_key"] = to_hex(wallet.master_key().secret_key());
+    result["chain_code"] = to_hex(wallet.master_key().chain_code());
+    result["public_key"] = to_hex(wallet.master_key().public_key());
+    {
+      std::stringstream stream;
+      stream << "0x"
+             << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
+             << std::hex << wallet.master_key().fingerprint();
+      result["fingerprint"] = stream.str();
+    }
     result["wallet"] = wallet.toString();
-    result["child_wallet"] = child_wallet.toString();
-    result["child_wallet_1"] = child_wallet_one.toString();
 
     return true;
   }
 
-  /// Handler for messages coming in from the browser via postMessage().  The
-  /// @a var_message can contain be any pp:Var type; for example int, string
-  /// Array or Dictionary. Please see the pp:Var documentation for more details.
-  /// @param[in] var_message The message posted by the browser.
+  /// Handler for messages coming in from the browser via
+  /// postMessage().  The @a var_message can contain be any pp:Var
+  /// type; for example int, string Array or Dictionary. Please see
+  /// the pp:Var documentation for more details.  @param[in]
+  /// var_message The message posted by the browser.
   virtual void HandleMessage(const pp::Var& var_message) {
     if (!var_message.is_string())
       return;
@@ -87,8 +104,8 @@ public:
     if (command == "sha256") {
       handled = HandleSHA256(root, result);
     }
-    if (command == "create-wallet") {
-      handled = HandleCreateWallet(root, result);
+    if (command == "get-wallet") {
+      handled = HandleGetWallet(root, result);
     }
     if (handled) {
       result["command"] = command;
@@ -99,9 +116,10 @@ public:
   }
 };
 
-/// The Module class.  The browser calls the CreateInstance() method to create
-/// an instance of your NaCl module on the web page.  The browser creates a new
-/// instance for each <embed> tag with type="application/x-pnacl".
+/// The Module class.  The browser calls the CreateInstance() method
+/// to create an instance of your NaCl module on the web page.  The
+/// browser creates a new instance for each <embed> tag with
+/// type="application/x-pnacl".
 class HDWalletDispatcherModule : public pp::Module {
 public:
   HDWalletDispatcherModule() : pp::Module() {}
@@ -116,11 +134,12 @@ public:
 };
 
 namespace pp {
-  /// Factory function called by the browser when the module is first loaded.
-  /// The browser keeps a singleton of this module.  It calls the
-  /// CreateInstance() method on the object you return to make instances.  There
-  /// is one instance per <embed> tag on the page.  This is the main binding
-  /// point for your NaCl module with the browser.
+  /// Factory function called by the browser when the module is first
+  /// loaded.  The browser keeps a singleton of this module.  It calls
+  /// the CreateInstance() method on the object you return to make
+  /// instances.  There is one instance per <embed> tag on the page.
+  /// This is the main binding point for your NaCl module with the
+  /// browser.
   Module* CreateModule() {
     return new HDWalletDispatcherModule();
   }

@@ -58,25 +58,30 @@
       <div class="container">
         <div class="form-group">
           <label for="seed">Seed</label>
-          <input type="text" class="form-control" id="seed" placeholder="Seed">
+          <input type="text" class="form-control" id="seed" placeholder="Seed" value="000102030405060708090a0b0c0d0e0f" />
         </div>
         <div class="form-group">
+          <label for="wallet">Wallet</label>
+          <input type="text" class="form-control" id="wallet" placeholder="Wallet" value="m/0'/1/2'/2/1000000000" />
+        </div>
+
+        <div class="form-group">
           <label for="secret-key">Secret Key</label>
-          <input type="text" class="form-control" id="secret-key" placeholder="Secret Key">
+          <input type="text" class="form-control uneditable-input" id="secret-key" placeholder="Secret Key" />
         </div>
         <div class="form-group">
           <label for="chain-code">Chain Code</label>
-          <input type="text" class="form-control" id="chain-code" placeholder="Chain Code">
+          <input type="text" class="form-control uneditable-input" id="chain-code" placeholder="Chain Code" />
         </div>
         <div class="form-group">
           <label for="public-key">Public Key</label>
-          <input type="text" class="form-control" id="public-key" placeholder="Public Key">
+          <input type="text" class="form-control uneditable-input" id="public-key" placeholder="Public Key" />
         </div>
         <div class="form-group">
           <label for="fingerprint">Fingerprint</label>
-          <input type="text" class="form-control" id="fingerprint" placeholder="Fingerprint">
+          <input type="text" class="form-control uneditable-input" id="fingerprint" placeholder="Fingerprint" />
         </div>
-        <button id="generate-wallet" class="btn btn-default">Generate Wallet</button>
+        <button id="get-wallet" class="btn btn-default">Get Wallet</button>
 
         <div id="log" style="-webkit-user-select: initial"></div>
       </div>

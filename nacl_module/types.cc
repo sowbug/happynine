@@ -16,3 +16,11 @@ std::string to_hex(const bytes_t bytes) {
   return out.str();
 }
 
+// http://stackoverflow.com/a/9622208/344467
+int to_int(int c) {
+  if (not isxdigit(c)) return -1; // error: non-hexadecimal digit found
+  if (isdigit(c)) return c - '0';
+  if (isupper(c)) c = tolower(c);
+  return c - 'a' + 10;
+}
+
