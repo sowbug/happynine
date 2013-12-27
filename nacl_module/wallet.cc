@@ -1,37 +1,18 @@
-// The browser can talk to your NaCl module via the postMessage() Javascript
-// function.  When you call postMessage() on your NaCl module from the browser,
-// this becomes a call to the HandleMessage() method of your pp::Instance
-// subclass.  You can send messages back to the browser by calling the
-// PostMessage() method on your pp::Instance.  Note that these two methods
-// (postMessage() in Javascript and PostMessage() in C++) are asynchronous.
-// This means they return immediately - there is no waiting for the message
-// to be handled.  This has implications in your program design, particularly
-// when mutating property values that are exposed to both the browser and the
-/// NaCl module.
-
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
 #include "json/reader.h"
+#include "json/writer.h"
 #include "openssl/sha.h"
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
 
-/// The Instance class.  One of these exists for each instance of your NaCl
-/// module on the web page.  The browser will ask the Module object to create
-/// a new Instance for each occurrence of the <embed> tag that has these
-/// attributes:
-///     src="hello_tutorial.nmf"
-///     type="application/x-pnacl"
-/// To communicate with the browser, you must override HandleMessage() to
-/// receive messages from the browser, and use PostMessage() to send messages
-/// back to the browser.  Note that this interface is asynchronous.
+#include "master_key.h"
+
 class BitcoinWalletInstance : public pp::Instance {
 public:
-  /// The constructor creates the plugin-side instance.
-  /// @param[in] instance the handle to the browser-side plugin instance.
   explicit BitcoinWalletInstance(PP_Instance instance) : pp::Instance(instance)
   {}
   virtual ~BitcoinWalletInstance() {}
@@ -47,11 +28,12 @@ public:
     return out.str();
   }
 
-  virtual pp::Var HandleSHA256(const Json::Value& root) {
+  virtual bool HandleSHA256(const Json::Value& args,
+                            Json::Value& result) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
 
-    const std::string value = root.get("value", "UTF-8").asString();
+    const std::string value = args.get("value", "UTF-8").asString();
 
     SHA256_Init(&sha256);
     SHA256_Update(&sha256,
@@ -59,7 +41,25 @@ public:
                   value.length());
     SHA256_Final(hash, &sha256);
 
-    return pp::Var(to_hex(hash, 32));
+    result["hash"] = to_hex(hash, 32);
+
+    return true;
+  }
+
+  virtual bool HandleCreateMasterKey(const Json::Value& args,
+                                     Json::Value& result) {
+    const unsigned char seed[16] = { 0x00, 0x01, 0x02, 0x03, 0x04,
+                                     0x05, 0x06, 0x07, 0x08, 0x09,
+                                     0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+                                     0x0f };
+    const bytes_t seed_bytes(seed, &seed[16]);
+    // args.get("seed", "UTF-8").asString()
+    MasterKey master_key(seed_bytes);
+
+    result["secret_key"] = to_hex(&master_key.secret_key()[0], 32);
+    result["chain_code"] = to_hex(&master_key.chain_code()[0], 32);
+
+    return true;
   }
 
   /// Handler for messages coming in from the browser via postMessage().  The
@@ -78,11 +78,20 @@ public:
       return;
     }
     const std::string command = root.get("command", "UTF-8").asString();
-    pp::Var reply;
+    Json::Value result;
+    bool handled = false;
     if (command == "sha256") {
-      reply = HandleSHA256(root);
+      handled = HandleSHA256(root, result);
     }
-    PostMessage(reply);
+    if (command == "create-master-key") {
+      handled = HandleCreateMasterKey(root, result);
+    }
+    if (handled) {
+      result["command"] = command;
+      Json::StyledWriter writer;
+      pp::Var reply_message(writer.write(result));
+      PostMessage(reply_message);
+    }
   }
 };
 

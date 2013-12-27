@@ -2,7 +2,7 @@ BOOTSTRAP := bootstrap-3.0.3
 
 all: force_look
 	mkdir -p $(ZIPBASE)/newlib/Release
-	cp -R *.html *.js *.json $(ZIPBASE)
+	cp -R *.html *.js *.json *.css $(ZIPBASE)
 	mkdir -p $(ZIPBASE)/$(BOOTSTRAP)
 	cp -R $(BOOTSTRAP) $(ZIPBASE)
 
