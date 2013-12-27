@@ -4,6 +4,7 @@ function moduleDidLoad() {
 
 function handleMessage(message) {
     var message_object = JSON.parse(message.data);
+    console.log(message);
     switch (message_object.command) {
     case "sha256":
         document.querySelector("#sha256-output").value = message_object.hash;

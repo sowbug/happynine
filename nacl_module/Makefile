@@ -10,6 +10,8 @@ CFLAGS = -Wall
 
 SOURCES = \
 	master_key.cc \
+	secp256k1.cc \
+	types.cc \
 	wallet.cc \
 	dispatcher.cc
 

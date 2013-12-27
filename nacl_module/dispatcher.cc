@@ -1,6 +1,9 @@
+#include "wallet.h"
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <stdint.h>
 
 #include "json/reader.h"
 #include "json/writer.h"
@@ -8,26 +11,13 @@
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
-
-#include "wallet.h"
+#include "types.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance) {}
   virtual ~HDWalletDispatcherInstance() {}
-
-  std::string to_hex(const bytes_t bytes) {
-    std::stringstream out;
-    size_t len = bytes.size();
-
-    for (size_t i = 0; i < len; i++) {
-      out << std::setw(2) << std::hex << std::setfill('0') <<
-        static_cast<unsigned int>(bytes[i]);
-    }
-
-    return out.str();
-  }
 
   virtual bool HandleSHA256(const Json::Value& args,
                             Json::Value& result) {
@@ -59,10 +49,19 @@ public:
     MasterKey master_key(seed_bytes);
     Wallet wallet(master_key);
 
+    MasterKey child_master_key;
+    Wallet child_wallet(child_master_key);
+    wallet.GetChildNode(0x80000000, child_wallet);
+
+    Wallet child_wallet_one(child_master_key);
+    child_wallet.GetChildNode(1, child_wallet_one);
+
     result["secret_key"] = to_hex(master_key.secret_key());
     result["chain_code"] = to_hex(master_key.chain_code());
-    result["public_key"] = to_hex(wallet.public_key());
-    result["fingerprint"] = to_hex(wallet.fingerprint());
+    result["public_key"] = to_hex(master_key.public_key());
+    result["wallet"] = wallet.toString();
+    result["child_wallet"] = child_wallet.toString();
+    result["child_wallet_1"] = child_wallet_one.toString();
 
     return true;
   }

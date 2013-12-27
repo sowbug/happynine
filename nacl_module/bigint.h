@@ -69,7 +69,7 @@ public:
         this->allocate();
         this->setBytes(bytes, bigEndian);
     }
-    BigInt(const std::string& inBase, unsigned int base = 16, const char* alphabet = "0123456789abcdef")
+    BigInt(const std::string& inBase, unsigned int base = 16, const char* alphabet = "0123456789ABCDEF")
     {
         this->allocate();
         this->setInBase(inBase, base, alphabet);
