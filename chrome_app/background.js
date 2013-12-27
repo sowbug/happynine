@@ -1,5 +1,5 @@
 var WIDTH = 640;
-var HEIGHT = 480;
+var HEIGHT = 640;
 
 var onCreate = function(window) {
     // There seems to be a bug where resizeTo includes the title bar
