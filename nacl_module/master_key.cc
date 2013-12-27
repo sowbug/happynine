@@ -18,3 +18,6 @@ MasterKey::MasterKey(const bytes_t& seed) {
   secret_key_ = bytes_t(digest, digest + 32);
   chain_code_ = bytes_t(digest + 32, digest + 64);
 }
+
+MasterKey::~MasterKey() {
+}

@@ -10,7 +10,9 @@ function handleMessage(message) {
         break;
     case "create-master-key":
         document.querySelector("#master-key-output").value =
-            message_object.secret_key + " " + message_object.chain_code;
+            message_object.secret_key + " " +
+            message_object.chain_code + " " +
+            message_object.public_key;
         break;
     }
 }

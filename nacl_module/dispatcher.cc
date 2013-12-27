@@ -9,7 +9,7 @@
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
 
-#include "master_key.h"
+#include "wallet.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
 public:
@@ -55,9 +55,11 @@ public:
     const bytes_t seed_bytes(seed, &seed[16]);
     // args.get("seed", "UTF-8").asString()
     MasterKey master_key(seed_bytes);
+    Wallet wallet(master_key);
 
     result["secret_key"] = to_hex(&master_key.secret_key()[0], 32);
     result["chain_code"] = to_hex(&master_key.chain_code()[0], 32);
+    result["public_key"] = to_hex(&wallet.public_key()[0], 33);
 
     return true;
   }
