@@ -11,11 +11,11 @@
 
 #include "master_key.h"
 
-class BitcoinWalletInstance : public pp::Instance {
+class HDWalletDispatcherInstance : public pp::Instance {
 public:
-  explicit BitcoinWalletInstance(PP_Instance instance) : pp::Instance(instance)
-  {}
-  virtual ~BitcoinWalletInstance() {}
+  explicit HDWalletDispatcherInstance(PP_Instance instance)
+  : pp::Instance(instance) {}
+  virtual ~HDWalletDispatcherInstance() {}
 
   std::string to_hex(const unsigned char* bytes, size_t len) {
     std::stringstream out;
@@ -98,16 +98,16 @@ public:
 /// The Module class.  The browser calls the CreateInstance() method to create
 /// an instance of your NaCl module on the web page.  The browser creates a new
 /// instance for each <embed> tag with type="application/x-pnacl".
-class BitcoinWalletModule : public pp::Module {
+class HDWalletDispatcherModule : public pp::Module {
 public:
-  BitcoinWalletModule() : pp::Module() {}
-  virtual ~BitcoinWalletModule() {}
+  HDWalletDispatcherModule() : pp::Module() {}
+  virtual ~HDWalletDispatcherModule() {}
 
-  /// Create and return a BitcoinWalletInstance object.
+  /// Create and return a HDWalletDispatcherInstance object.
   /// @param[in] instance The browser-side instance.
   /// @return the plugin-side instance.
   virtual pp::Instance* CreateInstance(PP_Instance instance) {
-    return new BitcoinWalletInstance(instance);
+    return new HDWalletDispatcherInstance(instance);
   }
 };
 
@@ -118,6 +118,6 @@ namespace pp {
   /// is one instance per <embed> tag on the page.  This is the main binding
   /// point for your NaCl module with the browser.
   Module* CreateModule() {
-    return new BitcoinWalletModule();
+    return new HDWalletDispatcherModule();
   }
 }  // namespace pp
