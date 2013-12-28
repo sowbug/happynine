@@ -3,12 +3,14 @@
 
 class Wallet {
  public:
+  Wallet();
+
   // From a master key.
-  Wallet(const MasterKey& master_key);
+  explicit Wallet(const MasterKey& master_key);
 
   // From a serialized key.
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#serialization-format
-  Wallet(const bytes_t& bytes);
+  explicit Wallet(const bytes_t& bytes);
 
   virtual ~Wallet();
 

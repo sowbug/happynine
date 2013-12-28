@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdint.h>
 
+#include "base58.h"
 #include "json/reader.h"
 #include "json/writer.h"
 #include "openssl/sha.h"
@@ -56,10 +57,14 @@ public:
       wallet_name_parts.push_back(token);
     }
 
-    MasterKey master_key(seed_bytes);
-    Wallet wallet(master_key);
+    Wallet wallet;
     if (seed_bytes.size() == 78) {
       wallet = Wallet(seed_bytes);
+    } else if (seed_hex[0] == 'x') {
+      wallet = Wallet(Base58::fromBase58Check(seed_hex));
+    } else {
+      MasterKey master_key(seed_bytes);
+      wallet = Wallet(master_key);
     }
     for (size_t i = 1; i < wallet_name_parts.size(); ++i) {
       std::string part = wallet_name_parts[i];

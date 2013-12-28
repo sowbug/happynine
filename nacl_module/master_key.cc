@@ -13,6 +13,7 @@ MasterKey::MasterKey() {
   set_key(bytes);
   set_chain_code(bytes);
 }
+
 MasterKey::MasterKey(const bytes_t& seed) {
   const std::string BIP0032_HMAC_KEY("Bitcoin seed");
   bytes_t digest;

@@ -13,6 +13,13 @@ const std::string CURVE_ORDER_BYTES("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
 FEBAAEDCE6AF48A03BBFD25E8CD0364141");
 const BigInt CURVE_ORDER(CURVE_ORDER_BYTES);
 
+Wallet::Wallet() :
+  master_key_(),
+  depth_(0),
+  parent_fingerprint_(0),
+  child_num_(0) {
+}
+
 Wallet::Wallet(const MasterKey& master_key) :
   master_key_(master_key),
   depth_(0),
