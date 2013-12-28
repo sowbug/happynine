@@ -1,10 +1,13 @@
 {
-  "name": "Bitcoin Wallet",
-  "description": "A BIP0032 Bitcoin wallet.",
-  "version": "0.0.1.0",
-  "app": {
-    "background": {
-      "scripts": ["background.js"]
-    }
-  }
+    "name": "Bitcoin Wallet",
+    "description": "A BIP0032 Bitcoin wallet.",
+    "version": "0.0.1.0",
+    "app": {
+        "background": {
+            "scripts": ["background.js"]
+        }
+    },
+    "permissions": [
+        "http://robohash.org/"
+    ]
 }

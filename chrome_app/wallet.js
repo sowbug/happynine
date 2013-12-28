@@ -2,6 +2,18 @@ function moduleDidLoad() {
     common.hideModule();
 }
 
+function updateFingerprintImage(fingerprint) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'http://robohash.org/' + fingerprint +
+             '.png?set=set3&bgset=any&size=64x64', true);
+    xhr.responseType = 'blob';
+    xhr.onload = function(e) {
+        var img = document.querySelector("#fingerprint-img");
+        img.src = window.webkitURL.createObjectURL(this.response);
+    };
+    xhr.send();
+}
+
 function handleMessage(message) {
     var message_object = JSON.parse(message.data);
     console.log(message);
@@ -18,6 +30,7 @@ function handleMessage(message) {
             message_object.public_key;
         document.querySelector("#fingerprint").value =
             message_object.fingerprint;
+        updateFingerprintImage(message_object.fingerprint);
         break;
     }
 }
