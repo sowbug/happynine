@@ -40,13 +40,9 @@ MasterKey::~MasterKey() {
 void MasterKey::set_key(const bytes_t& new_key) {
   secret_key_.clear();
   // TODO(miket): check key_num validity
-  is_private_ = (new_key.size() == 32) ||
-    (new_key.size() == 33 && new_key[0] == 0x00);
+  is_private_ = new_key.size() == 32;
   version_ = is_private_ ? 0x0488ADE4 : 0x0488B21E;
   if (is_private()) {
-    if (new_key.size() == 32) {
-      secret_key_.push_back(0x00);
-    }
     secret_key_.insert(secret_key_.end(), new_key.begin(), new_key.end());
     secp256k1_key curvekey;
     curvekey.setPrivKey(secret_key_);

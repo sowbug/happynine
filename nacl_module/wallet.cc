@@ -44,6 +44,12 @@ Wallet::Wallet(const bytes_t& bytes) {
       (uint32_t)bytes[12];
     bytes_t chain_code(&bytes[13], &bytes[45]);
     bytes_t secret_key(&bytes[45], &bytes[78]);
+
+    // If the secret key is private, it needs to be 32 bytes.
+    if (secret_key[0] == 0x00) {
+      secret_key.assign(secret_key.begin() + 1, secret_key.end());
+    }
+
     master_key_ = MasterKey(secret_key, chain_code);
     if (version != master_key_.version()) {
       master_key_ = MasterKey();
@@ -69,6 +75,7 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
 
   if (wants_private) {
     // Push the parent's private key
+    child_data.push_back(0x00);
     child_data.insert(child_data.end(), secret_key.begin(), secret_key.end());
   } else {
     // Push just the parent's public key
@@ -184,6 +191,9 @@ bytes_t Wallet::toSerialized() const {
   // for public keys, 0x00 + k for private keys)
   const bytes_t& key = master_key_.is_private() ?
     master_key_.secret_key() : master_key_.public_key();
+  if (master_key_.is_private()) {
+    s.push_back(0x00);
+  }
   s.insert(s.end(), key.begin(), key.end());
 
   return s;
