@@ -58,6 +58,9 @@ public:
 
     MasterKey master_key(seed_bytes);
     Wallet wallet(master_key);
+    if (seed_bytes.size() == 78) {
+      wallet = Wallet(seed_bytes);
+    }
     for (size_t i = 1; i < wallet_name_parts.size(); ++i) {
       std::string part = wallet_name_parts[i];
       uint32_t n = strtol(&part[0], NULL, 10);

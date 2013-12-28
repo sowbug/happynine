@@ -37,15 +37,21 @@ MasterKey::~MasterKey() {
 }
 
 void MasterKey::set_key(const bytes_t& new_key) {
+  secret_key_.clear();
   // TODO(miket): check key_num validity
-  is_private_ = (new_key.size() == 32);
+  is_private_ = (new_key.size() == 32) ||
+    (new_key.size() == 33 && new_key[0] == 0x00);
+  version_ = is_private_ ? 0x0488ADE4 : 0x0488B21E;
   if (is_private()) {
-    secret_key_ = new_key;
+    if (new_key.size() == 33) {
+      secret_key_.assign(&new_key[1], &new_key[33]);
+    } else {
+      secret_key_ = new_key;
+    }
     secp256k1_key curvekey;
     curvekey.setPrivKey(secret_key_);
     public_key_ = curvekey.getPubKey();
   } else {
-    secret_key_.clear();
     public_key_ = new_key;
   }
   update_fingerprint();
@@ -76,7 +82,8 @@ void MasterKey::update_fingerprint() {
 
 std::string MasterKey::toString() const {
   std::stringstream ss;
-  ss << "fingerprint: " << std::hex << fingerprint_ << std::endl
+  ss << "version: " << std::hex << version_ << std::endl
+     << "fingerprint: " << std::hex << fingerprint_ << std::endl
      << "secret_key: " << to_hex(secret_key_) << std::endl
      << "public_key: " << to_hex(public_key_) << std::endl
      << "chain_code: " << to_hex(chain_code_) << std::endl

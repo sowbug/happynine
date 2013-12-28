@@ -8,16 +8,39 @@
 #include "openssl/sha.h"
 #include "secp256k1.h"
 
-const std::string CURVE_ORDER_BYTES(
-"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+const std::string CURVE_ORDER_BYTES("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
+FEBAAEDCE6AF48A03BBFD25E8CD0364141");
 const BigInt CURVE_ORDER(CURVE_ORDER_BYTES);
 
 Wallet::Wallet(const MasterKey& master_key) :
   master_key_(master_key),
-  version_(0),
   depth_(0),
   parent_fingerprint_(0),
   child_num_(0) {
+}
+
+Wallet::Wallet(const bytes_t& bytes) {
+  if (bytes.size() == 78) {
+    uint32_t version = ((uint32_t)bytes[0] << 24) |
+      ((uint32_t)bytes[1] << 16) |
+      ((uint32_t)bytes[2] << 8) |
+      (uint32_t)bytes[3];
+    depth_ = bytes[4];
+    parent_fingerprint_ = ((uint32_t)bytes[5] << 24) |
+      ((uint32_t)bytes[6] << 16) |
+      ((uint32_t)bytes[7] << 8) |
+      (uint32_t)bytes[8];
+    child_num_ = ((uint32_t)bytes[9] << 24) |
+      ((uint32_t)bytes[10] << 16) |
+      ((uint32_t)bytes[11] << 8) |
+      (uint32_t)bytes[12];
+    bytes_t chain_code(&bytes[13], &bytes[45]);
+    bytes_t secret_key(&bytes[45], &bytes[78]);
+    master_key_ = MasterKey(secret_key, chain_code);
+    if (version != master_key_.version()) {
+      master_key_ = MasterKey();
+    }
+  }
 }
 
 Wallet::~Wallet() {
@@ -94,7 +117,6 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
     new_child_key = K.bytes();
   }
 
-  child.version_ = version_;
   child.depth_ = depth_ + 1;
   child.parent_fingerprint_ = master_key_.fingerprint();
   child.child_num_ = i;
@@ -108,10 +130,52 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
 
 std::string Wallet::toString() const {
   std::stringstream ss;
-  ss << "version: " << std::hex << version_ << std::endl
-     << "depth: " << depth_ << std::endl
+  ss << "depth: " << depth_ << std::endl
      << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
      << "child_num: " << child_num_ << std::endl
+     << "serialized: " << to_hex(toSerialized()) << std::endl
      << "master_key: " << master_key_.toString() << std::endl;
   return ss.str();
+}
+
+bytes_t Wallet::toSerialized() const {
+  bytes_t s;
+
+  // 4 byte: version bytes (mainnet: 0x0488B21E public, 0x0488ADE4 private;
+  // testnet: 0x043587CF public, 0x04358394 private)
+  uint32_t version = master_key_.version();
+  s.push_back((uint32_t)version >> 24);
+  s.push_back(((uint32_t)version >> 16) & 0xff);
+  s.push_back(((uint32_t)version >> 8) & 0xff);
+  s.push_back((uint32_t)version & 0xff);
+
+  // 1 byte: depth: 0x00 for master nodes, 0x01 for level-1 descendants, etc.
+  s.push_back(depth_);
+
+  // 4 bytes: the fingerprint of the parent's key (0x00000000 if master key)
+  s.push_back((uint32_t)parent_fingerprint_ >> 24);
+  s.push_back(((uint32_t)parent_fingerprint_ >> 16) & 0xff);
+  s.push_back(((uint32_t)parent_fingerprint_ >> 8) & 0xff);
+  s.push_back((uint32_t)parent_fingerprint_ & 0xff);
+
+  // 4 bytes: child number. This is the number i in xi = xpar/i, with xi
+  // the key being serialized. This is encoded in MSB order.
+  // (0x00000000 if master key)
+  s.push_back((uint32_t)child_num_ >> 24);
+  s.push_back(((uint32_t)child_num_ >> 16) & 0xff);
+  s.push_back(((uint32_t)child_num_ >> 8) & 0xff);
+  s.push_back((uint32_t)child_num_ & 0xff);
+
+  // 32 bytes: the chain code
+  s.insert(s.end(),
+           master_key_.chain_code().begin(),
+           master_key_.chain_code().end());
+
+  // 33 bytes: the public key or private key data (0x02 + X or 0x03 + X
+  // for public keys, 0x00 + k for private keys)
+  const bytes_t& key = master_key_.is_private() ?
+    master_key_.secret_key() : master_key_.public_key();
+  s.insert(s.end(), key.begin(), key.end());
+
+  return s;
 }
