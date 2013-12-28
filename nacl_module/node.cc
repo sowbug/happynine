@@ -6,6 +6,7 @@
 #include "base58.h"
 #include "bigint.h"
 #include "openssl/hmac.h"
+#include "openssl/ripemd.h"
 #include "openssl/sha.h"
 #include "secp256k1.h"
 
@@ -14,20 +15,30 @@ FEBAAEDCE6AF48A03BBFD25E8CD0364141");
 const BigInt CURVE_ORDER(CURVE_ORDER_BYTES);
 
 Node::Node() :
-  master_key_(),
   depth_(0),
   parent_fingerprint_(0),
   child_num_(0) {
 }
 
-Node::Node(const MasterKey& master_key) :
-  master_key_(master_key),
+Node::Node(const bytes_t& seed) :
   depth_(0),
   parent_fingerprint_(0),
   child_num_(0) {
+  const std::string BIP0032_HMAC_KEY("Bitcoin seed");
+  bytes_t digest;
+  digest.resize(EVP_MAX_MD_SIZE);
+  HMAC(EVP_sha512(),
+       BIP0032_HMAC_KEY.c_str(),
+       BIP0032_HMAC_KEY.size(),
+       &seed[0],
+       seed.size(),
+       &digest[0],
+       NULL);
+  set_key(bytes_t(&digest[0], &digest[32]));
+  set_chain_code(bytes_t(&digest[32], &digest[64]));
 }
 
-Node::Node(const bytes_t& bytes) {
+Node::Node(const bytes_t& bytes, bool unused) {
   if (bytes.size() == 78) {
     uint32_t version = ((uint32_t)bytes[0] << 24) |
       ((uint32_t)bytes[1] << 16) |
@@ -49,12 +60,25 @@ Node::Node(const bytes_t& bytes) {
     if (secret_key[0] == 0x00) {
       secret_key.assign(secret_key.begin() + 1, secret_key.end());
     }
+    set_key(secret_key);
+    set_chain_code(chain_code);
 
-    master_key_ = MasterKey(secret_key, chain_code);
-    if (version != master_key_.version()) {
-      master_key_ = MasterKey();
+    if (version_ != version) {
+      // TODO
     }
   }
+}
+
+Node::Node(const bytes_t& key,
+           const bytes_t& chain_code,
+           unsigned int depth,
+           uint32_t parent_fingerprint,
+           uint32_t child_num) :
+  depth_(depth),
+  parent_fingerprint_(parent_fingerprint),
+  child_num_(child_num) {
+  set_key(key);
+  set_chain_code(chain_code);
 }
 
 Node::~Node() {
@@ -64,11 +88,9 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
   // If the caller is asking for a private derivation but we don't
   // have the private key, exit with error.
   bool wants_private = (i & 0x80000000) != 0;
-  if (wants_private && !master_key_.is_private()) {
+  if (wants_private && !is_private()) {
     return false;
   }
-  bytes_t secret_key = master_key_.secret_key();
-  bytes_t public_key = master_key_.public_key();
 
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#private-child-key-derivation
   bytes_t child_data;
@@ -76,10 +98,14 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
   if (wants_private) {
     // Push the parent's private key
     child_data.push_back(0x00);
-    child_data.insert(child_data.end(), secret_key.begin(), secret_key.end());
+    child_data.insert(child_data.end(),
+                      secret_key().begin(),
+                      secret_key().end());
   } else {
     // Push just the parent's public key
-    child_data.insert(child_data.end(), public_key.begin(), public_key.end());
+    child_data.insert(child_data.end(),
+                      public_key().begin(),
+                      public_key().end());
   }
   // Push i
   child_data.push_back(i >> 24);
@@ -91,8 +117,8 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
   bytes_t digest;
   digest.resize(EVP_MAX_MD_SIZE);
   HMAC(EVP_sha512(),
-       &master_key_.chain_code()[0],
-       master_key_.chain_code().size(),
+       &chain_code()[0],
+       chain_code().size(),
        &child_data[0],
        child_data.size(),
        &digest[0],
@@ -108,8 +134,8 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
   }
 
   bytes_t new_child_key;
-  if (master_key_.is_private()) {
-    BigInt k(secret_key);
+  if (is_private()) {
+    BigInt k(secret_key());
     k += iLeft;
     k %= CURVE_ORDER;
     if (k.isZero()) {
@@ -122,7 +148,7 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
     padded_key.insert(padded_key.end(), child_key.begin(), child_key.end());
     new_child_key = padded_key;
   } else {
-    secp256k1_point K(public_key);
+    secp256k1_point K(public_key());
     K.generator_mul(left32);
     if (K.is_at_infinity()) {
       // TODO: "and one should proceed with the next value for i."
@@ -131,27 +157,67 @@ bool Node::GetChildNode(uint32_t i, Node& child) const {
     new_child_key = K.bytes();
   }
 
-  child.depth_ = depth_ + 1;
-  child.parent_fingerprint_ = master_key_.fingerprint();
-  child.child_num_ = i;
-
   // Chain code is right half of HMAC output
-  MasterKey child_master_key(new_child_key, right32);
-  child.master_key_ = child_master_key;
+  child = Node(new_child_key, right32, depth_ + 1, fingerprint(), i);
 
   return true;
 }
 
 std::string Node::toString() const {
   std::stringstream ss;
-  ss << "depth: " << depth_ << std::endl
+  ss << "version: " << std::hex << version_ << std::endl
+     << "fingerprint: " << std::hex << fingerprint_ << std::endl
+     << "secret_key: " << to_hex(secret_key_) << std::endl
+     << "public_key: " << to_hex(public_key_) << std::endl
+     << "chain_code: " << to_hex(chain_code_) << std::endl
      << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
+     << "depth: " << depth_ << std::endl
      << "child_num: " << child_num_ << std::endl
      << "serialized: " << to_hex(toSerialized()) << std::endl
      << "serialized-base58: " <<
     Base58::toBase58Check(toSerialized()) << std::endl
-     << "master_key: " << master_key_.toString() << std::endl;
+    ;
+
   return ss.str();
+}
+
+void Node::set_key(const bytes_t& new_key) {
+  secret_key_.clear();
+  // TODO(miket): check key_num validity
+  is_private_ = new_key.size() == 32;
+  version_ = is_private_ ? 0x0488ADE4 : 0x0488B21E;
+  if (is_private()) {
+    secret_key_.insert(secret_key_.end(), new_key.begin(), new_key.end());
+    secp256k1_key curvekey;
+    curvekey.setPrivKey(secret_key_);
+    public_key_ = curvekey.getPubKey();
+  } else {
+    public_key_ = new_key;
+  }
+  update_fingerprint();
+}
+
+void Node::set_chain_code(const bytes_t& new_code) {
+  chain_code_ = new_code;
+}
+
+void Node::update_fingerprint() {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &public_key_[0], public_key_.size());
+  SHA256_Final(hash, &sha256);
+
+  unsigned char ripemd_hash[RIPEMD160_DIGEST_LENGTH];
+  RIPEMD160_CTX ripemd;
+  RIPEMD160_Init(&ripemd);
+  RIPEMD160_Update(&ripemd, hash, SHA256_DIGEST_LENGTH);
+  RIPEMD160_Final(ripemd_hash, &ripemd);
+
+  fingerprint_ = (uint32_t)ripemd_hash[0] << 24 |
+    (uint32_t)ripemd_hash[1] << 16 |
+    (uint32_t)ripemd_hash[2] << 8 |
+    (uint32_t)ripemd_hash[3];
 }
 
 bytes_t Node::toSerialized() const {
@@ -159,11 +225,10 @@ bytes_t Node::toSerialized() const {
 
   // 4 byte: version bytes (mainnet: 0x0488B21E public, 0x0488ADE4 private;
   // testnet: 0x043587CF public, 0x04358394 private)
-  uint32_t version = master_key_.version();
-  s.push_back((uint32_t)version >> 24);
-  s.push_back(((uint32_t)version >> 16) & 0xff);
-  s.push_back(((uint32_t)version >> 8) & 0xff);
-  s.push_back((uint32_t)version & 0xff);
+  s.push_back((uint32_t)version() >> 24);
+  s.push_back(((uint32_t)version() >> 16) & 0xff);
+  s.push_back(((uint32_t)version() >> 8) & 0xff);
+  s.push_back((uint32_t)version() & 0xff);
 
   // 1 byte: depth: 0x00 for master nodes, 0x01 for level-1 descendants, etc.
   s.push_back(depth_);
@@ -183,15 +248,12 @@ bytes_t Node::toSerialized() const {
   s.push_back((uint32_t)child_num_ & 0xff);
 
   // 32 bytes: the chain code
-  s.insert(s.end(),
-           master_key_.chain_code().begin(),
-           master_key_.chain_code().end());
+  s.insert(s.end(), chain_code().begin(), chain_code().end());
 
   // 33 bytes: the public key or private key data (0x02 + X or 0x03 + X
   // for public keys, 0x00 + k for private keys)
-  const bytes_t& key = master_key_.is_private() ?
-    master_key_.secret_key() : master_key_.public_key();
-  if (master_key_.is_private()) {
+  const bytes_t& key = is_private() ? secret_key() : public_key();
+  if (is_private()) {
     s.push_back(0x00);
   }
   s.insert(s.end(), key.begin(), key.end());

@@ -10,7 +10,6 @@ CFLAGS = -Wall
 
 SOURCES = \
 	base58.cc \
-	master_key.cc \
 	node.cc \
 	secp256k1.cc \
 	types.cc \

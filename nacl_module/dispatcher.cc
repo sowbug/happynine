@@ -59,12 +59,11 @@ public:
 
     Node node;
     if (seed_bytes.size() == 78) {
-      node = Node(seed_bytes);
+      node = Node(seed_bytes, false);
     } else if (seed_hex[0] == 'x') {
-      node = Node(Base58::fromBase58Check(seed_hex));
+      node = Node(Base58::fromBase58Check(seed_hex), false);
     } else {
-      MasterKey master_key(seed_bytes);
-      node = Node(master_key);
+      node = Node(seed_bytes);
     }
     for (size_t i = 1; i < node_path_parts.size(); ++i) {
       std::string part = node_path_parts[i];
@@ -75,14 +74,14 @@ public:
       node.GetChildNode(n, node);
     }
 
-    result["secret_key"] = to_hex(node.master_key().secret_key());
-    result["chain_code"] = to_hex(node.master_key().chain_code());
-    result["public_key"] = to_hex(node.master_key().public_key());
+    result["secret_key"] = to_hex(node.secret_key());
+    result["chain_code"] = to_hex(node.chain_code());
+    result["public_key"] = to_hex(node.public_key());
     {
       std::stringstream stream;
       stream << "0x"
              << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
-             << std::hex << node.master_key().fingerprint();
+             << std::hex << node.fingerprint();
       result["fingerprint"] = stream.str();
     }
     result["node"] = node.toString();
