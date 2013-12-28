@@ -1,4 +1,4 @@
-#include "wallet.h"
+#include "node.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -41,51 +41,51 @@ public:
     return true;
   }
 
-  virtual bool HandleGetWallet(const Json::Value& args,
-                               Json::Value& result) {
+  virtual bool HandleGetWalletNode(const Json::Value& args,
+                                   Json::Value& result) {
     const std::string seed_hex = args.get("seed_hex", "").asString();
     bytes_t seed_bytes(seed_hex.size() / 2);
     unhexlify(&seed_hex[0],
               &seed_hex[0] + seed_hex.size(),
               &seed_bytes[0]);
 
-    const std::string wallet_name = args.get("wallet", "m").asString();
-    std::istringstream iss(wallet_name);
+    const std::string node_path = args.get("path", "m").asString();
+    std::istringstream iss(node_path);
     std::string token;
-    std::vector<std::string> wallet_name_parts;
+    std::vector<std::string> node_path_parts;
     while (std::getline(iss, token, '/')) {
-      wallet_name_parts.push_back(token);
+      node_path_parts.push_back(token);
     }
 
-    Wallet wallet;
+    Node node;
     if (seed_bytes.size() == 78) {
-      wallet = Wallet(seed_bytes);
+      node = Node(seed_bytes);
     } else if (seed_hex[0] == 'x') {
-      wallet = Wallet(Base58::fromBase58Check(seed_hex));
+      node = Node(Base58::fromBase58Check(seed_hex));
     } else {
       MasterKey master_key(seed_bytes);
-      wallet = Wallet(master_key);
+      node = Node(master_key);
     }
-    for (size_t i = 1; i < wallet_name_parts.size(); ++i) {
-      std::string part = wallet_name_parts[i];
+    for (size_t i = 1; i < node_path_parts.size(); ++i) {
+      std::string part = node_path_parts[i];
       uint32_t n = strtol(&part[0], NULL, 10);
       if (part.rfind('\'') != std::string::npos) {
         n += 0x80000000;
       }
-      wallet.GetChildNode(n, wallet);
+      node.GetChildNode(n, node);
     }
 
-    result["secret_key"] = to_hex(wallet.master_key().secret_key());
-    result["chain_code"] = to_hex(wallet.master_key().chain_code());
-    result["public_key"] = to_hex(wallet.master_key().public_key());
+    result["secret_key"] = to_hex(node.master_key().secret_key());
+    result["chain_code"] = to_hex(node.master_key().chain_code());
+    result["public_key"] = to_hex(node.master_key().public_key());
     {
       std::stringstream stream;
       stream << "0x"
              << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
-             << std::hex << wallet.master_key().fingerprint();
+             << std::hex << node.master_key().fingerprint();
       result["fingerprint"] = stream.str();
     }
-    result["wallet"] = wallet.toString();
+    result["node"] = node.toString();
 
     return true;
   }
@@ -112,8 +112,8 @@ public:
     if (command == "sha256") {
       handled = HandleSHA256(root, result);
     }
-    if (command == "get-wallet") {
-      handled = HandleGetWallet(root, result);
+    if (command == "get-wallet-node") {
+      handled = HandleGetWalletNode(root, result);
     }
     if (handled) {
       result["command"] = command;

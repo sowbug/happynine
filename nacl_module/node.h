@@ -1,20 +1,20 @@
 #include "master_key.h"
 #include "types.h"
 
-class Wallet {
+class Node {
  public:
-  Wallet();
+  Node();
 
   // From a master key.
-  explicit Wallet(const MasterKey& master_key);
+  explicit Node(const MasterKey& master_key);
 
   // From a serialized key.
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#serialization-format
-  explicit Wallet(const bytes_t& bytes);
+  explicit Node(const bytes_t& bytes);
 
-  virtual ~Wallet();
+  virtual ~Node();
 
-  bool GetChildNode(uint32_t i, Wallet& child) const;
+  bool GetChildNode(uint32_t i, Node& child) const;
   const MasterKey& master_key() const { return master_key_; }
 
   std::string toString() const;

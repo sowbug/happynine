@@ -1,4 +1,4 @@
-#include "wallet.h"
+#include "node.h"
 
 #include <sstream>
 #include <string>
@@ -13,21 +13,21 @@ const std::string CURVE_ORDER_BYTES("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
 FEBAAEDCE6AF48A03BBFD25E8CD0364141");
 const BigInt CURVE_ORDER(CURVE_ORDER_BYTES);
 
-Wallet::Wallet() :
+Node::Node() :
   master_key_(),
   depth_(0),
   parent_fingerprint_(0),
   child_num_(0) {
 }
 
-Wallet::Wallet(const MasterKey& master_key) :
+Node::Node(const MasterKey& master_key) :
   master_key_(master_key),
   depth_(0),
   parent_fingerprint_(0),
   child_num_(0) {
 }
 
-Wallet::Wallet(const bytes_t& bytes) {
+Node::Node(const bytes_t& bytes) {
   if (bytes.size() == 78) {
     uint32_t version = ((uint32_t)bytes[0] << 24) |
       ((uint32_t)bytes[1] << 16) |
@@ -57,10 +57,10 @@ Wallet::Wallet(const bytes_t& bytes) {
   }
 }
 
-Wallet::~Wallet() {
+Node::~Node() {
 }
 
-bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
+bool Node::GetChildNode(uint32_t i, Node& child) const {
   // If the caller is asking for a private derivation but we don't
   // have the private key, exit with error.
   bool wants_private = (i & 0x80000000) != 0;
@@ -142,7 +142,7 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
   return true;
 }
 
-std::string Wallet::toString() const {
+std::string Node::toString() const {
   std::stringstream ss;
   ss << "depth: " << depth_ << std::endl
      << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
@@ -154,7 +154,7 @@ std::string Wallet::toString() const {
   return ss.str();
 }
 
-bytes_t Wallet::toSerialized() const {
+bytes_t Node::toSerialized() const {
   bytes_t s;
 
   // 4 byte: version bytes (mainnet: 0x0488B21E public, 0x0488ADE4 private;

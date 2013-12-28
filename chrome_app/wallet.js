@@ -21,7 +21,7 @@ function handleMessage(message) {
     case "sha256":
         document.querySelector("#sha256-output").value = message_object.hash;
         break;
-    case "get-wallet":
+    case "get-wallet-node":
         document.querySelector("#secret-key").value =
             message_object.secret_key;
         document.querySelector("#chain-code").value =
@@ -36,11 +36,11 @@ function handleMessage(message) {
 }
 
 window.onload = function() {
-    document.querySelector('#get-wallet').onclick = function() {
+    document.querySelector('#get-wallet-node').onclick = function() {
         var message = {
-            'command': 'get-wallet',
+            'command': 'get-wallet-node',
             'seed_hex': document.querySelector("#seed").value,
-            'wallet': document.querySelector("#wallet").value
+            'path': document.querySelector("#path").value
         };
         common.naclModule.postMessage(JSON.stringify(message));
     };
