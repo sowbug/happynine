@@ -9,6 +9,7 @@ LIBS = $(DEPS) ppapi_cpp ppapi pthread crypto jsoncpp
 CFLAGS = -Wall
 
 SOURCES = \
+	base58.cc \
 	master_key.cc \
 	secp256k1.cc \
 	types.cc \

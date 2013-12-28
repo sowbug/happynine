@@ -16,7 +16,7 @@ MasterKey::MasterKey() {
 MasterKey::MasterKey(const bytes_t& seed) {
   const std::string BIP0032_HMAC_KEY("Bitcoin seed");
   bytes_t digest;
-  digest.reserve(EVP_MAX_MD_SIZE);
+  digest.resize(EVP_MAX_MD_SIZE);
   HMAC(EVP_sha512(),
        BIP0032_HMAC_KEY.c_str(),
        BIP0032_HMAC_KEY.size(),
@@ -43,11 +43,10 @@ void MasterKey::set_key(const bytes_t& new_key) {
     (new_key.size() == 33 && new_key[0] == 0x00);
   version_ = is_private_ ? 0x0488ADE4 : 0x0488B21E;
   if (is_private()) {
-    if (new_key.size() == 33) {
-      secret_key_.assign(&new_key[1], &new_key[33]);
-    } else {
-      secret_key_ = new_key;
+    if (new_key.size() == 32) {
+      secret_key_.push_back(0x00);
     }
+    secret_key_.insert(secret_key_.end(), new_key.begin(), new_key.end());
     secp256k1_key curvekey;
     curvekey.setPrivKey(secret_key_);
     public_key_ = curvekey.getPubKey();

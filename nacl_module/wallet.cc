@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 
+#include "base58.h"
 #include "bigint.h"
 #include "openssl/hmac.h"
 #include "openssl/sha.h"
@@ -60,8 +61,7 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
   bytes_t child_data;
 
   if (wants_private) {
-    // Push a zero, then the parent's private key
-    child_data.push_back((uint8_t)0x00);
+    // Push the parent's private key
     child_data.insert(child_data.end(), secret_key.begin(), secret_key.end());
   } else {
     // Push just the parent's public key
@@ -75,7 +75,7 @@ bool Wallet::GetChildNode(uint32_t i, Wallet& child) const {
 
   // Now HMAC the whole thing
   bytes_t digest;
-  digest.reserve(EVP_MAX_MD_SIZE);
+  digest.resize(EVP_MAX_MD_SIZE);
   HMAC(EVP_sha512(),
        &master_key_.chain_code()[0],
        master_key_.chain_code().size(),
@@ -134,6 +134,8 @@ std::string Wallet::toString() const {
      << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
      << "child_num: " << child_num_ << std::endl
      << "serialized: " << to_hex(toSerialized()) << std::endl
+     << "serialized-base58: " <<
+    Base58::toBase58Check(toSerialized()) << std::endl
      << "master_key: " << master_key_.toString() << std::endl;
   return ss.str();
 }
