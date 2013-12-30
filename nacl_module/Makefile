@@ -11,6 +11,7 @@ CFLAGS = -Wall
 SOURCES = \
 	base58.cc \
 	node.cc \
+	node_factory.cc \
 	secp256k1.cc \
 	types.cc \
 	dispatcher.cc

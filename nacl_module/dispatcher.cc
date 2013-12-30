@@ -10,7 +10,7 @@
 #include "base58.h"
 #include "json/reader.h"
 #include "json/writer.h"
-#include "openssl/sha.h"
+#include "node_factory.h"
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
@@ -21,25 +21,6 @@ public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance) {}
   virtual ~HDWalletDispatcherInstance() {}
-
-  virtual bool HandleSHA256(const Json::Value& args,
-                            Json::Value& result) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-
-    const std::string value = args.get("value", "").asString();
-
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256,
-                  reinterpret_cast<const unsigned char*>(value.c_str()),
-                  value.length());
-    SHA256_Final(hash, &sha256);
-    bytes_t hash_bytes(hash, hash + SHA256_DIGEST_LENGTH);
-
-    result["hash"] = to_hex(hash_bytes);
-
-    return true;
-  }
 
   virtual bool HandleGetWalletNode(const Json::Value& args,
                                    Json::Value& result) {
@@ -57,13 +38,13 @@ public:
       node_path_parts.push_back(token);
     }
 
-    Node node;
+    Node *node = NULL;
     if (seed_bytes.size() == 78) {
-      node = Node(seed_bytes, false);
+      node = NodeFactory::CreateNodeFromExtended(seed_bytes);
     } else if (seed_hex[0] == 'x') {
-      node = Node(Base58::fromBase58Check(seed_hex), false);
+      node = NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
     } else {
-      node = Node(seed_bytes);
+      node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
     for (size_t i = 1; i < node_path_parts.size(); ++i) {
       std::string part = node_path_parts[i];
@@ -71,20 +52,24 @@ public:
       if (part.rfind('\'') != std::string::npos) {
         n += 0x80000000;
       }
-      node.GetChildNode(n, node);
+      Node *child_node = NodeFactory::DeriveChildNode(*node, n);
+      delete node;
+      node = child_node;
     }
 
-    result["secret_key"] = to_hex(node.secret_key());
-    result["chain_code"] = to_hex(node.chain_code());
-    result["public_key"] = to_hex(node.public_key());
+    result["secret_key"] = to_hex(node->secret_key());
+    result["chain_code"] = to_hex(node->chain_code());
+    result["public_key"] = to_hex(node->public_key());
     {
       std::stringstream stream;
       stream << "0x"
              << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
-             << std::hex << node.fingerprint();
+             << std::hex << node->fingerprint();
       result["fingerprint"] = stream.str();
     }
-    result["node"] = node.toString();
+    result["node"] = node->toString();
+
+    delete node;
 
     return true;
   }
@@ -108,9 +93,6 @@ public:
     const std::string command = root.get("command", "UTF-8").asString();
     Json::Value result;
     bool handled = false;
-    if (command == "sha256") {
-      handled = HandleSHA256(root, result);
-    }
     if (command == "get-wallet-node") {
       handled = HandleGetWalletNode(root, result);
     }
