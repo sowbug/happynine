@@ -1,11 +1,15 @@
 #include "node_factory.h"
 
+#include <algorithm>
+#include <iterator>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <string>
 
 #include "bigint.h"
 #include "node.h"
 #include "openssl/hmac.h"
-//#include "openssl/ripemd.h"
 #include "openssl/sha.h"
 #include "secp256k1.h"
 #include "types.h"
@@ -70,6 +74,30 @@ Node* NodeFactory::CreateNodeFromExtended(const bytes_t& bytes) {
                   depth,
                   parent_fingerprint,
                   child_num);
+}
+
+Node* NodeFactory::DeriveChildNodeWithPath(Node* node,
+                                           const std::string& path) {
+    std::istringstream iss(path);
+    std::string token;
+    std::vector<std::string> node_path_parts;
+    while (std::getline(iss, token, '/')) {
+      node_path_parts.push_back(token);
+    }
+    for (size_t i = 1; i < node_path_parts.size(); ++i) {
+      std::string part = node_path_parts[i];
+      if (part.empty()) {
+        continue;
+      }
+      uint32_t n = strtol(&part[0], NULL, 10);
+      if (part.rfind('\'') != std::string::npos) {
+        n += 0x80000000;
+      }
+      Node *child_node = NodeFactory::DeriveChildNode(*node, n);
+      delete node;
+      node = child_node;
+    }
+    return node;
 }
 
 Node* NodeFactory::DeriveChildNode(const Node& parent_node,

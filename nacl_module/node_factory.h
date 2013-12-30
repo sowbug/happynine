@@ -13,6 +13,12 @@ class NodeFactory {
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#serialization-format
   static Node* CreateNodeFromExtended(const bytes_t& bytes);
 
+  // Given a parent node and using a path string like "m/0'/1/2",
+  // returns the appropriate child node. Might delete parent_node or
+  // return it as the result. Caller obtains ownership of the result.
+  static Node* DeriveChildNodeWithPath(Node* parent_node,
+                                       const std::string& path);
+
   // TODO
   static Node* DeriveChildNode(const Node& parent_node,
                                uint32_t i);

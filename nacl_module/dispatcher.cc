@@ -1,9 +1,6 @@
 #include "node.h"
 
-#include <algorithm>
 #include <iomanip>
-#include <iostream>
-#include <iterator>
 #include <sstream>
 #include <stdint.h>
 
@@ -30,14 +27,6 @@ public:
               &seed_hex[0] + seed_hex.size(),
               &seed_bytes[0]);
 
-    const std::string node_path = args.get("path", "m").asString();
-    std::istringstream iss(node_path);
-    std::string token;
-    std::vector<std::string> node_path_parts;
-    while (std::getline(iss, token, '/')) {
-      node_path_parts.push_back(token);
-    }
-
     Node *node = NULL;
     if (seed_bytes.size() == 78) {
       node = NodeFactory::CreateNodeFromExtended(seed_bytes);
@@ -46,16 +35,9 @@ public:
     } else {
       node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
-    for (size_t i = 1; i < node_path_parts.size(); ++i) {
-      std::string part = node_path_parts[i];
-      uint32_t n = strtol(&part[0], NULL, 10);
-      if (part.rfind('\'') != std::string::npos) {
-        n += 0x80000000;
-      }
-      Node *child_node = NodeFactory::DeriveChildNode(*node, n);
-      delete node;
-      node = child_node;
-    }
+
+    const std::string node_path = args.get("path", "m").asString();
+    node = NodeFactory::DeriveChildNodeWithPath(node, node_path);
 
     result["secret_key"] = to_hex(node->secret_key());
     result["chain_code"] = to_hex(node->chain_code());
