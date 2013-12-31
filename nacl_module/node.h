@@ -12,11 +12,14 @@ class Node {
 
   bool is_private() const { return is_private_; }
   uint32_t version() const { return version_; }
+  const bytes_t& hex_id() const { return hex_id_; }
+  uint32_t fingerprint() const { return fingerprint_; }
   const bytes_t& secret_key() const { return secret_key_; }
   const bytes_t& public_key() const { return public_key_; }
-  uint32_t fingerprint() const { return fingerprint_; }
-   unsigned int depth() const { return depth_; }
   const bytes_t& chain_code() const { return chain_code_; }
+  unsigned int depth() const { return depth_; }
+  uint32_t parent_fingerprint() const { return parent_fingerprint_; }
+  uint32_t child_num() const { return child_num_; }
 
   std::string toString() const;
   bytes_t toSerialized(bool public_if_available) const;
@@ -30,10 +33,11 @@ class Node {
 
   bool is_private_;
   uint32_t version_;
+  bytes_t hex_id_;
+  uint32_t fingerprint_;
   bytes_t secret_key_;
   bytes_t public_key_;
   bytes_t chain_code_;
-  uint32_t fingerprint_;
   unsigned int depth_;
   uint32_t parent_fingerprint_;
   uint32_t child_num_;

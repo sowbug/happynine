@@ -95,6 +95,15 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
         n += 0x80000000;
       }
       Node* temp_node = NodeFactory::DeriveChildNode(*child_node, n);
+      if (temp_node->parent_fingerprint() != child_node->fingerprint()) {
+        return NULL;
+      }
+      if (temp_node->child_num() != n) {
+        return NULL;
+      }
+      if (temp_node->depth() != child_node->depth() + 1) {
+        return NULL;
+      }
       delete child_node;
       child_node = temp_node;
     }

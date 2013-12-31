@@ -40,6 +40,8 @@ TEST(NodeTest, BIP0032TestVectors) {
       Node* child_node = NodeFactory::DeriveChildNodeWithPath(*parent_node,
                                                               path);
 
+      EXPECT_EQ(unhexlify(chain["hex_id"].asString()),
+                child_node->hex_id());
       const std::string fp_expected(chain["fingerprint"].asString());
       std::stringstream fp;
       fp << std::hex << std::setw(8) << child_node->fingerprint();

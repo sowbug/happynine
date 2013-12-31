@@ -29,16 +29,14 @@ Node::~Node() {
 std::string Node::toString() const {
   std::stringstream ss;
   ss << "version: " << std::hex << version_ << std::endl
+     << "hex_id: " << to_hex(hex_id_) << std::endl
      << "fingerprint: " << std::hex << fingerprint_ << std::endl
      << "secret_key: " << to_hex(secret_key_) << std::endl
      << "public_key: " << to_hex(public_key_) << std::endl
      << "chain_code: " << to_hex(chain_code_) << std::endl
-     << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
      << "depth: " << depth_ << std::endl
+     << "parent_fingerprint: " << std::hex << parent_fingerprint_ << std::endl
      << "child_num: " << child_num_ << std::endl
-     << "serialized: " << to_hex(toSerialized()) << std::endl
-     << "serialized-base58: " <<
-    Base58::toBase58Check(toSerialized()) << std::endl
     ;
 
   return ss.str();
@@ -65,22 +63,23 @@ void Node::set_chain_code(const bytes_t& new_code) {
 }
 
 void Node::update_fingerprint() {
-  unsigned char hash[SHA256_DIGEST_LENGTH];
+  bytes_t hash;
+  hash.resize(SHA256_DIGEST_LENGTH);
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
   SHA256_Update(&sha256, &public_key_[0], public_key_.size());
-  SHA256_Final(hash, &sha256);
+  SHA256_Final(&hash[0], &sha256);
 
-  unsigned char ripemd_hash[RIPEMD160_DIGEST_LENGTH];
+  hex_id_.resize(RIPEMD160_DIGEST_LENGTH);
   RIPEMD160_CTX ripemd;
   RIPEMD160_Init(&ripemd);
-  RIPEMD160_Update(&ripemd, hash, SHA256_DIGEST_LENGTH);
-  RIPEMD160_Final(ripemd_hash, &ripemd);
+  RIPEMD160_Update(&ripemd, &hash[0], hash.capacity());
+  RIPEMD160_Final(&hex_id_[0], &ripemd);
 
-  fingerprint_ = (uint32_t)ripemd_hash[0] << 24 |
-    (uint32_t)ripemd_hash[1] << 16 |
-    (uint32_t)ripemd_hash[2] << 8 |
-    (uint32_t)ripemd_hash[3];
+  fingerprint_ = (uint32_t)hex_id_[0] << 24 |
+    (uint32_t)hex_id_[1] << 16 |
+    (uint32_t)hex_id_[2] << 8 |
+    (uint32_t)hex_id_[3];
 }
 
 bytes_t Node::toSerialized(bool private_if_available) const {
