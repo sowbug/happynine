@@ -1,5 +1,10 @@
 function moduleDidLoad() {
     common.hideModule();
+    $("#loading-container").slideUp(250, function() {
+        $("#main-container").fadeIn(500, function() {
+            $('#main-tabs a:first').tab('show');
+        });
+    });
 }
 
 function updateFingerprintImage(fingerprint) {
@@ -45,6 +50,12 @@ function handleMessage(message) {
 }
 
 window.onload = function() {
+    var onTabClick = function (e) {
+        e.preventDefault()
+        $(this).tab('show')
+    };
+    $('#main-tabs a').click(onTabClick);
+
     document.querySelector('#get-wallet-node').onclick = function() {
         var message = {
             'command': 'get-wallet-node',
