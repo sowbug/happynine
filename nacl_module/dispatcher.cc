@@ -28,13 +28,15 @@ public:
     if (seed_bytes.size() == 78) {
       parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
     } else if (seed_hex[0] == 'x') {
-      parent_node = NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
+      parent_node =
+        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
     } else {
       parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
 
     const std::string node_path = args.get("path", "m").asString();
-    node = NodeFactory::DeriveChildNodeWithPath(*parent_node, node_path);
+    Node* node = NodeFactory::DeriveChildNodeWithPath(*parent_node,
+                                                      node_path);
     delete parent_node;
 
     result["secret_key"] = to_hex(node->secret_key());
@@ -47,8 +49,6 @@ public:
              << std::hex << node->fingerprint();
       result["fingerprint"] = stream.str();
     }
-    result["node"] = node->toString();
-
     delete node;
 
     return true;
