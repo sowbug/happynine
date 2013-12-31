@@ -23,3 +23,10 @@ Installation/Development
 1. Clone the repository.
 2. `make`.
 3. In Chrome, load the unpacked extension in `out/zip`.
+
+Acknowledgments (in addition to the [Bitcoin developers](https://github.com/bitcoin))
+===
+
+* [Richard Kiss](http://blog.richardkiss.com/?p=313), whose blog post walked through what a BIP0032 wallet really is.
+* [Eric Lombrozo](https://github.com/CodeShark), some of whose C++ BIP0032 HD wallet code appears here.
+* Various folks who have posted on [bitcointalk](https://bitcointalk.org/) about BIP0032.
