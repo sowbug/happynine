@@ -9,6 +9,7 @@
 typedef std::vector<unsigned char> bytes_t;
 
 std::string to_hex(const bytes_t bytes);
+std::string to_fingerprint(uint32_t fingerprint);
 
 int to_int(int c);
 

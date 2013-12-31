@@ -16,6 +16,13 @@ std::string to_hex(const bytes_t bytes) {
   return out.str();
 }
 
+std::string to_fingerprint(uint32_t fingerprint) {
+  std::stringstream stream;
+  stream << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
+         << std::hex << fingerprint;
+  return stream.str();
+}
+
 // http://stackoverflow.com/a/9622208/344467
 int to_int(int c) {
   if (not isxdigit(c)) return -1; // error: non-hexadecimal digit found

@@ -39,15 +39,17 @@ public:
                                                       node_path);
     delete parent_node;
 
+    result["hex_id"] = to_hex(node->hex_id());
+    result["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
     result["secret_key"] = to_hex(node->secret_key());
-    result["chain_code"] = to_hex(node->chain_code());
+    result["secret_wif"] = Base58::toPrivateKey(node->secret_key());
     result["public_key"] = to_hex(node->public_key());
-    {
-      std::stringstream stream;
-      stream << "0x"
-             << std::setfill ('0') << std::setw(sizeof(uint32_t) * 2)
-             << std::hex << node->fingerprint();
-      result["fingerprint"] = stream.str();
+    result["chain_code"] = to_hex(node->chain_code());
+    result["ext_pub_hex"] = to_hex(node->toSerializedPublic());
+    result["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
+    if (node->is_private()) {
+      result["ext_prv_hex"] = to_hex(node->toSerialized());
+      result["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
     }
     delete node;
 
