@@ -1,140 +1,253 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="-1">
-    <title>Bitcoin Wallet</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="text/javascript" src="common.js"></script>
-    <script type="text/javascript" src="wallet.js"></script>
-    <link href="bootstrap-3.0.3/css/bootstrap.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
-  </head>
+<head>
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <title>Bitcoin Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/javascript" src="common.js"></script>
+  <script type="text/javascript" src="wallet.js"></script>
+  <link href="bootstrap-3.0.3/css/bootstrap.min.css" rel="stylesheet">
+  <link href="styles.css" rel="stylesheet">
+</head>
 
-  <body data-name="hd_wallet"
-        data-tools="newlib glibc pnacl"
-        data-configs="Release Debug"
-        data-path="{tc}/{config}">
+<body data-name="hd_wallet" data-tools="newlib glibc pnacl" data-configs="Release Debug" data-path="{tc}/{config}">
 
-    <div id="wrap">
+  <div id="wrap">
 
-      <!-- Static navbar -->
-      <div class="navbar navbar-default" role="navigation">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">Bitcoin Wallet</a>
-        </div>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
-              <ul class="dropdown-menu">
-                <li><a href="#">Action</a></li>
-                <li><a href="#">Another action</a></li>
-                <li><a href="#">Something else here</a></li>
-                <li class="divider"></li>
-                <li class="dropdown-header">Nav header</li>
-                <li><a href="#">Separated link</a></li>
-                <li><a href="#">One more separated link</a></li>
-              </ul>
-            </li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li class="active"><a href="./">Default</a></li>
-            <li><a href="../navbar-static-top/">Static top</a></li>
-            <li><a href="../navbar-fixed-top/">Fixed top</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
+    <div class="navbar navbar-default" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Bitcoin Wallet</a>
       </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li class="active">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Wallet</a>
+            <ul class="dropdown-menu">
+              <li><a href="#">New&hellip;</a></li>
+              <li><a href="#">Switch&hellip;</a></li>
+              <li><a href="#">Delete</a></li>
+              <li class="divider"></li>
+              <li><a href="#">Import&hellip;</a></li>
+              <li><a href="#">Export/Back Up&hellip;</a></li>
+              <li class="divider"></li>
+              <li><a href="#">Set Password&hellip;</a></li>
+              <li><a href="#">Clear Password</a></li>
+            </ul>
 
-      <div class="container" id="loading-container">
-        <div class="panel panel-info">
-          <div class="panel-heading">Loading &hellip;</div>
-          <div class="panel-body">
-            <div class="progress progress-striped active">
-              <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 4100%">
-                <span class="sr-only">Loading</span>
-              </div>
+          </li>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Account</a>
+            <ul class="dropdown-menu">
+              <li><a href="#">Default</a></li>
+              <li><a href="#">Previous</a></li>
+              <li><a href="#">Next</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div><!--/.nav-collapse -->
+    </div><!-- static navbar -->
+
+    <div class="container" id="loading-container">
+      <div class="panel panel-info">
+        <div class="panel-heading">Loading &hellip;</div>
+        <div class="panel-body">
+          <div class="progress progress-striped active">
+            <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 4100%">
+              <span class="sr-only">Loading</span>
             </div>
           </div>
         </div>
       </div>
+    </div><!-- loading-container -->
 
-      <div class="container" id="main-container">
+    <div class="container" id="main-container">
 
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs" id="main-tabs">
+      <div class="col-sm-2">
+        <ul class="nav nav-pills nav-stacked" id="main-tabs">
           <li><a href="#home" data-toggle="tab">Home</a></li>
           <li><a href="#send" data-toggle="tab">Send</a></li>
           <li><a href="#receive" data-toggle="tab">Receive</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
+      </div><!-- main-tabs col-sm-2 -->
 
-        <!-- Tab panes -->
+      <div class="col-sm-10">
+
         <div class="tab-content">
-          <div class="tab-pane fade active in" id="home">
-            <div class="form-group">
-              <label for="seed">Seed</label>
-              <input type="text" class="form-control" id="seed" placeholder="Seed" value="0488ade4000000000000000000873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d50800e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35" />
-            </div>
-            <div class="form-group">
-              <label for="path">Path</label>
-              <input type="text" class="form-control" id="path" placeholder="Path" value="m/0'/1/2'/2/1000000000" />
-            </div>
 
-            <div class="form-group">
-              <label for="ext-prv-b58">Extended Private Key</label>
-              <input type="text" readonly="readonly" class="form-control uneditable-input" id="ext-prv-b58" placeholder="Extended Private Key" />
+          <!-- Home -->
+          <div class="tab-pane fade active in" id="home">
+            <div class="panel panel-default">
+              <div class="panel-heading">Balance</div>
+              <div class="panel-body">
+                <p>1234.5678 mBTC <button type="button" class="btn btn-primary btn-sm">Refresh</button></p>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="chain-code">Chain Code</label>
-              <input type="text" readonly="readonly" class="form-control uneditable-input" id="chain-code" placeholder="Chain Code" />
-            </div>
-            <div class="form-group">
-              <label for="public-key">Public Key</label>
-              <input type="text" readonly="readonly" class="form-control uneditable-input" id="public-key" placeholder="Public Key" />
-            </div>
-            <div class="form-group">
-              <label for="fingerprint">Fingerprint</label>
-              <input type="text" readonly="readonly" class="form-control uneditable-input" id="fingerprint" placeholder="Fingerprint" />
-            </div>
-            <div class="form-group">
-              <img id="fingerprint-img" class="img-thumbnail" />
-            </div>
-            <div class="form-group">
-              <button id="get-wallet-node" class="btn btn-default">Get Node</button>
-              <button id="create-random-node" class="btn">Create Random Node</button>
+            <div class="panel panel-default">
+              <div class="panel-heading">Transactions</div>
+              <div class="panel-body">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Date</th><th>Address</th><th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>3 Jan 2009</td><td>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</td><td>2.34</td>
+                    </tr>
+                    <tr>
+                      <td>3 Jan 2009</td><td>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</td><td>0.00005</td>
+                    </tr>
+                    <tr>
+                      <td>3 Jan 2009</td><td>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</td><td>(200.0)</td>
+                    </tr>
+                    <tr>
+                      <td>3 Jan 2009</td><td>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</td><td>50.00000002</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-          <div class="tab-pane fade" id="send">...</div>
-          <div class="tab-pane fade" id="receive">...</div>
-          <div class="tab-pane fade" id="settings">...</div>
-        </div>
+
+          <!-- Send -->
+          <div class="tab-pane fade" id="send">
+            <div class="panel panel-default">
+              <div class="panel-heading">Send Bitcoin</div>
+              <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                  <div class="form-group">
+                    <label for="send-to" class="col-sm-2 control-label">Send To</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="send-to" placeholder="Send To">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="send-amount" class="col-sm-2 control-label">Amount</label>
+                    <div class="col-sm-10">
+                      <input type="number" class="form-control" id="send-amount" placeholder="Amount">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="send-fee" class="col-sm-2 control-label">Fee</label>
+                    <div class="col-sm-10">
+                      <input type="number" class="form-control" id="send-fee" placeholder="Fee">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                      <button type="submit" class="btn btn-primary">Send</button>
+                      <button type="submit" class="btn btn-default">Cancel</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Receive -->
+          <div class="tab-pane fade" id="receive">
+            <div class="panel panel-default">
+              <div class="panel-heading">Receive Bitcoin</div>
+              <div class="panel-body">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Receiving Address</th><th>Balance</th><th>TX Count</th><th>&nbsp;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</td><td>12.34567812</td><td>3</td><td><button type="button" class="btn btn-primary btn-sm">Use</button></td>
+                    </tr>
+                    <tr>
+                      <td>1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59</td><td>12.34567812</td><td>1</td><td><button type="button" class="btn btn-primary btn-sm">Use</button></td>
+                    </tr>
+                    <tr>
+                      <td>17sz256snXYak5VMX8EdE4p4Pab8X8iMGn</td><td>12.34567812</td><td>12</td><td><button type="button" class="btn btn-primary btn-sm">Use</button></td>
+                    </tr>
+                    <tr>
+                      <td>1xA1pqS7EQvcX6vmkNhoohBZaBb74zwVL</td><td>12.34567812</td><td>0</td><td><button type="button" class="btn btn-primary btn-sm">Use</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings -->
+          <div class="tab-pane fade" id="settings">
+            <div class="panel panel-default">
+              <div class="panel-heading">Wallet Password</div>
+              <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                  <div class="form-group">
+                    <label for="password-edit" class="col-sm-2 control-label">Password</label>
+                    <div class="col-sm-10">
+                      <input type="password" class="form-control" id="password-edit" placeholder="New Password">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="password-confirm" class="col-sm-2 control-label">Confirm</label>
+                    <div class="col-sm-10">
+                      <input type="password" class="form-control" id="password-confirm" placeholder="Confirm Password">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                      <button type="submit" class="btn btn-primary">Set</button>
+                      <button type="submit" class="btn btn-default">Remove</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div><!-- panel-default -->
+
+            <div class="panel panel-default">
+              <div class="panel-heading">Bitcoin</div>
+              <div class="panel-body">
+                <form class="form-horizontal" role="form">
+                  <div class="form-group">
+                    <label for="units-btc" class="col-sm-2 control-label">Bitcoin Units</label>
+                    <div class="col-sm-10">
+                      <select class="form-control">
+                        <option>BTC</option>
+                        <option>mBTC</option>
+                        <option>uBTC</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div><!-- panel-default -->
+
+          </div><!-- Settings -->
+
+        </div><!-- tab-content -->
 
         <div id="log" style="-webkit-user-select: initial"></div>
-      </div>
+      </div><!-- col-sm-10 -->
+    </div><!-- main-container -->
+  </div><!-- wrap -->
+
+  <div id="footer">
+    <div id="footer-inner" class="container">
+      Status: <code id="statusField">NO-STATUS</code>
     </div>
+  </div><!-- footer -->
 
-    <div id="listener"></div>
+  <div id="listener"></div>
 
-    <div id="footer">
-      <div class="container">
-        <div class="text-muted">
-          Status: <code id="statusField">NO-STATUS</code>
-        </div>
-      </div>
-    </div>
+  <script src="jquery-1.10.2.min.js"></script>
+  <script src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
 
-    <script src="jquery-1.10.2.min.js"></script>
-    <script src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
-
-  </body>
+</body>
 </html>

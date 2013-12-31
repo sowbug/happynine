@@ -1,4 +1,4 @@
-var WIDTH = 640;
+var WIDTH = 800;
 var HEIGHT = 640;
 
 var onCreate = function(window) {
