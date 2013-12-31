@@ -11,6 +11,7 @@
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
+#include "rng.h"
 #include "types.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
@@ -18,6 +19,22 @@ public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance) {}
   virtual ~HDWalletDispatcherInstance() {}
+
+  void PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
+    dict["hex_id"] = to_hex(node->hex_id());
+    dict["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
+    dict["address"] = Base58::toAddress(node->public_key());
+    dict["public_key"] = to_hex(node->public_key());
+    dict["chain_code"] = to_hex(node->chain_code());
+    dict["ext_pub_hex"] = to_hex(node->toSerializedPublic());
+    dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
+    if (node->is_private()) {
+      dict["secret_key"] = to_hex(node->secret_key());
+      dict["secret_wif"] = Base58::toPrivateKey(node->secret_key());
+      dict["ext_prv_hex"] = to_hex(node->toSerialized());
+      dict["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
+    }
+  }
 
   virtual bool HandleGetWalletNode(const Json::Value& args,
                                    Json::Value& result) {
@@ -35,24 +52,32 @@ public:
     }
 
     const std::string node_path = args.get("path", "m").asString();
-    Node* node = NodeFactory::DeriveChildNodeWithPath(*parent_node,
-                                                      node_path);
+    Node* node =
+      NodeFactory::DeriveChildNodeWithPath(*parent_node, node_path);
     delete parent_node;
 
-    result["hex_id"] = to_hex(node->hex_id());
-    result["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
-    result["secret_key"] = to_hex(node->secret_key());
-    result["secret_wif"] = Base58::toPrivateKey(node->secret_key());
-    result["public_key"] = to_hex(node->public_key());
-    result["chain_code"] = to_hex(node->chain_code());
-    result["ext_pub_hex"] = to_hex(node->toSerializedPublic());
-    result["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
-    if (node->is_private()) {
-      result["ext_prv_hex"] = to_hex(node->toSerialized());
-      result["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
-    }
+    PopulateDictionaryFromNode(result, node);
     delete node;
 
+    return true;
+  }
+
+  virtual bool HandleCreateRandomNode(const Json::Value& /*args*/,
+                                      Json::Value& result) {
+    RNG rng;
+    const size_t SEED_SIZE = 32;
+    const bytes_t seed_bytes = rng.GetRandomBytes(SEED_SIZE);
+    if (seed_bytes.size() != SEED_SIZE) {
+      result["error_code"] = -1;
+      result["error_message"] =
+        std::string("The PRNG has not been seeded with enough "
+                    "randomness to ensure an unpredictable byte sequence.");
+      return true;
+    }
+
+    Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+    PopulateDictionaryFromNode(result, node);
+    delete node;
     return true;
   }
 
@@ -77,6 +102,9 @@ public:
     bool handled = false;
     if (command == "get-wallet-node") {
       handled = HandleGetWalletNode(root, result);
+    }
+    if (command == "create-random-node") {
+      handled = HandleCreateRandomNode(root, result);
     }
     if (handled) {
       result["command"] = command;
