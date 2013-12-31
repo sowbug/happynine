@@ -1,6 +1,7 @@
 #include "base58.h"
 
 #include "bigint.h"
+#include "openssl/ripemd.h"
 #include "openssl/sha.h"
 #include "types.h"
 
@@ -65,4 +66,44 @@ bytes_t Base58::fromBase58Check(const std::string s) {
   //  uint8_t version = bytes[0];
 
   return bytes;
+}
+
+// https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
+std::string Base58::toAddress(const bytes_t& bytes) {
+  bytes_t digest;
+  digest.resize(SHA256_DIGEST_LENGTH);
+
+  // 2. Perform SHA-256 hashing on the public key
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &bytes[0], bytes.size());
+  SHA256_Final(&digest[0], &sha256);
+
+  // 3. Perform RIPEMD-160 hashing on the result of SHA-256
+  bytes_t ripe_digest;
+  ripe_digest.resize(RIPEMD160_DIGEST_LENGTH);
+  RIPEMD160_CTX ripemd;
+  RIPEMD160_Init(&ripemd);
+  RIPEMD160_Update(&ripemd, &digest[0], SHA256_DIGEST_LENGTH);
+  RIPEMD160_Final(&ripe_digest[0], &ripemd);
+
+  // 4. Add version byte in front of RIPEMD-160 hash (0x00 for Main Network)
+  bytes_t version(1, 0);
+  ripe_digest.insert(ripe_digest.begin(), version.begin(), version.end());
+
+  return toBase58Check(ripe_digest);
+}
+
+// http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript
+std::string Base58::toPrivateKey(const bytes_t& bytes) {
+  bytes_t private_key_bytes(1, 0x80);
+
+  private_key_bytes.insert(private_key_bytes.end(),
+                           bytes.begin(),
+                           bytes.end());
+  bytes_t compressed_marker(1, 0x01);
+  private_key_bytes.insert(private_key_bytes.end(),
+                           compressed_marker.begin(),
+                           compressed_marker.end());
+  return toBase58Check(private_key_bytes);
 }

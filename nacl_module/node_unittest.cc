@@ -44,8 +44,12 @@ TEST(NodeTest, BIP0032TestVectors) {
       std::stringstream fp;
       fp << std::hex << std::setw(8) << child_node->fingerprint();
       EXPECT_EQ(fp_expected.substr(2), fp.str());
+      EXPECT_EQ(chain["address"].asString(),
+                Base58::toAddress(child_node->public_key()));
       EXPECT_EQ(unhexlify(chain["secret_hex"].asString()),
                 child_node->secret_key());
+      EXPECT_EQ(chain["secret_wif"].asString(),
+                Base58::toPrivateKey(child_node->secret_key()));
       EXPECT_EQ(unhexlify(chain["public_hex"].asString()),
                 child_node->public_key());
       EXPECT_EQ(unhexlify(chain["chain_code"].asString()),

@@ -50,7 +50,7 @@ void Node::set_key(const bytes_t& new_key) {
   is_private_ = new_key.size() == 32;
   version_ = is_private_ ? 0x0488ADE4 : 0x0488B21E;
   if (is_private()) {
-    secret_key_.insert(secret_key_.end(), new_key.begin(), new_key.end());
+    secret_key_ = new_key;
     secp256k1_key curvekey;
     curvekey.setPrivKey(secret_key_);
     public_key_ = curvekey.getPubKey();
