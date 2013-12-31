@@ -6,7 +6,7 @@ include $(NACL_SDK_ROOT)/tools/common.mk
 TARGET = hd_wallet
 LIBS = $(DEPS) ppapi_cpp ppapi pthread crypto jsoncpp
 
-CFLAGS = -Wall
+CFLAGS = -Wall -Wextra
 
 SOURCES = \
 	base58.cc \

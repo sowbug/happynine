@@ -76,7 +76,7 @@ Node* NodeFactory::CreateNodeFromExtended(const bytes_t& bytes) {
                   child_num);
 }
 
-Node* NodeFactory::DeriveChildNodeWithPath(Node* node,
+Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
                                            const std::string& path) {
     std::istringstream iss(path);
     std::string token;
@@ -84,6 +84,7 @@ Node* NodeFactory::DeriveChildNodeWithPath(Node* node,
     while (std::getline(iss, token, '/')) {
       node_path_parts.push_back(token);
     }
+    Node* child_node = new Node(parent_node);
     for (size_t i = 1; i < node_path_parts.size(); ++i) {
       std::string part = node_path_parts[i];
       if (part.empty()) {
@@ -93,15 +94,14 @@ Node* NodeFactory::DeriveChildNodeWithPath(Node* node,
       if (part.rfind('\'') != std::string::npos) {
         n += 0x80000000;
       }
-      Node *child_node = NodeFactory::DeriveChildNode(*node, n);
-      delete node;
-      node = child_node;
+      Node* temp_node = NodeFactory::DeriveChildNode(*child_node, n);
+      delete child_node;
+      child_node = temp_node;
     }
-    return node;
+    return child_node;
 }
 
-Node* NodeFactory::DeriveChildNode(const Node& parent_node,
-                                   uint32_t i) {
+Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
   // If the caller is asking for a private derivation but we don't
   // have the private key, exit with error.
   bool wants_private = (i & 0x80000000) != 0;

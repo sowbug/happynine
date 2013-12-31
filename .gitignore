@@ -2,3 +2,7 @@
 *~
 ext/
 out/
+*.o
+*.a
+*_unittest
+.gdb_history

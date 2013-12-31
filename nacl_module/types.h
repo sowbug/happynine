@@ -24,4 +24,6 @@ template<class InputIterator, class OutputIterator> int
   return 0;
 }
 
+bytes_t unhexlify(const std::string& s);
+
 #endif  // #if !defined __TYPES_H__

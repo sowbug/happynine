@@ -22,22 +22,20 @@ public:
   virtual bool HandleGetWalletNode(const Json::Value& args,
                                    Json::Value& result) {
     const std::string seed_hex = args.get("seed_hex", "").asString();
-    bytes_t seed_bytes(seed_hex.size() / 2);
-    unhexlify(&seed_hex[0],
-              &seed_hex[0] + seed_hex.size(),
-              &seed_bytes[0]);
+    const bytes_t seed_bytes(unhexlify(seed_hex));
 
-    Node *node = NULL;
+    Node *parent_node = NULL;
     if (seed_bytes.size() == 78) {
-      node = NodeFactory::CreateNodeFromExtended(seed_bytes);
+      parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
     } else if (seed_hex[0] == 'x') {
-      node = NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
+      parent_node = NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
     } else {
-      node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+      parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
 
     const std::string node_path = args.get("path", "m").asString();
-    node = NodeFactory::DeriveChildNodeWithPath(node, node_path);
+    node = NodeFactory::DeriveChildNodeWithPath(*parent_node, node_path);
+    delete parent_node;
 
     result["secret_key"] = to_hex(node->secret_key());
     result["chain_code"] = to_hex(node->chain_code());

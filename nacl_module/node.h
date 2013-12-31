@@ -11,11 +11,11 @@ class Node {
   virtual ~Node();
 
   bool is_private() const { return is_private_; }
-  const uint32_t version() const { return version_; }
+  uint32_t version() const { return version_; }
   const bytes_t& secret_key() const { return secret_key_; }
   const bytes_t& public_key() const { return public_key_; }
-  const uint32_t fingerprint() const { return fingerprint_; }
-  const unsigned int depth() const { return depth_; }
+  uint32_t fingerprint() const { return fingerprint_; }
+   unsigned int depth() const { return depth_; }
   const bytes_t& chain_code() const { return chain_code_; }
 
   std::string toString() const;

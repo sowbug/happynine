@@ -15,7 +15,7 @@ System Requirements
 * The [Native Client SDK](https://developers.google.com/native-client/sdk/download)
 * `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory in the NaCl SDK
 * [naclports](https://code.google.com/p/naclports/) with `./make_all.sh openssl` successfully executed on the local system (for what it's worth, I had to exclude the glibc versions to get it to build with unit tests.)
-
+* [googletest](https://code.google.com/p/googletest/) (a.k.a. gtest)
 
 Installation/Development
 ===

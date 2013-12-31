@@ -24,3 +24,8 @@ int to_int(int c) {
   return c - 'a' + 10;
 }
 
+bytes_t unhexlify(const std::string& s) {
+  bytes_t result(s.size() >> 1);
+  unhexlify(&s[0], &s[s.size()], &result[0]);
+  return result;
+}
