@@ -54,24 +54,25 @@ function handleMessage(message) {
 }
 
 window.onload = function() {
-  var onTabClick = function (e) {
+  $('#main-tabs a').click(function (e) {
     e.preventDefault()
     $(this).tab('show')
-  };
-  $('#main-tabs a').click(onTabClick);
-
-  document.querySelector('#get-wallet-node').onclick = function() {
-    var message = {
-      'command': 'get-wallet-node',
-      'seed_hex': document.querySelector("#seed").value,
-      'path': document.querySelector("#path").value
-    };
-    common.naclModule.postMessage(JSON.stringify(message));
-  };
-  document.querySelector('#create-random-node').onclick = function() {
+  });
+  $('#menu-wallet-new').click(function() {
     var message = {
       'command': 'create-random-node'
     };
     common.naclModule.postMessage(JSON.stringify(message));
-  };
+  });
+
+  // document.querySelector('#get-wallet-node').onclick = function() {
+  //   var message = {
+  //     'command': 'get-wallet-node',
+  //     'seed_hex': document.querySelector("#seed").value,
+  //     'path': document.querySelector("#path").value
+  //   };
+  //   common.naclModule.postMessage(JSON.stringify(message));
+  // };
+  if (true)
+    hideLoading();
 };
