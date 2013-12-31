@@ -83,15 +83,17 @@ void Node::update_fingerprint() {
     (uint32_t)ripemd_hash[3];
 }
 
-bytes_t Node::toSerialized() const {
+bytes_t Node::toSerialized(bool private_if_available) const {
   bytes_t s;
+  bool should_generate_private = is_private() && private_if_available;
 
   // 4 byte: version bytes (mainnet: 0x0488B21E public, 0x0488ADE4 private;
   // testnet: 0x043587CF public, 0x04358394 private)
-  s.push_back((uint32_t)version() >> 24);
-  s.push_back(((uint32_t)version() >> 16) & 0xff);
-  s.push_back(((uint32_t)version() >> 8) & 0xff);
-  s.push_back((uint32_t)version() & 0xff);
+  uint32_t version = should_generate_private ? 0x0488ADE4 : 0x0488B21E;
+  s.push_back((uint32_t)version >> 24);
+  s.push_back(((uint32_t)version >> 16) & 0xff);
+  s.push_back(((uint32_t)version >> 8) & 0xff);
+  s.push_back((uint32_t)version & 0xff);
 
   // 1 byte: depth: 0x00 for master nodes, 0x01 for level-1 descendants, etc.
   s.push_back(depth_);
@@ -115,11 +117,20 @@ bytes_t Node::toSerialized() const {
 
   // 33 bytes: the public key or private key data (0x02 + X or 0x03 + X
   // for public keys, 0x00 + k for private keys)
-  const bytes_t& key = is_private() ? secret_key() : public_key();
-  if (is_private()) {
+  bool use_private = is_private() && private_if_available;
+  const bytes_t& key = use_private ? secret_key() : public_key();
+  if (use_private) {
     s.push_back(0x00);
   }
   s.insert(s.end(), key.begin(), key.end());
 
   return s;
+}
+
+bytes_t Node::toSerializedPublic() const {
+  return toSerialized(false);
+}
+
+bytes_t Node::toSerialized() const {
+  return toSerialized(true);
 }

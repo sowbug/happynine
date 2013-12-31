@@ -19,7 +19,9 @@ class Node {
   const bytes_t& chain_code() const { return chain_code_; }
 
   std::string toString() const;
+  bytes_t toSerialized(bool public_if_available) const;
   bytes_t toSerialized() const;
+  bytes_t toSerializedPublic() const;
 
  private:
   void set_key(const bytes_t& new_key);

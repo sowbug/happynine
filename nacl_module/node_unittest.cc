@@ -54,10 +54,10 @@ TEST(NodeTest, BIP0032TestVectors) {
                 child_node->toSerialized());
       EXPECT_EQ(chain["ext_prv_b58"].asString(),
                 Base58::toBase58Check(child_node->toSerialized()));
-      // EXPECT_EQ(unhexlify(chain["ext_pub_hex"].asString()),
-      //           child_node->toSerialized());
-      // EXPECT_EQ(chain["ext_pub_b58"].asString(),
-      //           Base58::toBase58Check(child_node->toSerialized()));
+      EXPECT_EQ(unhexlify(chain["ext_pub_hex"].asString()),
+                child_node->toSerializedPublic());
+      EXPECT_EQ(chain["ext_pub_b58"].asString(),
+                Base58::toBase58Check(child_node->toSerializedPublic()));
 
       delete child_node;
     }
