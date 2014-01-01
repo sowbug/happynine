@@ -20,7 +20,7 @@ function updateFingerprintImage() {
   var fingerprint = $("#fingerprint-readonly").val();
   var xhr = new XMLHttpRequest();
   xhr.open('GET', 'http://robohash.org/' + fingerprint +
-           '.png?set=set3&bgset=any&size=64x64', true);
+   '.png?set=set3&bgset=any&size=64x64', true);
   xhr.responseType = 'blob';
   xhr.onload = function(e) {
     $("#fingerprint-img-big").attr(
@@ -33,30 +33,56 @@ function updateFingerprintImage() {
   xhr.send();
 }
 
+var refreshTransactionTable = function(transactions) {
+  var table = $("#transaction-table");
+  var noTransactions = $("#no-transactions");
+  table.empty();
+
+  if (transactions.length == 0) {
+    table.hide();
+    noTransactions.show();
+  } else {
+    table.show();
+    noTransactions.hide();
+    table.append($("<thead><tr><th>Date</th><th>Address</th><th>Amount</th></tr></thead>"));
+    var tbody = $('<tbody></tbody>');
+    for (var i in transactions) {
+      var transaction = transactions[i];
+      tbody.append($("<tr>" +
+       "<td>" + transaction.date + "</td>" + 
+       "<td>" + transaction.address + "</td>" + 
+       "<td>" + transaction.amount + "</td>" +
+       "</tr>"));
+    }
+    table.append(tbody);
+
+  }
+};
+
 function handleMessage(message) {
   var message_object = JSON.parse(message.data);
   console.log(message);
   switch (message_object.command) {
-  case "get-wallet-node":
+    case "get-wallet-node":
     document.querySelector("#ext-prv-b58").value =
-      message_object.ext_prv_b58;
+    message_object.ext_prv_b58;
     document.querySelector("#chain-code").value =
-      message_object.chain_code;
+    message_object.chain_code;
     document.querySelector("#public-key").value =
-      message_object.public_key;
+    message_object.public_key;
     document.querySelector("#fingerprint").value =
-      message_object.fingerprint;
+    message_object.fingerprint;
     updateFingerprintImage(message_object.fingerprint);
     break;
-  case "create-random-node":
+    case "create-random-node":
     document.querySelector("#xprv-readonly").value =
-      message_object.ext_prv_b58;
+    message_object.ext_prv_b58;
     document.querySelector("#xpub-readonly").value =
-      message_object.ext_pub_b58;
+    message_object.ext_pub_b58;
     document.querySelector("#fingerprint-readonly").value =
-      message_object.fingerprint;
+    message_object.fingerprint;
     document.querySelector("#fingerprint-navbar").innerText =
-      message_object.fingerprint;
+    message_object.fingerprint;
     updateFingerprintImage(message_object.fingerprint);
     break;
   }
@@ -88,6 +114,11 @@ window.onload = function() {
 
   // Set up initial state.
   $("#xprv-wrapper").hide();
+  refreshTransactionTable([
+    { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': '2.34' },
+    { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': '50.00' },
+    { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': '(50.00)' }
+    ]);
 
   // document.querySelector('#get-wallet-node').onclick = function() {
   //   var message = {
