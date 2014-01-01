@@ -4,7 +4,7 @@ function moduleDidLoad() {
 }
 
 function hideLoading() {
-  $("#loading-container").slideUp(250, function() {
+  $("#loading-container").fadeOut(250, function() {
     $("#main-container").fadeIn(500, function() {
       $('#main-tabs a:first').tab('show');
     });
@@ -79,10 +79,9 @@ window.onload = function() {
   //   common.naclModule.postMessage(JSON.stringify(message));
   // };
 
-  // Set to true when developing on a machine that doesn't have
-  // the NaCl module installed.
-  if (false)
-    hideLoading();
+  // For development in a normal browser tab.
+  if (chrome && chrome.runtime)
+    showLoading();
   else
-    setLoading();
+    hideLoading();
 };

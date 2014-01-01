@@ -13,18 +13,6 @@ html, body {
   padding: 0 0 60px;
 }
 
-/* Set the fixed height of the footer here */
-#footer {
-  height: 60px;
-  background-color: #f5f5f5;
-}
-
-#footer-inner {
-  height: 20px;
-  padding-top: 20px;
-  padding-bottom: 20px;
-}
-
 #loading-container {
   margin-top: 8em;
 }
@@ -37,4 +25,9 @@ html, body {
   padding: 0;
   margin: 6px;
   border: 0;
+}
+
+.navbar-fixed-bottom {
+  padding-left: 15px;
+  padding-right: 15px;
 }
