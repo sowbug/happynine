@@ -23,11 +23,16 @@ html, body {
 
 .navbar-icon {
   padding: 0;
-  margin: 6px;
+  margin: 6px 15px;
   border: 0;
 }
 
 .navbar-fixed-bottom {
   padding-left: 15px;
   padding-right: 15px;
+}
+
+.navbar-pagination {
+  margin-left: 15px;
+  margin-right: 15px;
 }
