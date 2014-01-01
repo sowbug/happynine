@@ -99,7 +99,6 @@ function WalletController($scope) {
     //
     // Less of a big deal if the master key is public.
     $scope.masterKey = null;
-    $scope.$apply();
   };
 }
 
