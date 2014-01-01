@@ -1,3 +1,4 @@
+ZIPBASE ?= $(PWD)/../out/zip
 BOOTSTRAP := bootstrap-3.0.3
 IMAGES := img
 
