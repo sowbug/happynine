@@ -4,9 +4,12 @@ bitcoin-wallet-app
 A Bitcoin Wallet Chrome App that implements a BIP0032 hierarchical
 deterministic wallet.
 
-Portions adapted from
-[the reference Bitcoin client](https://github.com/bitcoin/bitcoin) and
-Eric Lombrozo's [CoinClasses project](https://github.com/CodeShark/CoinClasses).
+Great Big Warning
+===
+
+**This project is early and under heavy development! Do not use it for real transactions! Do not let real bitcoin anywhere near it!**
+
+Even if/when this warning is removed, the applicable license still applies. Read it!
 
 System Requirements
 ===
@@ -24,10 +27,11 @@ Installation/Development
 2. `make`.
 3. In Chrome, load the unpacked extension in `out/zip`.
 
-Acknowledgments (in addition to the [Bitcoin developers](https://github.com/bitcoin))
+Acknowledgments
 ===
 
 * [Richard Kiss](http://blog.richardkiss.com/?p=313), whose blog post walked through what a BIP0032 wallet really is.
 * [Eric Lombrozo](https://github.com/CodeShark), some of whose C++ BIP0032 HD wallet code appears here.
 * [JP Richardson](https://github.com/jprichardson)'s invaluable [blog post](http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript) that went into interactive detail about compressed keys/addresses.
 * Various folks who have posted on [bitcointalk](https://bitcointalk.org/) about BIP0032.
+* Portions adapted from [the reference Bitcoin client](https://github.com/bitcoin/bitcoin).
