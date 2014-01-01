@@ -106,12 +106,12 @@ public:
     if (command == "create-random-node") {
       handled = HandleCreateRandomNode(root, result);
     }
-    if (handled) {
-      result["command"] = command;
-      Json::StyledWriter writer;
-      pp::Var reply_message(writer.write(result));
-      PostMessage(reply_message);
-    }
+    result["id"] = root["id"];
+    result["command"] = command;
+    Json::StyledWriter writer;
+    pp::Var reply_message(writer.write(result));
+    PostMessage(reply_message);
+    if (handled) {}
   }
 };
 
