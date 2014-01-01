@@ -73,6 +73,9 @@ window.onload = function() {
   //   };
   //   common.naclModule.postMessage(JSON.stringify(message));
   // };
-  if (true)
+
+  // Set to true when developing on a machine that doesn't have
+  // the NaCl module installed.
+  if (false)
     hideLoading();
 };

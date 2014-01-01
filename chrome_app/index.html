@@ -25,31 +25,29 @@
         </button>
         <a class="navbar-brand" href="#">Bitcoin Wallet</a>
       </div>
-      <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav">
-          <li class="active">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Wallet</a>
-            <ul class="dropdown-menu">
-              <li><a href="#" id="menu-wallet-new">New&hellip;</a></li>
-              <li><a href="#">Switch&hellip;</a></li>
-              <li><a href="#">Delete</a></li>
-              <li class="divider"></li>
-              <li><a href="#">Import&hellip;</a></li>
-              <li><a href="#">Export/Back Up&hellip;</a></li>
-              <li class="divider"></li>
-              <li><a href="#">Set Password&hellip;</a></li>
-              <li><a href="#">Clear Password</a></li>
-            </ul>
 
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <div class="btn-group">
+              <button class="btn btn-default navbar-btn">&laquo;</button>
+              <button class="btn btn-default navbar-btn disabled">Account 1</button>
+              <button class="btn btn-default navbar-btn">&raquo;</button>
+            </div>
           </li>
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Account</a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Default</a></li>
-              <li><a href="#">Previous</a></li>
-              <li><a href="#">Next</a></li>
-            </ul>
+          <li>
+            <p class="navbar-text" id="fingerprint">Key 0x12345678</p>
           </li>
+          <li>
+            <img id="fingerprint-img" class="img-thumbnail navbar-icon" src="http://robohash.org/0x12345678.png?set=set3&bgset=any&size=38x38"/>
+          </li>
+          <li>
+            <p class="navbar-text">1234.5678 mBTC</p>
+          </li>
+          <li>
+            <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
+          </li>
+          <li>&nbsp;</li>
         </ul>
       </div><!--/.nav-collapse -->
     </div><!-- static navbar -->
@@ -74,6 +72,7 @@
           <li><a href="#home" data-toggle="tab">Home</a></li>
           <li><a href="#send" data-toggle="tab">Send</a></li>
           <li><a href="#receive" data-toggle="tab">Receive</a></li>
+          <li><a href="#master-key" data-toggle="tab">Master Key</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-sm-2 -->
@@ -84,12 +83,6 @@
 
           <!-- Home -->
           <div class="tab-pane fade active in" id="home">
-            <div class="panel panel-default">
-              <div class="panel-heading">Balance</div>
-              <div class="panel-body">
-                <p>1234.5678 mBTC <button type="button" class="btn btn-primary btn-sm">Refresh</button></p>
-              </div>
-            </div>
             <div class="panel panel-default">
               <div class="panel-heading">Transactions</div>
               <div class="panel-body">
@@ -127,19 +120,19 @@
                   <div class="form-group">
                     <label for="send-to" class="col-sm-2 control-label">Send To</label>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control" id="send-to" placeholder="Send To">
+                      <input type="text" class="form-control" id="send-to" placeholder="Bitcoin Address">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-amount" class="col-sm-2 control-label">Amount</label>
-                    <div class="col-sm-10">
-                      <input type="number" class="form-control" id="send-amount" placeholder="Amount">
+                    <div class="col-sm-4">
+                      <input type="number" class="form-control" id="send-amount" placeholder="Amount To Send">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-fee" class="col-sm-2 control-label">Fee</label>
-                    <div class="col-sm-10">
-                      <input type="number" class="form-control" id="send-fee" placeholder="Fee">
+                    <div class="col-sm-4">
+                      <input type="number" class="form-control" id="send-fee" placeholder="Amount of Transaction Fee">
                     </div>
                   </div>
                   <div class="form-group">
@@ -158,6 +151,12 @@
             <div class="panel panel-default">
               <div class="panel-heading">Receive Bitcoin</div>
               <div class="panel-body">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" value="1" checked>
+                    Show used addresses
+                  </label>
+                </div>
                 <table class="table table-striped">
                   <thead>
                     <tr>
@@ -179,75 +178,146 @@
                     </tr>
                   </tbody>
                 </table>
+
+                <ul class="pagination">
+                  <li><a href="#">&laquo;</a></li>
+                  <li><a href="#">1</a></li>
+                  <li><a href="#">2</a></li>
+                  <li><a href="#">3</a></li>
+                  <li><a href="#">4</a></li>
+                  <li><a href="#">5</a></li>
+                  <li><a href="#">&raquo;</a></li>
+                </ul>
+
               </div>
             </div>
           </div>
 
-          <!-- Settings -->
-          <div class="tab-pane fade" id="settings">
+          <!-- Key -->
+          <div class="tab-pane fade" id="master-key">
+
+            <!-- Management -->
             <div class="panel panel-default">
-              <div class="panel-heading">Wallet Password</div>
+              <div class="panel-heading">Management</div>
               <div class="panel-body">
-                <form class="form-horizontal" role="form">
-                  <div class="form-group">
-                    <label for="password-edit" class="col-sm-2 control-label">Password</label>
-                    <div class="col-sm-10">
-                      <input type="password" class="form-control" id="password-edit" placeholder="New Password">
+              <div class="row">
+                <div class="col-sm-6 col-sm-offset-2">
+                    <button type="submit" class="btn btn-success">New Master Key</button>
+                    <button type="submit" class="btn btn-primary">Import Master Key &hellip;</button>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="password-confirm" class="col-sm-2 control-label">Confirm</label>
-                    <div class="col-sm-10">
-                      <input type="password" class="form-control" id="password-confirm" placeholder="Confirm Password">
                     </div>
+
+            </div>
+          </div><!-- panel-default -->
+
+          <!-- Installed Master Key -->
+          <div class="panel panel-default">
+            <div class="panel-heading">Installed Master Key</div>
+            <div class="panel-body">
+              <form class="form-horizontal" role="form">
+                <div class="form-group">
+                  <label for="fingerprint-readonly" class="col-sm-2 control-label">Fingerprint</label>
+                  <div class="col-sm-4">
+                    <input type="text" class="form-control" id="fingerprint-readonly" readonly>
                   </div>
-                  <div class="form-group">
-                    <div class="col-sm-offset-2 col-sm-10">
-                      <button type="submit" class="btn btn-primary">Set</button>
-                      <button type="submit" class="btn btn-default">Remove</button>
+                </div>
+                <div class="form-group">
+                  <label for="xpub-readonly" class="col-sm-2 control-label">Public Key</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="xpub-readonly" readonly>
+                  </div>
+                </div>
+                <div class="form-group">
+                <div class="col-sm-4 col-sm-offset-2">
+                  <button id="xprv-show" class="btn btn-warning">Show Private Key</button>                  
+                </div>
+                </div>
+                <div class="form-group">
+                  <label for="xprv-readonly" class="col-sm-2 control-label">Private Key</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="xprv-readonly" readonly>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                <div class="col-sm-4 col-sm-offset-2">
+                    <button type="submit" class="btn btn-danger">Remove Master Key</button>
                     </div>
-                  </div>
-                </form>
-              </div>
-            </div><!-- panel-default -->
-
-            <div class="panel panel-default">
-              <div class="panel-heading">Bitcoin</div>
-              <div class="panel-body">
-                <form class="form-horizontal" role="form">
-                  <div class="form-group">
-                    <label for="units-btc" class="col-sm-2 control-label">Bitcoin Units</label>
-                    <div class="col-sm-10">
-                      <select class="form-control">
-                        <option>BTC</option>
-                        <option>mBTC</option>
-                        <option>uBTC</option>
-                      </select>
                     </div>
+
+              </form>
+            </div>
+          </div><!-- panel-default -->
+
+        </div><!-- Key -->
+
+        <!-- Settings -->
+        <div class="tab-pane fade" id="settings">
+
+          <!-- Password -->
+          <div class="panel panel-default">
+            <div class="panel-heading">Password</div>
+            <div class="panel-body">
+              <form class="form-horizontal" role="form">
+                <div class="form-group">
+                  <label for="password-edit" class="col-sm-2 control-label">Password</label>
+                  <div class="col-sm-6">
+                    <input type="password" class="form-control" id="password-edit" placeholder="New Password">
                   </div>
-                </form>
-              </div>
-            </div><!-- panel-default -->
+                </div>
+                <div class="form-group">
+                  <label for="password-confirm" class="col-sm-2 control-label">Confirm</label>
+                  <div class="col-sm-6">
+                    <input type="password" class="form-control" id="password-confirm" placeholder="Confirm Password">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-primary">Set</button>
+                    <button type="submit" class="btn btn-default">Remove</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div><!-- panel-default -->
 
-          </div><!-- Settings -->
+          <div class="panel panel-default">
+            <div class="panel-heading">Bitcoin</div>
+            <div class="panel-body">
+              <form class="form-horizontal" role="form">
+                <div class="form-group">
+                  <label for="units-btc" class="col-sm-2 control-label">Bitcoin Units</label>
+                  <div class="col-sm-4">
+                    <select class="form-control">
+                      <option>BTC</option>
+                      <option>mBTC</option>
+                      <option>uBTC</option>
+                    </select>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div><!-- panel-default -->
 
-        </div><!-- tab-content -->
+        </div><!-- Settings -->
 
-        <div id="log" style="-webkit-user-select: initial"></div>
-      </div><!-- col-sm-10 -->
-    </div><!-- main-container -->
-  </div><!-- wrap -->
+      </div><!-- tab-content -->
 
-  <div id="footer">
-    <div id="footer-inner" class="container">
-      Status: <code id="statusField">NO-STATUS</code>
-    </div>
-  </div><!-- footer -->
+      <div id="log" style="-webkit-user-select: initial"></div>
+    </div><!-- col-sm-10 -->
+  </div><!-- main-container -->
+</div><!-- wrap -->
 
-  <div id="listener"></div>
+<div id="footer">
+  <div id="footer-inner" class="container">
+    Status: <code id="statusField">NO-STATUS</code>
+  </div>
+</div><!-- footer -->
 
-  <script src="jquery-1.10.2.min.js"></script>
-  <script src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
+<div id="listener"></div>
+
+<script src="jquery-1.10.2.min.js"></script>
+<script src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
 
 </body>
 </html>
