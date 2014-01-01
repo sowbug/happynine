@@ -25,6 +25,14 @@ html, body {
   padding-bottom: 20px;
 }
 
+#loading-container {
+  margin-top: 8em;
+}
+
+#main-container {
+  display: none;
+}
+
 .navbar-icon {
   padding: 0;
   margin: 6px;

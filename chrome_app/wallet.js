@@ -11,6 +11,11 @@ function hideLoading() {
   });
 }
 
+function showLoading() {
+  $("#loading-container").show();
+  $("#main-container").hide();
+}
+
 function updateFingerprintImage(fingerprint) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', 'http://robohash.org/' + fingerprint +
@@ -78,4 +83,6 @@ window.onload = function() {
   // the NaCl module installed.
   if (false)
     hideLoading();
+  else
+    setLoading();
 };
