@@ -91,6 +91,16 @@ function WalletController($scope) {
       $scope.$apply();
     });
   };
+
+  $scope.removeMasterKey = function() {
+    // TODO(miket): ideally we'll track whether this key was backed
+    // up, and make this button available only if yes. Then we'll
+    // confirm up the wazoo before actually deleting.
+    //
+    // Less of a big deal if the master key is public.
+    $scope.masterKey = null;
+    $scope.$apply();
+  };
 }
 
 function moduleDidLoad() {
