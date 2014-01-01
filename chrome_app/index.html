@@ -26,12 +26,12 @@
       </div>
 
       <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav navbar-right">
+        <ul class="nav navbar-nav navbar-right" ng-if="account">
           <li>
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
-            <p class="navbar-text">1234.5678 mBTC</p>
+            <p class="navbar-text" ng-data="account">{{account.balance}} <span ng-data="settings">{{settings.units}}</span></p>
           </li>
         </ul>
       </div><!--/.nav-collapse -->
@@ -76,15 +76,15 @@
             <div class="panel panel-default">
               <div class="panel-heading">Transactions</div>
               <div class="panel-body">
-                <p id="no-transactions" ng-if="!transactions.length">None.</p>
-                <table id="transaction-table" class="table table-striped"  ng-if="transactions.length">
+                <p id="no-transactions" ng-if="!(account && account.hasTransactions())">None.</p>
+                <table id="transaction-table" class="table table-striped"  ng-if="account && account.hasTransactions()">
                   <thead>
                     <tr>
                       <th>Date</th><th>Address</th><th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in transactions">
+                    <tr data-ng-repeat="tx in account.transactions">
                       <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{tx.amount}}</td>
                     </tr>
                   </tbody>
@@ -146,7 +146,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in addresses">
+                    <tr data-ng-repeat="addr in account.addresses">
                       <td>{{addr.address}}</td><td>{{addr.balance}}</td><td>{{addr.tx_count}}</td><td><button type="button" class="btn btn-primary btn-sm">Use</button></td>
                     </tr>
                   </tbody>
@@ -184,7 +184,7 @@
             </div><!-- panel-default -->
 
             <!-- Installed Master Key -->
-            <div class="panel panel-default">
+            <div class="panel panel-default" ng-if="masterKey">
               <div class="panel-heading">Installed Master Key</div>
               <div class="panel-body">
                 <form class="form-horizontal" role="form">
@@ -290,10 +290,10 @@
 
   <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
     <ul class="nav navbar-nav navbar-right">
-      <li>
+      <li ng-if="account">
         <div class="btn-group navbar-pagination">
           <button id="account-prev" class="btn btn-default navbar-btn">&laquo;</button>
-          <button id="account" class="btn btn-default navbar-btn disabled">Account 1</button>
+          <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{ account.number }}</button>
           <button id="account-next" class="btn btn-default navbar-btn">&raquo;</button>
         </div>
       </li>

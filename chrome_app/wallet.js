@@ -44,21 +44,36 @@ function MasterKey() {
   };
 }
 
-function WalletController($scope) {
-  $scope.addresses = [
+function Account(number) {
+  this.number = number;
+  this.balance = 9999.12345678;
+  this.addresses = [
   { 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'balance': '123.45', 'tx_count': 3 },
   { 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'balance': '3.50', 'tx_count': 1 },
   { 'address': '1ADc4zojfRp9794ZX3ozDSGF4W2meSfkzr', 'balance': '0.0001', 'tx_count': 2 },
   { 'address': '18gaduiJeXLcLJVcdhRAiMLge6YmCyAnQz', 'balance': '5.55', 'tx_count': 3 },
   { 'address': '1CSWk7EioDwpqUDr4gftsjnzewPUSRPs9p', 'balance': '0.00', 'tx_count': 0 },
-  ];
-  $scope.transactions = [
+];
+
+  this.transactions = [
   { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': '2.34' },
   { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': '50.00' },
   { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': '(50.00)' }
-  ];
+];
 
+  this.hasTransactions = function() {
+    return this.transactions.length > 0;
+  }
+}
+
+function Settings() {
+  this.units = "mBTC";
+}
+
+function WalletController($scope) {
   $scope.masterKey = null;
+  $scope.account = null;
+  $scope.settings = new Settings();
 
   $scope.newMasterKey = function() {
     var message = {
@@ -72,6 +87,7 @@ function WalletController($scope) {
       masterKey.setFingerprint(response.fingerprint);
 
       $scope.masterKey = masterKey;
+      $scope.account = new Account(7);
       $scope.$apply();
     });
   };
