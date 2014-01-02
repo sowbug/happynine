@@ -76,7 +76,17 @@ function Account($scope, number) {
 }
 
 function Settings() {
+  var settings = this;
   this.units = "mBTC";
+  this.passphraseHash = null;
+
+  this.isPassphraseSet = function() {
+    return settings.passphraseHash;
+  }
+
+  this.setPassphrase = function(passphrase, confirm) {
+    settings.passphraseHash = 'foobarbaz';
+  }
 }
 
 function WalletController($scope) {
