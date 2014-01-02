@@ -2,6 +2,7 @@ var callbacks = {};
 var callbackId = 1;
 
 var bitcoinWalletApp = angular.module('bitcoinWalletApp', []);
+var settings = new Settings();
 
 var postMessageWithCallback = function(message, callback) {
   message.id = callbackId++;
@@ -76,7 +77,7 @@ function Account($scope, number) {
 }
 
 function Settings() {
-  var settings = this;
+  var thisSettings = this;
   this.units = "mbtc";
   this.availableUnits = {
     "btc": "BTC",
@@ -87,35 +88,35 @@ function Settings() {
   this.passphraseHash = null;
 
   this.isPassphraseSet = function() {
-    return settings.passphraseHash;
+    return thisSettings.passphraseHash;
   };
 
   this.setPassphrase = function(passphrase, confirm) {
-    settings.passphraseHash = 'foobarbaz';
+    thisSettings.passphraseHash = 'foobarbaz';
   };
 
   this.satoshiToUnit = function(satoshis) {
-    switch (settings.units) {
+    switch (thisSettings.units) {
     case "btc":
-      return satoshis / 10000000;
+      return satoshis / 100000000;
     case "mbtc":
-       return satoshis / 10000;
+       return satoshis / 100000;
     case "ubtc":
-       return satoshis / 10;
+       return satoshis / 100;
     default:
       return satoshis;
     }
   };
 
   this.unitLabel = function() {
-    return settings.availableUnits[settings.units];
+    return thisSettings.availableUnits[thisSettings.units];
   };
 }
 
 function WalletController($scope) {
   $scope.masterKey = null;
   $scope.account = null;
-  $scope.settings = new Settings();
+  $scope.settings = settings;
 
   $scope.newMasterKey = function() {
     var message = {
