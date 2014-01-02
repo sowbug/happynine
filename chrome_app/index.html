@@ -255,27 +255,33 @@
           <!-- Settings -->
           <div class="tab-pane fade" id="settings">
 
-            <!-- Password -->
+            <!-- Passphrase -->
             <div class="panel panel-default">
-              <div class="panel-heading">Password</div>
+              <div class="panel-heading">Passphrase</div>
               <div class="panel-body">
                 <form class="form-horizontal" role="form">
-                  <div class="form-group">
-                    <label for="password-edit" class="col-md-2 control-label">Password</label>
+                  <div class="form-group" ng-if="settings.isPassphraseSet()">
+                    <label for="passphrase-current" class="col-md-2 control-label">Current</label>
                     <div class="col-md-6">
-                      <input type="password" class="form-control" id="password-edit" placeholder="New Password">
+                      <input type="password" class="form-control" placeholder="Current Passphrase" ng-model="settings.currentPassphrase">
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="password-confirm" class="col-md-2 control-label">Confirm</label>
+                    <label for="passphrase-new" class="col-md-2 control-label">New</label>
                     <div class="col-md-6">
-                      <input type="password" class="form-control" id="password-confirm" placeholder="Confirm Password">
+                      <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="settings.newPassphrase">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="passphrase-confirm" class="col-md-2 control-label">Confirm</label>
+                    <div class="col-md-6">
+                      <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="settings.confirmPassphrase">
                     </div>
                   </div>
                   <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
-                      <button class="btn btn-primary" ng-click="settings.setPassphrase()">Set</button>
-                      <button class="btn btn-default">Remove</button>
+                      <button class="btn btn-primary" ng-click="settings.setPassphrase()" ng-if="!settings.isPassphraseSet()">Set</button>
+                      <button class="btn btn-primary" ng-click="settings.changePassphrase()" ng-if="settings.isPassphraseSet()">Change</button>
                     </div>
                   </div>
                 </form>

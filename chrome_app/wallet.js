@@ -87,7 +87,11 @@ function Settings() {
     "ubtc": "uBTC",
     "sats": "Satoshis"
   };
-  this.passphraseHash = null;
+
+  // These are here only for data bindings. Never serialize!
+  this.currentPassphrase = null;
+  this.newPassphrase = null;
+  this.confirmPassphrase = null;
 
   this.load = function() {
     if (chrome && chrome.storage) {
@@ -113,28 +117,33 @@ function Settings() {
   };
 
   this.isPassphraseSet = function() {
-    return thisSettings.passphraseHash;
+    return thisSettings.passphraseSalt;
   };
 
-  this.setPassphrase = function(passphrase, confirm) {
-    if (passphrase == confirm) {
+  this.setPassphrase = function() {
+    console.log(thisSettings.newPassphrase);
+    console.log(thisSettings.confirmPassphrase);
+
+    if (thisSettings.newPassphrase &&
+        thisSettings.newPassphrase.length > 0 &&
+        thisSettings.newPassphrase == thisSettings.confirmPassphrase) {
+      console.log("here");
       var message = {
         'command': 'derive-key',
-        'passphrase': passphrase
+        'passphrase': thisSettings.newPassphrase
       };
+
+      // We don't want these items lurking in the DOM.
+      thisSettings.currentPassphrase = null;
+      thisSettings.newPassphrase = null;
+      thisSettings.confirmPassphrase = null;
+
       postMessageWithCallback(message, function(response) {
-        var message = {
-          'command': 'verify-key',
-          'passphrase': passphrase,
-          'key': response.key,
-          'salt': response.salt
-        };
-        postMessageWithCallback(message, function(response) {
-          // TODO(miket): key should be cleared after something like 5 min.
-          thisSettings.passphraseKey = response['key'];
-          thisSettings.passphraseSalt = response['salt'];
-          thisSettings.save();
-        });
+        // TODO(miket): key should be cleared after something like 5 min.
+        thisSettings.passphraseKey = response.key;
+        thisSettings.passphraseSalt = response.salt;
+        thisSettings.$scope.$apply();
+        thisSettings.save();
       });
     }
   };
