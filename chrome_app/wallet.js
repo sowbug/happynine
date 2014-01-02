@@ -44,22 +44,27 @@ function MasterKey() {
   };
 }
 
-function Account(number) {
+function Account($scope, number) {
+  this.$scope = $scope;
+  this.masterKey = $scope.masterKey;
   this.number = number;
-  this.balance = 9999.12345678;
-  this.addresses = [
-  { 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'balance': '123.45', 'tx_count': 3 },
-  { 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'balance': '3.50', 'tx_count': 1 },
-  { 'address': '1ADc4zojfRp9794ZX3ozDSGF4W2meSfkzr', 'balance': '0.0001', 'tx_count': 2 },
-  { 'address': '18gaduiJeXLcLJVcdhRAiMLge6YmCyAnQz', 'balance': '5.55', 'tx_count': 3 },
-  { 'address': '1CSWk7EioDwpqUDr4gftsjnzewPUSRPs9p', 'balance': '0.00', 'tx_count': 0 },
-];
-
+  this.balance = number * 7 + 0.12345678;
+  this.addresses = [];
   this.transactions = [
-  { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': '2.34' },
-  { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': '50.00' },
-  { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': '(50.00)' }
-];
+    { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': '2.34' },
+    { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': '50.00' },
+    { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': '(50.00)' }
+  ];
+
+  var account = this;
+  var message = { 'command': 'get-node', 'seed_hex': this.masterKey.xprv,
+                  'path': "m/" + number + "'/0/0"};
+  postMessageWithCallback(message, function(response) {
+    account.addresses = [
+      { 'address': response.address, 'balance': '123.45', 'tx_count': 3 },
+    ];
+    account.$scope.$apply();
+  });
 
   this.hasTransactions = function() {
     return this.transactions.length > 0;
@@ -77,7 +82,7 @@ function WalletController($scope) {
 
   $scope.newMasterKey = function() {
     var message = {
-      'command': 'create-random-node'
+      'command': 'create-node'
     };
     postMessageWithCallback(message, function(response) {
       var masterKey = new MasterKey();
@@ -87,7 +92,7 @@ function WalletController($scope) {
       masterKey.setFingerprint(response.fingerprint);
 
       $scope.masterKey = masterKey;
-      $scope.account = new Account(7);
+      $scope.nextAccount();
       $scope.$apply();
     });
   };
@@ -98,7 +103,32 @@ function WalletController($scope) {
     // confirm up the wazoo before actually deleting.
     //
     // Less of a big deal if the master key is public.
+    $scope.account = null;
     $scope.masterKey = null;
+  };
+
+  $scope.importMasterKey = function() {
+    console.log("not implemented");
+  };
+
+  $scope.nextAccount = function() {
+    if ($scope.account) {
+      $scope.account =
+        new Account($scope, $scope.account.number + 1);
+    } else {
+      $scope.account = new Account($scope, 0);
+    }
+  };
+
+  $scope.prevAccount = function() {
+    if ($scope.account) {
+      if ($scope.account.number > 0) {
+        $scope.account =
+          new Account($scope, $scope.account.number - 1);
+      }
+    } else {
+      $scope.account = new Account($scope, 0);
+    }
   };
 }
 

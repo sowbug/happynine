@@ -36,8 +36,7 @@ public:
     }
   }
 
-  virtual bool HandleGetWalletNode(const Json::Value& args,
-                                   Json::Value& result) {
+  virtual bool HandleGetNode(const Json::Value& args, Json::Value& result) {
     const std::string seed_hex = args.get("seed_hex", "").asString();
     const bytes_t seed_bytes(unhexlify(seed_hex));
 
@@ -62,8 +61,8 @@ public:
     return true;
   }
 
-  virtual bool HandleCreateRandomNode(const Json::Value& /*args*/,
-                                      Json::Value& result) {
+  virtual bool HandleCreateNode(const Json::Value& /*args*/,
+                                Json::Value& result) {
     RNG rng;
     const size_t SEED_SIZE = 32;
     const bytes_t seed_bytes = rng.GetRandomBytes(SEED_SIZE);
@@ -100,11 +99,11 @@ public:
     const std::string command = root.get("command", "UTF-8").asString();
     Json::Value result;
     bool handled = false;
-    if (command == "get-wallet-node") {
-      handled = HandleGetWalletNode(root, result);
+    if (command == "create-node") {
+      handled = HandleCreateNode(root, result);
     }
-    if (command == "create-random-node") {
-      handled = HandleCreateRandomNode(root, result);
+    if (command == "get-node") {
+      handled = HandleGetNode(root, result);
     }
     result["id"] = root["id"];
     result["command"] = command;
