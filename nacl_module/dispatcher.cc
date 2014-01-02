@@ -80,6 +80,44 @@ public:
     return true;
   }
 
+  virtual bool HandleGetAddresses(const Json::Value& args,
+                                  Json::Value& result) {
+    const std::string seed_hex = args.get("seed_hex", "").asString();
+    const bytes_t seed_bytes(unhexlify(seed_hex));
+
+    Node *parent_node = NULL;
+    if (seed_bytes.size() == 78) {
+      parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
+    } else if (seed_hex[0] == 'x') {
+      parent_node =
+        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
+    } else {
+      parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+    }
+
+    uint32_t start = args.get("start", 0).asUInt();
+    uint32_t count = args.get("count", 20).asUInt();
+    const std::string base_node_path = args.get("path", "m").asString();
+    for (uint32_t i = 0; i < count; ++i) {
+      std::stringstream node_path;
+      node_path << base_node_path << "/" << (start + i);
+      Node* node =
+        NodeFactory::DeriveChildNodeWithPath(*parent_node, node_path.str());
+      result["addresses"][i]["index"] = i + start;
+      result["addresses"][i]["path"] = node_path.str();
+      result["addresses"][i]["address"] =
+        Base58::toAddress(node->public_key());
+      if (node->is_private()) {
+        result["addresses"][i]["key"] =
+          Base58::toPrivateKey(node->secret_key());
+      }
+      delete node;
+    }
+    delete parent_node;
+
+    return true;
+  }
+
   /// Handler for messages coming in from the browser via
   /// postMessage().  The @a var_message can contain be any pp:Var
   /// type; for example int, string Array or Dictionary. Please see
@@ -104,6 +142,9 @@ public:
     }
     if (command == "get-node") {
       handled = HandleGetNode(root, result);
+    }
+    if (command == "get-addresses") {
+      handled = HandleGetAddresses(root, result);
     }
     result["id"] = root["id"];
     result["command"] = command;

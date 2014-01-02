@@ -57,12 +57,16 @@ function Account($scope, number) {
   ];
 
   var account = this;
-  var message = { 'command': 'get-node', 'seed_hex': this.masterKey.xprv,
-                  'path': "m/" + number + "'/0/0"};
+  var message = { 'command': 'get-addresses', 'seed_hex': this.masterKey.xprv,
+                  'path': "m/" + number + "'/0",
+                  'start': 0, 'count': 5 };
   postMessageWithCallback(message, function(response) {
-    account.addresses = [
-      { 'address': response.address, 'balance': '123.45', 'tx_count': 3 },
-    ];
+    for (var i in response.addresses) {
+      var address = response.addresses[i];
+      account.addresses.push(
+        { 'index': address.index, 'address': address.address,
+          'balance': '123.45', 'tx_count': 3 });
+    }
     account.$scope.$apply();
   });
 
