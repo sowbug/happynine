@@ -8,6 +8,7 @@ var postMessageWithCallback = function(message, callback) {
   message.id = callbackId++;
   callbacks[message.id] = callback;
   common.naclModule.postMessage(JSON.stringify(message));
+  console.log(message);
 };
 
 function handleMessage(message) {
@@ -92,7 +93,25 @@ function Settings() {
   };
 
   this.setPassphrase = function(passphrase, confirm) {
-    thisSettings.passphraseHash = 'foobarbaz';
+    if (passphrase == confirm) {
+      var message = {
+        'command': 'derive-key',
+        'passphrase': passphrase
+      };
+      postMessageWithCallback(message, function(response) {
+        var message = {
+          'command': 'verify-key',
+          'passphrase': passphrase,
+          'key': response.key,
+          'salt': response.salt
+        };
+        postMessageWithCallback(message, function(response) {
+          // TODO(miket): key should be cleared after something like 5 min.
+          thisSettings.passphraseKey = response['key'];
+          thisSettings.passphraseSalt = response['salt'];
+        });
+      });
+    }
   };
 
   this.satoshiToUnit = function(satoshis) {

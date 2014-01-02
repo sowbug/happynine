@@ -7,6 +7,7 @@
 #include "base58.h"
 #include "json/reader.h"
 #include "json/writer.h"
+#include "key_deriver.h"
 #include "node_factory.h"
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
@@ -118,6 +119,30 @@ public:
     return true;
   }
 
+  virtual bool HandleDeriveKey(const Json::Value& args,
+                               Json::Value& result) {
+    KeyDeriver key_deriver;
+    const std::string passphrase = args["passphrase"].asString();
+    bytes_t key(32, 0), salt(32, 0);
+    if (key_deriver.Derive(passphrase, key, salt)) {
+      result["key"] = to_hex(key);
+      result["salt"] = to_hex(salt);
+    } else {
+      result["error_code"] = -1;
+    }
+    return true;
+  }
+
+  virtual bool HandleVerifyKey(const Json::Value& args,
+                               Json::Value& result) {
+    KeyDeriver key_deriver;
+    const std::string passphrase = args["passphrase"].asString();
+    bytes_t key(unhexlify(args["key"].asString()));
+    bytes_t salt(unhexlify(args["salt"].asString()));
+    result["verified"] = key_deriver.Verify(passphrase, key, salt);
+    return true;
+  }
+
   /// Handler for messages coming in from the browser via
   /// postMessage().  The @a var_message can contain be any pp:Var
   /// type; for example int, string Array or Dictionary. Please see
@@ -145,6 +170,12 @@ public:
     }
     if (command == "get-addresses") {
       handled = HandleGetAddresses(root, result);
+    }
+    if (command == "derive-key") {
+      handled = HandleDeriveKey(root, result);
+    }
+    if (command == "verify-key") {
+      handled = HandleVerifyKey(root, result);
     }
     result["id"] = root["id"];
     result["command"] = command;

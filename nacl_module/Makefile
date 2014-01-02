@@ -10,6 +10,7 @@ CFLAGS = -Wall -Wextra
 
 SOURCES = \
 	base58.cc \
+	key_deriver.cc \
 	node.cc \
 	node_factory.cc \
 	rng.cc \
