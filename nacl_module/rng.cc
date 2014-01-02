@@ -8,11 +8,6 @@ RNG::RNG() {
 RNG::~RNG() {
 }
 
-bytes_t RNG::GetRandomBytes(size_t num) {
-  bytes_t buffer;
-  buffer.resize(num);
-  if (RAND_bytes(&buffer[0], num) == 1) {
-    return buffer;
-  }
-  return bytes_t();
+bool RNG::GetRandomBytes(bytes_t& bytes) {
+  return RAND_bytes(&bytes[0], bytes.capacity()) == 1;
 }

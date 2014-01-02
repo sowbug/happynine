@@ -72,12 +72,13 @@ gtest_main.a : gtest-all.o gtest_main.o
 # function.
 
 SOURCES = \
-	base58.cc \
-	key_deriver.cc \
-	node.cc \
-	node_factory.cc \
-	secp256k1.cc \
-	types.cc
+  base58.cc \
+  key_deriver.cc \
+  node.cc \
+  node_factory.cc \
+  rng.cc \
+  secp256k1.cc \
+  types.cc
 
 OBJS = $(SOURCES:.cc=.o)
 LIBS = -lpthread -lssl -lcrypto -ljsoncpp

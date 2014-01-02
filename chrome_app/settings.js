@@ -37,9 +37,11 @@ function Settings() {
   this.newPassphrase = null;
   this.confirmPassphrase = null;
 
+  var PASSPHRASE_CHECK = 'https://github.com/sowbug/bitcoin-wallet-app/';
   var SERIALIZED_FIELDS = [
     'units',
-    'passphraseSalt'
+    'passphraseSalt',
+    'passphraseCheck',
   ];
 
   this.load = function() {
@@ -73,17 +75,12 @@ function Settings() {
   };
 
   this.setPassphrase = function() {
-    console.log(thisSettings.newPassphrase);
-    console.log(thisSettings.confirmPassphrase);
-
     if (thisSettings.newPassphrase &&
         thisSettings.newPassphrase.length > 0 &&
         thisSettings.newPassphrase == thisSettings.confirmPassphrase) {
-      console.log("here");
-      var message = {
-        'command': 'derive-key',
-        'passphrase': thisSettings.newPassphrase
-      };
+      var message = {};
+      message.command = 'derive-key';
+      message.passphrase = thisSettings.newPassphrase;
 
       // We don't want these items lurking in the DOM.
       thisSettings.currentPassphrase = null;
@@ -98,6 +95,55 @@ function Settings() {
         thisSettings.save();
       });
     }
+  };
+
+  this.changePassphrase = function() {
+    var message = {};
+    message.command = 'derive-key';
+    message.passphrase =  thisSettings.currentPassphrase;
+    message.salt = thisSettings.passphraseSalt;
+
+    postMessageWithCallback(message, function(response) {
+      if (response.verified) {
+        this.removePassphrase();
+        this.setPassphrase();
+      } else {
+        thisSettings.currentPassphrase = null;
+        thisSettings.newPassphrase = null;
+        thisSettings.confirmPassphrase = null;
+        thisSettings.$scope.$apply();
+      }
+    });
+  };
+
+  this.verifyPassphrase = function() {
+    // Generate key for given passphrase using current salt
+    var message = {};
+    message.command = 'derive-key';
+    message.passphrase =  thisSettings.currentPassphrase;
+    message.salt =  thisSettings.passphraseSalt;
+
+    postMessageWithCallback(message, function(response) {
+      var message = {};
+      message.command = 'verify-passphrase';
+      if (response.verified) {
+        this.removePassphrase();
+        this.setPassphrase();
+      } else {
+        thisSettings.currentPassphrase = null;
+        thisSettings.newPassphrase = null;
+        thisSettings.confirmPassphrase = null;
+        thisSettings.$scope.$apply();
+      }
+    });
+    // Decrypt check with generated key
+    // return whether check matches
+
+  };
+
+  this.removePassphrase = function() {
+    // decrypt any encrypted stuff
+    // clear current passphrase
   };
 
   this.satoshiToUnit = function(satoshis) {

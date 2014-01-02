@@ -7,22 +7,15 @@ class KeyDeriver {
   KeyDeriver();
   virtual ~KeyDeriver();
 
-  // Using PKCS5_PBKDF2_HMAC_SHA1, takes a std::string representing a
-  // passphrase and derives a key from it. Returns true if successful.
+  // Using PKCS5_PBKDF2_HMAC_SHA1, takes a passphrase and salt and
+  // derives a key from them. Returns true if successful.
   //
-  // Generates a salt as well. Returns both key and salt.
+  // The key vector should be set to the desired capacity. For example:
   //
-  // Both key and salt should be resized to the desired length. For example:
-  //
-  // bytes_t key, salt;
-  // key.resize(32); salt.resize(32);
-  // if (key_deriver.Derive("foo", key, salt)) { go... }
-  bool Derive(const std::string& passphrase,
-              bytes_t& key,
-              bytes_t& salt);
-
-  // Pass in what you got from Derive() and it will return true.
-  bool Verify(const std::string& passphrase,
-              const bytes_t& key,
-              const bytes_t& salt);
+  // bytes_t salt(32, 0), key(32, 0);
+  // RNG.GetRandomBytes(salt);
+  // if (key_deriver.Derive("foo", salt, key)) { go... }
+  static bool Derive(const std::string& passphrase,
+                     const bytes_t& salt,
+                     bytes_t& key);
 };
