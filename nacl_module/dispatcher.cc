@@ -5,14 +5,13 @@
 #include <stdint.h>
 
 #include "base58.h"
+#include "crypto.h"
 #include "json/reader.h"
 #include "json/writer.h"
-#include "key_deriver.h"
 #include "node_factory.h"
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
-#include "rng.h"
 #include "types.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
@@ -66,7 +65,7 @@ public:
                                 Json::Value& result) {
     bytes_t seed_bytes(32, 0);
 
-    if (!RNG::GetRandomBytes(seed_bytes)) {
+    if (!Crypto::GetRandomBytes(seed_bytes)) {
       result["error_code"] = -1;
       result["error_message"] =
         std::string("The PRNG has not been seeded with enough "
@@ -126,15 +125,46 @@ public:
     if (salt_hex.size() >= 32 * 2) {
       salt = unhexlify(salt_hex);
     } else {
-      if (!RNG::GetRandomBytes(salt)) {
+      if (!Crypto::GetRandomBytes(salt)) {
         result["error_code"] = -1;
         return true;
       }
     }
 
-    if (key_deriver.Derive(passphrase, salt, key)) {
+    if (Crypto::DeriveKey(passphrase, salt, key)) {
       result["key"] = to_hex(key);
       result["salt"] = to_hex(salt);
+    } else {
+      result["error_code"] = -1;
+    }
+    return true;
+  }
+
+  virtual bool HandleEncryptString(const Json::Value& args,
+                                   Json::Value& result) {
+    bytes_t key(unhexlify(args["key"].asString()));
+    const std::string plaintext = args["plaintext"].asString();
+    if (plaintext.size() % 16 != 0) {
+      result["error_code"] = -1;
+      result["error_message"] = "Plaintext size must be a multiple of 16";
+      return true;
+    }
+    bytes_t ciphertext;
+    if (Crypto::Encrypt(key, plaintext, ciphertext)) {
+      result["ciphertext"] = to_hex(ciphertext);
+    } else {
+      result["error_code"] = -1;
+    }
+    return true;
+  }
+
+  virtual bool HandleDecryptString(const Json::Value& args,
+                                   Json::Value& result) {
+    bytes_t key(unhexlify(args["key"].asString()));
+    bytes_t ciphertext(unhexlify(args["ciphertext"].asString()));
+    std::string plaintext;
+    if (Crypto::Decrypt(key, ciphertext, plaintext)) {
+      result["plaintext"] = plaintext;
     } else {
       result["error_code"] = -1;
     }
@@ -171,6 +201,12 @@ public:
     }
     if (command == "derive-key") {
       handled = HandleDeriveKey(root, result);
+    }
+    if (command == "encrypt-string") {
+      handled = HandleEncryptString(root, result);
+    }
+    if (command == "decrypt-string") {
+      handled = HandleDecryptString(root, result);
     }
     result["id"] = root["id"];
     result["command"] = command;

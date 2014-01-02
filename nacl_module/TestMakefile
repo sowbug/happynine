@@ -73,10 +73,9 @@ gtest_main.a : gtest-all.o gtest_main.o
 
 SOURCES = \
   base58.cc \
-  key_deriver.cc \
+  crypto.cc \
   node.cc \
   node_factory.cc \
-  rng.cc \
   secp256k1.cc \
   types.cc
 
@@ -84,7 +83,7 @@ OBJS = $(SOURCES:.cc=.o)
 LIBS = -lpthread -lssl -lcrypto -ljsoncpp
 OUT = out/x86
 
-all: key_deriver_unittest node_unittest
+all: crypto_unittest node_unittest
 
 %.o : %.cc
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
@@ -97,10 +96,10 @@ node_unittest.o : $(USER_DIR)/node_unittest.cc \
 node_unittest : $(OBJS) node_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
-key_deriver_unittest.o : $(USER_DIR)/key_deriver_unittest.cc \
-                         $(USER_DIR)/key_deriver.h \
-                         $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/key_deriver_unittest.cc
+crypto_unittest.o : $(USER_DIR)/crypto_unittest.cc \
+                    $(USER_DIR)/crypto.h \
+                    $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/crypto_unittest.cc
 
-key_deriver_unittest : $(OBJS) key_deriver_unittest.o gtest_main.a
+crypto_unittest : $(OBJS) crypto_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
