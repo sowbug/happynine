@@ -48,12 +48,12 @@ function Account($scope, number) {
   this.$scope = $scope;
   this.masterKey = $scope.masterKey;
   this.number = number;
-  this.balance = number * 7 + 0.12345678;
+  this.balance = number * 700000000 + 12345678;
   this.addresses = [];
   this.transactions = [
-    { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': '2.34' },
-    { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': '50.00' },
-    { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': '(50.00)' }
+    { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': 234000000 },
+    { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': 500000000 },
+    { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': -500000000 }
   ];
 
   var account = this;
@@ -65,7 +65,7 @@ function Account($scope, number) {
       var address = response.addresses[i];
       account.addresses.push(
         { 'index': address.index, 'address': address.address,
-          'balance': '123.45', 'tx_count': 3 });
+          'balance': 12345678, 'tx_count': 3 });
     }
     account.$scope.$apply();
   });
@@ -77,16 +77,39 @@ function Account($scope, number) {
 
 function Settings() {
   var settings = this;
-  this.units = "mBTC";
+  this.units = "mbtc";
+  this.availableUnits = {
+    "btc": "BTC",
+    "mbtc":"mBTC",
+    "ubtc": "uBTC",
+    "sats": "Satoshis"
+  };
   this.passphraseHash = null;
 
   this.isPassphraseSet = function() {
     return settings.passphraseHash;
-  }
+  };
 
   this.setPassphrase = function(passphrase, confirm) {
     settings.passphraseHash = 'foobarbaz';
-  }
+  };
+
+  this.satoshiToUnit = function(satoshis) {
+    switch (settings.units) {
+    case "btc":
+      return satoshis / 10000000;
+    case "mbtc":
+       return satoshis / 10000;
+    case "ubtc":
+       return satoshis / 10;
+    default:
+      return satoshis;
+    }
+  };
+
+  this.unitLabel = function() {
+    return settings.availableUnits[settings.units];
+  };
 }
 
 function WalletController($scope) {
