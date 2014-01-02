@@ -3,6 +3,7 @@ var callbackId = 1;
 
 var bitcoinWalletApp = angular.module('bitcoinWalletApp', []);
 var settings = new Settings();
+settings.load();
 
 var postMessageWithCallback = function(message, callback) {
   message.id = callbackId++;
@@ -88,6 +89,29 @@ function Settings() {
   };
   this.passphraseHash = null;
 
+  this.load = function() {
+    if (chrome && chrome.storage) {
+      chrome.storage.local.get("settings", function(items) {
+        var loadedSettings = items.settings;
+        if (loadedSettings) {
+          thisSettings.units = loadedSettings.units;
+          thisSettings.passphraseSalt = loadedSettings.passphraseSalt;
+          thisSettings.$scope.$apply();
+        }
+      });
+    }
+  };
+
+  this.save = function() {
+    if (chrome && chrome.storage) {
+      var settingsToSave = {};
+      settingsToSave.units = thisSettings.units;
+      settingsToSave.passphraseSalt = thisSettings.passphraseSalt;
+      chrome.storage.local.set({'settings': settingsToSave}, function() {
+      });
+    }
+  };
+
   this.isPassphraseSet = function() {
     return thisSettings.passphraseHash;
   };
@@ -109,6 +133,7 @@ function Settings() {
           // TODO(miket): key should be cleared after something like 5 min.
           thisSettings.passphraseKey = response['key'];
           thisSettings.passphraseSalt = response['salt'];
+          thisSettings.save();
         });
       });
     }
@@ -136,6 +161,7 @@ function WalletController($scope) {
   $scope.masterKey = null;
   $scope.account = null;
   $scope.settings = settings;
+  settings.$scope = $scope;
 
   $scope.newMasterKey = function() {
     var message = {
