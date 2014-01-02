@@ -20,9 +20,9 @@ class Crypto {
                         bytes_t& key);
 
   static bool Encrypt(const bytes_t& key,
-                      const std::string& plaintext,
+                      const bytes_t& plaintext,
                       bytes_t& ciphertext);
   static bool Decrypt(const bytes_t& key,
                       const bytes_t& ciphertext,
-                      std::string& plaintext);
+                      bytes_t& plaintext);
 };

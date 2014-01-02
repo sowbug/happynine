@@ -140,31 +140,34 @@ public:
     return true;
   }
 
-  virtual bool HandleEncryptString(const Json::Value& args,
-                                   Json::Value& result) {
+  virtual bool HandleEncryptBytes(const Json::Value& args,
+                                  Json::Value& result) {
     bytes_t key(unhexlify(args["key"].asString()));
-    const std::string plaintext = args["plaintext"].asString();
-    if (plaintext.size() % 16 != 0) {
+    const std::string plaintext = args["plaintext_hex"].asString();
+    if (plaintext.size() % 64 != 0) {
       result["error_code"] = -1;
-      result["error_message"] = "Plaintext size must be a multiple of 16";
+      result["error_message"] =
+        "Decoded plaintext size must be a multiple of 32";
       return true;
     }
     bytes_t ciphertext;
-    if (Crypto::Encrypt(key, plaintext, ciphertext)) {
-      result["ciphertext"] = to_hex(ciphertext);
+    bytes_t plaintext_bytes(&plaintext[0], &plaintext[plaintext.size()]);
+    if (Crypto::Encrypt(key, plaintext_bytes, ciphertext)) {
+      result["ciphertext_hex"] = to_hex(ciphertext);
     } else {
       result["error_code"] = -1;
     }
     return true;
   }
 
-  virtual bool HandleDecryptString(const Json::Value& args,
-                                   Json::Value& result) {
+  virtual bool HandleDecryptBytes(const Json::Value& args,
+                                  Json::Value& result) {
     bytes_t key(unhexlify(args["key"].asString()));
-    bytes_t ciphertext(unhexlify(args["ciphertext"].asString()));
-    std::string plaintext;
-    if (Crypto::Decrypt(key, ciphertext, plaintext)) {
-      result["plaintext"] = plaintext;
+    bytes_t ciphertext(unhexlify(args["ciphertext_hex"].asString()));
+    bytes_t plaintext_bytes;
+
+    if (Crypto::Decrypt(key, ciphertext, plaintext_bytes)) {
+      result["plaintext_hex"] = to_hex(plaintext_bytes);
     } else {
       result["error_code"] = -1;
     }
@@ -202,11 +205,11 @@ public:
     if (command == "derive-key") {
       handled = HandleDeriveKey(root, result);
     }
-    if (command == "encrypt-string") {
-      handled = HandleEncryptString(root, result);
+    if (command == "encrypt-bytes") {
+      handled = HandleEncryptBytes(root, result);
     }
-    if (command == "decrypt-string") {
-      handled = HandleDecryptString(root, result);
+    if (command == "decrypt-bytes") {
+      handled = HandleDecryptBytes(root, result);
     }
     result["id"] = root["id"];
     result["command"] = command;

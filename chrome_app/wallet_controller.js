@@ -15,6 +15,9 @@ function WalletController($scope) {
       masterKey.xpub = response.ext_pub_b58;
       masterKey.setFingerprint(response.fingerprint);
 
+      $scope.settings.masterKey = response.ext_prv_hex;
+      $scope.settings.setMasterKey();
+
       $scope.masterKey = masterKey;
       $scope.nextAccount();
       $scope.$apply();

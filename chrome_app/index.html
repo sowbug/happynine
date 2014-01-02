@@ -338,6 +338,14 @@
   </div><!-- wrap -->
 
   <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
+
+    <ul class="nav navbar-nav">
+      <li class="active">
+        <span class="glyphicon glyphicon-lock" ng-if="!settings.isPassphraseCached()"></span>
+        <span class="glyphicon glyphicon-unlock" ng-if="settings.isPassphraseCached()"></span>
+      </li>
+    </ul>
+
     <ul class="nav navbar-nav navbar-right">
       <li ng-if="account">
         <div class="btn-group navbar-pagination">
