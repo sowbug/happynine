@@ -233,6 +233,7 @@ function hideLoading() {
   $("#loading-container").fadeOut(250, function() {
     $("#main-container").fadeIn(500, function() {
       $('#main-tabs a:first').tab('show');
+      $('#settings-tabs a:first').tab('show');
     });
   });
 }
@@ -258,6 +259,7 @@ var setAccount = function(account) {
 window.onload = function() {
   // Add click handlers.
   $('#main-tabs a').click(onTabClick);
+  $('#settings-tabs a').click(onTabClick);
 
   // For development in a normal browser tab.
   if (chrome && chrome.runtime)

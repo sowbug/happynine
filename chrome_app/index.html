@@ -255,53 +255,78 @@
           <!-- Settings -->
           <div class="tab-pane fade" id="settings">
 
-            <!-- Passphrase -->
-            <div class="panel panel-default">
-              <div class="panel-heading">Passphrase</div>
-              <div class="panel-body">
-                <form class="form-horizontal" role="form">
-                  <div class="form-group" ng-if="settings.isPassphraseSet()">
-                    <label for="passphrase-current" class="col-md-2 control-label">Current</label>
-                    <div class="col-md-6">
-                      <input type="password" class="form-control" placeholder="Current Passphrase" ng-model="settings.currentPassphrase">
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="passphrase-new" class="col-md-2 control-label">New</label>
-                    <div class="col-md-6">
-                      <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="settings.newPassphrase">
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="passphrase-confirm" class="col-md-2 control-label">Confirm</label>
-                    <div class="col-md-6">
-                      <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="settings.confirmPassphrase">
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <div class="col-md-offset-2 col-md-10">
-                      <button class="btn btn-primary" ng-click="settings.setPassphrase()" ng-if="!settings.isPassphraseSet()">Set</button>
-                      <button class="btn btn-primary" ng-click="settings.changePassphrase()" ng-if="settings.isPassphraseSet()">Change</button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div><!-- panel-default -->
+            <div class="btn-toolbar">
+              <ul class="nav nav-pills" id="settings-tabs">
+                <li><a href="#settings-basic" data-toggle="tab">Basic</a></li>
+                <li><a href="#settings-advanced" data-toggle="tab">Advanced</a></li>
+              </ul>
+            </div>
 
-            <div class="panel panel-default">
-              <div class="panel-heading">Bitcoin</div>
-              <div class="panel-body">
-                <form class="form-horizontal" role="form">
-                  <div class="form-group">
-                    <label for="units-btc" class="col-md-2 control-label">Bitcoin Units</label>
-                    <div class="col-md-4">
-                      <select class="form-control" ng-model="settings.units" ng-options="k as v for (k, v) in settings.availableUnits">
-                      </select>
-                    </div>
+            <div class="tab-content">
+              <div class="tab-pane active fade" id="settings-basic">
+                <!-- Passphrase -->
+                <div class="panel panel-default">
+                  <div class="panel-heading">Passphrase</div>
+                  <div class="panel-body">
+                    <form class="form-horizontal" role="form">
+                      <div class="form-group" ng-if="settings.isPassphraseSet()">
+                        <label for="passphrase-current" class="col-md-2 control-label">Current</label>
+                        <div class="col-md-6">
+                          <input type="password" class="form-control" placeholder="Current Passphrase" ng-model="settings.currentPassphrase">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="passphrase-new" class="col-md-2 control-label">New</label>
+                        <div class="col-md-6">
+                          <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="settings.newPassphrase">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="passphrase-confirm" class="col-md-2 control-label">Confirm</label>
+                        <div class="col-md-6">
+                          <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="settings.confirmPassphrase">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                          <button class="btn btn-primary" ng-click="settings.setPassphrase()" ng-if="!settings.isPassphraseSet()">Set</button>
+                          <button class="btn btn-primary" ng-click="settings.changePassphrase()" ng-if="settings.isPassphraseSet()">Change</button>
+                        </div>
+                      </div>
+                    </form>
                   </div>
-                </form>
+                </div><!-- panel-default -->
+
+                <div class="panel panel-default">
+                  <div class="panel-heading">Bitcoin</div>
+                  <div class="panel-body">
+                    <form class="form-horizontal" role="form">
+                      <div class="form-group">
+                        <label for="units-btc" class="col-md-2 control-label">Bitcoin Units</label>
+                        <div class="col-md-4">
+                          <select class="form-control" ng-model="settings.units" ng-options="k as v for (k, v) in settings.availableUnits">
+                          </select>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div><!-- panel-default -->
               </div>
-            </div><!-- panel-default -->
+              <div class="tab-pane fade" id="settings-advanced">
+                <div class="panel panel-danger">
+                  <div class="panel-heading">Danger</div>
+                  <div class="panel-body">
+                    <form class="form-horizontal" role="form">
+                      <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                          <button class="btn btn-danger" ng-click="settings.clearEverything()">Clear Everything</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div><!-- panel-default -->
+              </div>
+            </div>
 
           </div><!-- Settings -->
 
