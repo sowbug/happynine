@@ -90,8 +90,10 @@ function Settings() {
     return !!thisSettings.passphraseSalt;
   };
 
-  this.isWalletLocked = function() {
-    return !thisSettings.passphraseKey;
+  // locked means either that a passphrase is set and the key is not cached,
+  // or that there is no passphrase set.
+  this.isWalletUnlocked = function() {
+    return thisSettings.isPassphraseSet() && thisSettings.passphraseKey;
   };
 
   this.lockWallet = function() {
@@ -130,7 +132,7 @@ function Settings() {
     }
 
     if (thisSettings.isPassphraseSet()) {
-      if (thisSettings.isWalletLocked()) {
+      if (!thisSettings.isWalletUnlocked()) {
         console.log("Can't change passphrase because wallet is locked.");
         return;
       }
@@ -163,7 +165,7 @@ function Settings() {
   };
 
   this.setMasterKey = function(masterKey) {
-    if (thisSettings.isWalletLocked()) {
+    if (!thisSettings.isWalletUnlocked()) {
       console.log("can't set master key; wallet is locked");
       return;
     }

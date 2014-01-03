@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html data-ng-app="bitcoinWalletApp">
-<head>
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="-1">
-  <title>Bitcoin Wallet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script type="text/javascript" src="common.js"></script>
-  <link href="bootstrap-3.0.3/css/bootstrap.min.css" rel="stylesheet">
-  <link href="styles.css" rel="stylesheet">
-</head>
+  <head>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <title>Bitcoin Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="common.js"></script>
+    <link href="bootstrap-3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+  </head>
 
-<body data-name="hd_wallet" data-tools="newlib glibc pnacl" data-configs="Release Debug" data-path="{tc}/{config}" data-ng-controller="WalletController">
-
-  <div id="wrap">
+  <body data-name="hd_wallet" data-tools="newlib glibc pnacl" data-configs="Release Debug" data-path="{tc}/{config}" data-ng-controller="WalletController">
 
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
@@ -62,7 +60,7 @@
           <li><a href="#home" data-toggle="tab">Home</a></li>
           <li ng-if="masterKey"><a href="#send" data-toggle="tab">Send</a></li>
           <li ng-if="masterKey"><a href="#receive" data-toggle="tab">Receive</a></li>
-          <li><a href="#master-key" data-toggle="tab">Master Key</a></li>
+          <li ng-if="settings.isWalletUnlocked()"><a href="#master-key" data-toggle="tab">Master Key</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -80,7 +78,7 @@
                 <p class="lead">Welcome! Let's set up your wallet.</p>
                 <ul>
                   <li ng-if="!settings.isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
-                  <li ng-if="settings.isPassphraseSet() && settings.isWalletLocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
+                  <li ng-if="!settings.isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
                   <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv/xpub-formatted BIP0032 master key, import it.</li>
                 </ul>
               </div>
@@ -182,17 +180,8 @@
           <!-- Key -->
           <div class="tab-pane fade" id="master-key">
 
-            <!-- Needs passphrase -->
-            <div class="panel panel-warning" ng-if="!settings.isPassphraseSet()">
-              <div class="panel-heading">Passphrase Required</div>
-              <div class="panel-body">
-                <p class="lead">Your wallet needs a passphrase.</p>
-                <p>Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</p>
-              </div>
-            </div><!-- panel-default -->
-
             <!-- Management -->
-            <div class="panel panel-default" ng-if="settings.isPassphraseSet()">
+            <div class="panel panel-default" ng-if="settings.isWalletUnlocked()">
               <div class="panel-heading">Management</div>
               <div class="panel-body">
                 <div class="row">
@@ -266,7 +255,7 @@
             <div class="tab-content">
               <div class="tab-pane active fade" id="settings-basic">
                 <!-- Passphrase -->
-                <div class="panel panel-default" ng-if="!settings.isPassphraseSet() || !settings.isWalletLocked()">
+                <div class="panel panel-default" ng-if="!settings.isPassphraseSet() || settings.isWalletUnlocked()">
                   <div class="panel-heading">Passphrase</div>
                   <div class="panel-body">
                     <form class="form-horizontal" role="form">
@@ -330,74 +319,73 @@
         <div id="log" style="-webkit-user-select: initial"></div>
       </div><!-- col-md-10 -->
     </div><!-- main-container -->
-  </div><!-- wrap -->
 
-  <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
+    <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
 
-    <ul class="nav navbar-nav">
-      <li class="active" ng-data="settings" ng-if="settings.isPassphraseSet()">
-        <a href="#" ng-data="settings" ng-if="settings.isWalletLocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
-          <span class="glyphicon glyphicon-lock"></span>
-        </a>
-        <a href="#" ng-data="settings" ng-if="!settings.isWalletLocked()" ng-click="settings.lockWallet()">
-          <span class="glyphicon glyphicon-exclamation-sign"></span>
-        </a>
-      </li>
-    </ul>
+      <ul class="nav navbar-nav">
+        <li class="active" ng-data="settings" ng-if="settings.isPassphraseSet()">
+          <a href="#" ng-data="settings" ng-if="!settings.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
+            <span class="glyphicon glyphicon-lock"></span>
+          </a>
+          <a href="#" ng-data="settings" ng-if="settings.isWalletUnlocked()" ng-click="settings.lockWallet()">
+            <span class="glyphicon glyphicon-exclamation-sign"></span>
+          </a>
+        </li>
+      </ul>
 
-    <ul class="nav navbar-nav navbar-right">
-      <li ng-if="account">
-        <div class="btn-group navbar-pagination">
-          <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-          <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{account.index}}</button>
-          <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
-        </div>
-      </li>
-      <li>
-        <p class="navbar-text" id="fingerprint-navbar" ng-data="masterKey">{{masterKey.fingerprint}}</p>
-      </li>
-      <li>
-        <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" />
-      </li>
-    </ul>
-  </div><!-- footer -->
+      <ul class="nav navbar-nav navbar-right">
+        <li ng-if="account">
+          <div class="btn-group navbar-pagination">
+            <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
+            <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{account.index}}</button>
+            <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
+          </div>
+        </li>
+        <li>
+          <p class="navbar-text" id="fingerprint-navbar" ng-data="masterKey">{{masterKey.fingerprint}}</p>
+        </li>
+        <li>
+          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" />
+        </li>
+      </ul>
+    </div><!-- footer -->
 
-  <div id="listener"></div>
+    <div id="listener"></div>
 
-  <!-- Unlock wallet modal -->
-  <div class="modal fade" id="unlock-wallet-modal" tabindex="-1" role="dialog" aria-labelledby="unlock-wallet-label" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
-        </div>
-        <div class="modal-body">
-          <form class="form-horizontal" role="form">
-            <div class="form-group">
-              <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
-              <div class="col-md-6">
-                <input type="password" class="form-control" id="passphrase-unlock" placeholder="Passphrase" ng-model="settings.newPassphrase">
+    <!-- Unlock wallet modal -->
+    <div class="modal fade" id="unlock-wallet-modal" tabindex="-1" role="dialog" aria-labelledby="unlock-wallet-label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
+          </div>
+          <div class="modal-body">
+            <form class="form-horizontal" role="form">
+              <div class="form-group">
+                <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
+                <div class="col-md-6">
+                  <input type="password" class="form-control" id="passphrase-unlock" placeholder="Passphrase" ng-model="settings.newPassphrase">
+                </div>
               </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" ng-click="settings.unlockWallet()">Unlock for One Minute</button>
-        </div>
-      </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary" ng-click="settings.unlockWallet()">Unlock for One Minute</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-  <script type="text/javascript" src="jquery-1.10.2.min.js"></script>
-  <script type="text/javascript" src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="angular.min.js"></script>
-  <script type="text/javascript" src="settings.js"></script>
-  <script type="text/javascript" src="account.js"></script>
-  <script type="text/javascript" src="master_key.js"></script>
-  <script type="text/javascript" src="wallet_controller.js"></script>
-  <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="angular.min.js"></script>
+    <script type="text/javascript" src="settings.js"></script>
+    <script type="text/javascript" src="account.js"></script>
+    <script type="text/javascript" src="master_key.js"></script>
+    <script type="text/javascript" src="wallet_controller.js"></script>
+    <script type="text/javascript" src="index.js"></script>
 
-</body>
+  </body>
 </html>
