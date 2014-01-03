@@ -349,7 +349,7 @@
       <li ng-if="account">
         <div class="btn-group navbar-pagination">
           <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-          <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{ account.number }}</button>
+          <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{account.index}}</button>
           <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
         </div>
       </li>
