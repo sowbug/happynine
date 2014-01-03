@@ -32,7 +32,7 @@ function Account($scope, index) {
 
   var account = this;
   var message = { 'command': 'get-addresses',
-                  'seed_hex': this.masterKey.xprv,
+                  'seed': this.masterKey.xprv,
                   'path': "m/" + index + "'/0",
                   'start': 0, 'count': 5 };
   postMessageWithCallback(message, function(response) {

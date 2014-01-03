@@ -65,12 +65,13 @@ TEST(KeyDeriverTest, BadInput) {
   EXPECT_FALSE(Crypto::DeriveKey(passphrase, other_salt, key));
 }
 
-
 TEST(EncryptionTest, Basic) {
   const std::string passphrase_1 = "foo";
   const std::string passphrase_2 = "something_else";
-  //                                    12345678901234567890123456789012
-  const std::string plaintext_string = "This is a test!!This is a test!!";
+
+  // A block-sized string
+  //                                    123456789012345678901234567890123
+  const std::string plaintext_string = "This is a test!!This is a test!!!";
   const bytes_t plaintext(plaintext_string.c_str(),
                           plaintext_string.c_str() + plaintext_string.size());
 
@@ -89,7 +90,8 @@ TEST(EncryptionTest, Basic) {
   EXPECT_TRUE(Crypto::Encrypt(key_1, plaintext, ciphertext_1));
   bytes_t plaintext_output_1;
   EXPECT_TRUE(Crypto::Decrypt(key_1, ciphertext_1, plaintext_output_1));
-  EXPECT_EQ(plaintext_output_1, plaintext);
+  EXPECT_EQ(plaintext.size(), plaintext_output_1.size());
+  EXPECT_EQ(plaintext, plaintext_output_1);
 
   // Different key: ciphertext different?
   bytes_t ciphertext_2;
@@ -98,13 +100,19 @@ TEST(EncryptionTest, Basic) {
 
   // Different key: decryption garbled?
   bytes_t plaintext_output_2;
-  EXPECT_TRUE(Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2));
+  EXPECT_FALSE(Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2));
   EXPECT_NE(plaintext_output_2, plaintext);
 
   // Same salt, different key: decryption garbled?
   plaintext_output_2 = plaintext;
-  EXPECT_EQ(plaintext_output_2, plaintext_output_1);
+  EXPECT_EQ(plaintext_output_1, plaintext_output_2);
   Crypto::DeriveKey(passphrase_2, salt_1, key_2);
-  EXPECT_TRUE(Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2));
+  EXPECT_FALSE(Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2));
   EXPECT_NE(plaintext_output_2, plaintext);
+
+  // Now once more with non-block-sized plaintext
+  const bytes_t plaintext_odd_size(17, 37);
+  EXPECT_TRUE(Crypto::Encrypt(key_1, plaintext_odd_size, ciphertext_1));
+  EXPECT_TRUE(Crypto::Decrypt(key_1, ciphertext_1, plaintext_output_1));
+  EXPECT_EQ(plaintext_odd_size, plaintext_output_1);
 }

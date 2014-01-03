@@ -37,15 +37,15 @@ public:
   }
 
   virtual bool HandleGetNode(const Json::Value& args, Json::Value& result) {
-    const std::string seed_hex = args.get("seed_hex", "").asString();
-    const bytes_t seed_bytes(unhexlify(seed_hex));
+    const std::string seed = args.get("seed", "").asString();
+    const bytes_t seed_bytes(unhexlify(seed));
 
     Node *parent_node = NULL;
     if (seed_bytes.size() == 78) {
       parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
-    } else if (seed_hex[0] == 'x') {
+    } else if (seed[0] == 'x') {
       parent_node =
-        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
+        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed));
     } else {
       parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
@@ -81,15 +81,15 @@ public:
 
   virtual bool HandleGetAddresses(const Json::Value& args,
                                   Json::Value& result) {
-    const std::string seed_hex = args.get("seed_hex", "").asString();
-    const bytes_t seed_bytes(unhexlify(seed_hex));
+    const std::string seed = args.get("seed", "").asString();
+    const bytes_t seed_bytes(unhexlify(seed));
 
     Node *parent_node = NULL;
     if (seed_bytes.size() == 78) {
       parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
-    } else if (seed_hex[0] == 'x') {
+    } else if (seed[0] == 'x') {
       parent_node =
-        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed_hex));
+        NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed));
     } else {
       parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
     }
@@ -144,12 +144,6 @@ public:
                                   Json::Value& result) {
     bytes_t key(unhexlify(args["key"].asString()));
     const std::string plaintext = args["plaintext_hex"].asString();
-    if (plaintext.size() % 64 != 0) {
-      result["error_code"] = -1;
-      result["error_message"] =
-        "Decoded plaintext size must be a multiple of 32";
-      return true;
-    }
     bytes_t ciphertext;
     bytes_t plaintext_bytes(&plaintext[0], &plaintext[plaintext.size()]);
     if (Crypto::Encrypt(key, plaintext_bytes, ciphertext)) {
