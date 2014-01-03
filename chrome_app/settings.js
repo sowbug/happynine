@@ -1,22 +1,24 @@
 // Copyright 2014 Mike Tsao <mike@sowbug.com>
 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 var settings = new Settings();
 settings.load();
@@ -31,6 +33,7 @@ function Settings() {
   };
   this.units = "mbtc";
   this.passphraseSalt = null;
+  this.$scope = null;
 
   // These are here only for data bindings. Never serialize!
   this.confirmPassphrase = null;
@@ -42,6 +45,7 @@ function Settings() {
 
   var SERIALIZED_FIELDS = [
     'masterKeyEncrypted',
+    'masterKeyPublic',
     'internalKeyEncrypted',
     'passphraseCheck',
     'passphraseSalt',
@@ -59,6 +63,7 @@ function Settings() {
             var field_name = SERIALIZED_FIELDS[field];
             thisSettings[field_name] = loadedSettings[field_name];
           }
+//          thisSettings.$scope.setMasterKey(thisSettings.masterKeyPublic);
           thisSettings.$scope.$apply();
         }
       });
@@ -87,7 +92,7 @@ function Settings() {
   };
 
   this.isPassphraseSet = function() {
-    return !!thisSettings.passphraseSalt;
+    return !!thisSettings.internalKeyEncrypted;
   };
 
   // locked means either that a passphrase is set and the key is not cached,
@@ -169,16 +174,21 @@ function Settings() {
       console.log("can't set master key; wallet is locked");
       return;
     }
-    var message = {};
-    message.command = 'encrypt-item';
-    message.item = masterKey;
-    message.internal_key = thisSettings.internalKey;
+    thisSettings.masterKeyPublic = masterKey.xpub;
+    if (masterKey.xprv) {
+      var message = {};
+      message.command = 'encrypt-item';
+      message.item = masterKey.xprv;
+      message.internal_key = thisSettings.internalKey;
 
-    postMessageWithCallback(message, function(response) {
-      console.log("master key is now set.");
-      thisSettings.masterKeyEncrypted = response.item_encrypted;
+      postMessageWithCallback(message, function(response) {
+        console.log("master key is now set.");
+        thisSettings.masterKeyEncrypted = response.item_encrypted;
+        thisSettings.save();
+      });
+    } else {
       thisSettings.save();
-    });
+    }
   };
 
   this.unlockWallet = function() {
@@ -188,12 +198,12 @@ function Settings() {
     message.check = thisSettings.passphraseCheck;
     message.internal_key_encrypted = thisSettings.internalKeyEncrypted;
     message.passphrase = thisSettings.newPassphrase;
-    thisSettings.newPassphrase = null;
 
     postMessageWithCallback(message,function(response) {
       if (response.key) {
         $("#unlock-wallet-modal").modal('hide');
         thisSettings.cachePassphraseKey(response.key, response.internal_key);
+        thisSettings.newPassphrase = null;
         thisSettings.$scope.$apply();
       }
     });

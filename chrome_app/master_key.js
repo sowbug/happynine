@@ -18,11 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-function MasterKey() {
+function MasterKey(xprv, xpub, fingerprint) {
   this.showXprv = false;
-  this.xprv = "";
-  this.xpub = "";
-  this.fingerprint = "";
+  this.xprv = xprv;
+  this.xpub = xpub;
 
   var mk = this;
   this.setFingerprint = function(fingerprint) {
@@ -41,4 +40,5 @@ function MasterKey() {
     };
     xhr.send();
   };
+  this.setFingerprint(fingerprint);
 }

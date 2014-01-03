@@ -70,7 +70,9 @@ window.onload = function() {
   // Add click handlers.
   $('#main-tabs a').click(onTabClick);
   $('#settings-tabs a').click(onTabClick);
-
+  $('#unlock-wallet-modal').on('shown.bs.modal', function (e) {
+    $('#passphrase-unlock').focus();
+  })
   if (chrome && chrome.runtime) {
     showLoading();
   } else {

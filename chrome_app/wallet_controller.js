@@ -8,15 +8,26 @@ function WalletController($scope) {
     var message = {
       'command': 'create-node'
     };
+    thisScope = $scope;
     postMessageWithCallback(message, function(response) {
-      var masterKey = new MasterKey();
-      masterKey.xprv = response.ext_prv_b58;
-      masterKey.showXprv = false;
-      masterKey.xpub = response.ext_pub_b58;
-      masterKey.setFingerprint(response.fingerprint);
+      thisScope.setMasterKey(response.ext_prv_b58);
+    });
+  };
 
-      $scope.settings.setMasterKey(response.ext_prv_b58);
-
+  $scope.setMasterKey = function(extended_b58) {
+    if (!extended_b58 ||
+        ($scope.masterKey && $scope.masterKey.xpub == extended_b58)) {
+      return;
+    }
+    var message = {
+      'command': 'get-node',
+      'seed': extended_b58
+    };
+    thisScope = $scope;
+    postMessageWithCallback(message, function(response) {
+      var masterKey = new MasterKey(response.ext_prv_b58,
+                                    response.ext_pub_b58,
+                                    response.fingerprint);
       $scope.masterKey = masterKey;
       $scope.nextAccount();
       $scope.$apply();

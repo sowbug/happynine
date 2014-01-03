@@ -29,7 +29,7 @@
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
-            <p class="navbar-text" ng-data="account">{{settings.satoshiToUnit(account.balance)}} <span ng-data="settings">{{settings.unitLabel()}}</span></p>
+            <p class="navbar-text">{{settings.satoshiToUnit(account.balance)}} <span>{{settings.unitLabel()}}</span></p>
           </li>
         </ul>
       </div><!--/.nav-collapse -->
@@ -119,13 +119,13 @@
                   <div class="form-group">
                     <label for="send-amount" class="col-md-2 control-label">Amount</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-amount" placeholder="{{settings.unitLabel()}} To Send" ng-data="settings">
+                      <input type="number" class="form-control" id="send-amount" placeholder="{{settings.unitLabel()}} To Send">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-fee" class="col-md-2 control-label">Fee</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-fee" placeholder="Transaction Fee in {{settings.unitLabel()}}" ng-data="settings">
+                      <input type="number" class="form-control" id="send-fee" placeholder="Transaction Fee in {{settings.unitLabel()}}">
                     </div>
                   </div>
                   <div class="form-group">
@@ -202,7 +202,7 @@
                   <div class="form-group">
                     <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
                     <div class="col-md-3">
-                      <input type="text" class="form-control" id="fingerprint-readonly" readonly ng-data="masterKey" value="{{masterKey.fingerprint}}">
+                      <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
                     </div>
                     <div class="col-md-2">
                       <img id="fingerprint-img-big" class="img-thumbnail" width="64" height="64" />
@@ -211,30 +211,32 @@
                   <div class="form-group">
                     <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
                     <div class="col-md-10">
-                      <input type="text" class="form-control" id="xpub-readonly" readonly ng-data="masterKey" value="{{masterKey.xpub}}">
+                      <input type="text" class="form-control" id="xpub-readonly" readonly value="{{masterKey.xpub}}">
                     </div>
                   </div>
-                  <div class="form-group">
-                    <div class="col-md-4 col-md-offset-2">
-                      <div class="checkbox">
-                        <label>
-                          <input type="checkbox" ng-model="masterKey.showXprv">Show Private Key
-                        </label>
+                  <div ng-if="settings.isWalletUnlocked()">
+                    <div class="form-group">
+                      <div class="col-md-4 col-md-offset-2">
+                        <div class="checkbox">
+                          <label>
+                            <input type="checkbox" ng-model="masterKey.showXprv">Show Private Key
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="form-group" ng-if="masterKey.showXprv">
-                    <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
-                    <div class="col-md-10">
-                      <input type="text" class="form-control" id="xprv-readonly" readonly ng-data="masterKey" value="{{masterKey.xprv}}">
+                    <div class="form-group" ng-if="masterKey.showXprv">
+                      <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
+                      <div class="col-md-10">
+                        <input type="text" class="form-control" id="xprv-readonly" readonly value="{{masterKey.xprv}}">
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="form-group">
-                    <div class="col-md-4 col-md-offset-2">
-                      <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
+                    <div class="form-group">
+                      <div class="col-md-4 col-md-offset-2">
+                        <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
+                      </div>
                     </div>
-                  </div>
+                  </div><!-- isWalletUnlocked -->
 
                 </form>
               </div>
@@ -323,11 +325,11 @@
     <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
 
       <ul class="nav navbar-nav">
-        <li class="active" ng-data="settings" ng-if="settings.isPassphraseSet()">
-          <a href="#" ng-data="settings" ng-if="!settings.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
+        <li class="active" ng-if="settings.isPassphraseSet()">
+          <a href="#" ng-if="!settings.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
             <span class="glyphicon glyphicon-lock"></span>
           </a>
-          <a href="#" ng-data="settings" ng-if="settings.isWalletUnlocked()" ng-click="settings.lockWallet()">
+          <a href="#" ng-if="settings.isWalletUnlocked()" ng-click="settings.lockWallet()">
             <span class="glyphicon glyphicon-exclamation-sign"></span>
           </a>
         </li>
@@ -337,12 +339,12 @@
         <li ng-if="account">
           <div class="btn-group navbar-pagination">
             <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-            <button id="account" class="btn btn-default navbar-btn disabled" ng-data="account">Account {{account.index}}</button>
+            <button id="account" class="btn btn-default navbar-btn disabled">Account {{account.index}}</button>
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>
         <li>
-          <p class="navbar-text" id="fingerprint-navbar" ng-data="masterKey">{{masterKey.fingerprint}}</p>
+          <p class="navbar-text" id="fingerprint-navbar">{{masterKey.fingerprint}}</p>
         </li>
         <li>
           <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" />
@@ -361,7 +363,7 @@
             <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
           </div>
           <div class="modal-body">
-            <form class="form-horizontal" role="form">
+            <form class="form-horizontal" role="form" ng-submit="settings.unlockWallet()">
               <div class="form-group">
                 <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
                 <div class="col-md-6">
@@ -372,7 +374,7 @@
           </div>
           <div class="modal-footer">
             <button class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button class="btn btn-primary" ng-click="settings.unlockWallet()">Unlock for One Minute</button>
+            <button type="submit" class="btn btn-primary">Unlock for One Minute</button>
           </div>
         </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
