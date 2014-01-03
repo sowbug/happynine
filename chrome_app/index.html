@@ -29,7 +29,7 @@
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
-            <p class="navbar-text">{{settings.satoshiToUnit(account.balance)}} <span>{{settings.unitLabel()}}</span></p>
+            <p class="navbar-text" ng-bind="{{settings.satoshiToUnit(account.balance)}} <span>{{settings.unitLabel()}}"></span></p>
           </li>
         </ul>
       </div><!--/.nav-collapse -->
@@ -339,12 +339,12 @@
         <li ng-if="account">
           <div class="btn-group navbar-pagination">
             <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-            <button id="account" class="btn btn-default navbar-btn disabled">Account {{account.index}}</button>
+            <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="Account {{account.index}}"></button>
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>
         <li>
-          <p class="navbar-text" id="fingerprint-navbar">{{masterKey.fingerprint}}</p>
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="{{masterKey.fingerprint}}"></p>
         </li>
         <li>
           <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" />
