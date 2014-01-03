@@ -9,6 +9,7 @@ LIBS = $(DEPS) ppapi_cpp ppapi pthread crypto jsoncpp
 CFLAGS = -Wall -Wextra
 
 SOURCES = \
+  api.cc \
   base58.cc \
   crypto.cc \
   node.cc \

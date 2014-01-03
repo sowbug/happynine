@@ -35,6 +35,7 @@ function Settings() {
   // These are here only for data bindings. Never serialize!
   this.confirmPassphrase = null;
   this.currentPassphrase = null;
+  this.internalKey = null;
   this.masterKey = null;
   this.newPassphrase = null;
   this.passphraseKey = null;
@@ -93,138 +94,83 @@ function Settings() {
     return !thisSettings.passphraseKey;
   };
 
-  // echo -n "Bitcoin Wallet Copyright 2014 Mike Tsao." | sha256sum
-  var PASSPHRASE_CHECK_HEX =
-    "d961579ab5f288d5424816577a092435f32223347a562992811e71c31e2d12ea";
-
-  this.cachePassphraseKey = function(key) {
-    // TODO(miket): key should be cleared after something like 5 min.
+  this.cachePassphraseKey = function(key, internalKey) {
+    // TODO(miket): make clear time a pref
     console.log("caching passphrase key");
     thisSettings.passphraseKey = key;
+    thisSettings.internalKey = internalKey;
     window.setTimeout(function() {
       thisSettings.passphraseKey = null;
+      thisSettings.internalKey = null;
       thisSettings.$scope.$apply();
       console.log("cleared passphrase key");
     }, 1000 * 60 * 1);
   }
 
+  this.handleSetPassphraseResponse = function(response) {
+    thisSettings.cachePassphraseKey(response.key, response.internal_key);
+    thisSettings.passphraseSalt = response.salt;
+    thisSettings.passphraseCheck = response.check;
+    thisSettings.internalKeyEncrypted = response.internal_key_encrypted;
+    thisSettings.$scope.$apply();
+    thisSettings.save();
+  };
+
   this.setPassphrase = function() {
+    // TODO: angularjs can probably do this check for us
+    if (!thisSettings.newPassphrase ||
+        thisSettings.newPassphrase.length == 0 ||
+        thisSettings.newPassphrase != thisSettings.confirmPassphrase) {
+      console.log("new didn't match confirm");
+      return;
+    }
+
     if (thisSettings.isPassphraseSet()) {
-      console.log("can't set passphrase -- already set");
-    }
-
-    if (thisSettings.newPassphrase &&
-        thisSettings.newPassphrase.length > 0 &&
-        thisSettings.newPassphrase == thisSettings.confirmPassphrase) {
-      var message = {};
-      message.command = 'derive-key';
-      message.passphrase = thisSettings.newPassphrase;
-
-      // We don't want these items lurking in the DOM.
-      thisSettings.currentPassphrase = null;
-      thisSettings.newPassphrase = null;
-      thisSettings.confirmPassphrase = null;
-
-      postMessageWithCallback(message, function(response) {
-        thisSettings.cachePassphraseKey(response.key);
-        thisSettings.passphraseSalt = response.salt;
-
-        var message = {};
-        message.command = 'encrypt-bytes';
-        message.plaintext_hex = PASSPHRASE_CHECK_HEX;
-        message.key = thisSettings.passphraseKey;
-
-        postMessageWithCallback(message, function(response) {
-          console.log("passphraseCheck updated");
-          thisSettings.passphraseCheck = response.ciphertext_hex;
-          if (thisSettings.masterKey) {
-            thisSettings.setMasterKey();
-          }
-          thisSettings.$scope.$apply();
-          thisSettings.save();
-        });
-      });
-    }
-  };
-
-  this.changePassphrase = function() {
-    thisSettings.verifyPassphrase(function(verified) {
-      if (verified) {
-        this.removePassphrase(function() {
-          this.setPassphrase();
-        });
-      } else {
-        console.log("change failed -- not verified");
-        // nope
+      if (thisSettings.isWalletLocked()) {
+        console.log("Can't change passphrase because wallet is locked.");
+        return;
       }
-    });
-  };
+    } else {
+      if (thisSettings.internalKeyEncrypted) {
+        console.log("PROBLEM: internalKeyEncrypted set but no passphrase");
+        return;
+      }
+      if (thisSettings.masterKeyEncrypted) {
+        console.log("PROBLEM: masterKeyEncrypted set but no passphrase");
+        return;
+      }
+    }
 
-  this.verifyPassphrase = function(callback) {
     var message = {};
-    message.command = 'derive-key';
-    message.passphrase =  thisSettings.currentPassphrase;
-    message.salt =  thisSettings.passphraseSalt;
+    message.command = 'set-passphrase';
+    message.passphrase = thisSettings.newPassphrase;
+    if (thisSettings.isPassphraseSet()) {
+      message.key = thisSettings.passphraseKey;
+      message.check = thisSettings.passphraseCheck;
+      message.internalKeyEncrypted = thisSettings.internalKeyEncrypted;
+    }
 
-    postMessageWithCallback(message, function(response) {
-      var message = {};
-      message.command = 'encrypt-bytes';
-      message.plaintext_hex = PASSPHRASE_CHECK_HEX;
-      message.key = response.key;
+    // We don't want these items lurking in the DOM.
+    thisSettings.newPassphrase = null;
+    thisSettings.confirmPassphrase = null;
 
-      postMessageWithCallback(message, function(response) {
-        console.log("verify: " +
-                    (response.ciphertext_hex == thisSettings.passphraseCheck));
-        callback.call(
-          response.ciphertext_hex == thisSettings.passphraseCheck);
-      });
-    });
+    postMessageWithCallback(message,
+                            thisSettings.handleSetPassphraseResponse);
   };
 
-  this.removePassphrase = function(callback) {
+  this.setMasterKey = function(masterKey) {
     if (thisSettings.isWalletLocked()) {
-      callback.call(false);
-    }
-    if (!thisSettings.masterKeyEncrypted) {
-      // TODO(miket): success or failure?
-      callback.call(true);
-    }
-
-    // decrypt any encrypted stuff
-    var message = {};
-    message.command = 'decrypt-bytes';
-    message.ciphertext_hex = thisSettings.masterKeyEncrypted;
-    message.key = thisSettings.passphraseKey;
-    
-    postMessageWithCallback(message, function(response) {
-      console.log("master key is now cached in plaintext");
-      thisSettings.masterKey = response.plaintext_hex;
-      thisSettings.masterKeyEncrypted = null;
-
-      // clear current passphrase
-      thisSettings.passphraseKey = null;
-      thisSettings.passphraseSalt = null;
-      thisSettings.passphraseCheck = null;
-      thisSettings.$scope.$apply();
-
-      callback.call(true);
-    });
-  };
-
-  this.setMasterKey = function() {
-    if (thisSettings.isWalletLocked()) {
-      console.log("can't set master key; passphrase is not cached");
-      return false;
+      console.log("can't set master key; wallet is locked");
+      return;
     }
     var message = {};
-    message.command = 'encrypt-bytes';
-    message.plaintext_hex = thisSettings.masterKey;
-    message.key = thisSettings.passphraseKey;
+    message.command = 'encrypt-item';
+    message.item = masterKey;
+    message.internal_key = thisSettings.internalKey;
 
     postMessageWithCallback(message, function(response) {
       console.log("master key is now set.");
-      thisSettings.masterKeyEncrypted = response.ciphertext_hex;
-      thisSettings.masterKey = null;
+      thisSettings.masterKeyEncrypted = response.item_encrypted;
       thisSettings.save();
     });
   };

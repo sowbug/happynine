@@ -28,8 +28,13 @@
 
 #include "base58.h"
 #include "crypto.h"
+#ifdef BUILDING_FOR_TEST
 #include "jsoncpp/json/reader.h"
 #include "jsoncpp/json/writer.h"
+#else
+#include "json/reader.h"
+#include "json/writer.h"
+#endif
 #include "node.h"
 #include "node_factory.h"
 #include "types.h"
