@@ -94,16 +94,20 @@ function Settings() {
     return !thisSettings.passphraseKey;
   };
 
+  this.lockWallet = function() {
+    thisSettings.passphraseKey = null;
+    thisSettings.internalKey = null;
+    console.log("cleared passphrase key");
+  };
+
   this.cachePassphraseKey = function(key, internalKey) {
     // TODO(miket): make clear time a pref
     console.log("caching passphrase key");
     thisSettings.passphraseKey = key;
     thisSettings.internalKey = internalKey;
     window.setTimeout(function() {
-      thisSettings.passphraseKey = null;
-      thisSettings.internalKey = null;
+      thisSettings.lockWallet();
       thisSettings.$scope.$apply();
-      console.log("cleared passphrase key");
     }, 1000 * 60 * 1);
   }
 
@@ -143,11 +147,11 @@ function Settings() {
 
     var message = {};
     message.command = 'set-passphrase';
-    message.passphrase = thisSettings.newPassphrase;
+    message.new_passphrase = thisSettings.newPassphrase;
     if (thisSettings.isPassphraseSet()) {
       message.key = thisSettings.passphraseKey;
       message.check = thisSettings.passphraseCheck;
-      message.internalKeyEncrypted = thisSettings.internalKeyEncrypted;
+      message.internal_key_encrypted = thisSettings.internalKeyEncrypted;
     }
 
     // We don't want these items lurking in the DOM.
@@ -172,6 +176,24 @@ function Settings() {
       console.log("master key is now set.");
       thisSettings.masterKeyEncrypted = response.item_encrypted;
       thisSettings.save();
+    });
+  };
+
+  this.unlockWallet = function() {
+    var message = {};
+    message.command = 'unlock-wallet';
+    message.salt = thisSettings.passphraseSalt;
+    message.check = thisSettings.passphraseCheck;
+    message.internal_key_encrypted = thisSettings.internalKeyEncrypted;
+    message.passphrase = thisSettings.newPassphrase;
+    thisSettings.newPassphrase = null;
+
+    postMessageWithCallback(message,function(response) {
+      if (response.key) {
+        $("#unlock-wallet-modal").modal('hide');
+        thisSettings.cachePassphraseKey(response.key, response.internal_key);
+        thisSettings.$scope.$apply();
+      }
     });
   };
 

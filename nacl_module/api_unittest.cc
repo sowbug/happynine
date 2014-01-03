@@ -58,6 +58,7 @@ TEST(SetPassphraseTest, Basic) {
   request["passphrase"] = "foobarbaz";
   request["internal_key_encrypted"] = to_hex(internal_key_encrypted);
   EXPECT_TRUE(api.HandleUnlockWallet(request, response));
+  EXPECT_EQ(key, unhexlify(response["key"].asString()));
   EXPECT_EQ(internal_key, unhexlify(response["internal_key"].asString()));
 
   // Unlock wallet with wrong passphrase
