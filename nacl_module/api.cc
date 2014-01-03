@@ -1,4 +1,26 @@
-#include "node.h"
+// Copyright 2014 Mike Tsao <mike@sowbug.com>
+
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "api.h"
 
 #include <iomanip>
 #include <sstream>
@@ -8,19 +30,16 @@
 #include "crypto.h"
 #include "json/reader.h"
 #include "json/writer.h"
+#include "node.h"
 #include "node_factory.h"
-#include "ppapi/cpp/instance.h"
-#include "ppapi/cpp/module.h"
-#include "ppapi/cpp/var.h"
 #include "types.h"
 
-class HDWalletDispatcherInstance : public pp::Instance {
-public:
-  explicit HDWalletDispatcherInstance(PP_Instance instance)
-  : pp::Instance(instance) {}
-  virtual ~HDWalletDispatcherInstance() {}
+// echo -n "Bitcoin Wallet Copyright 2014 Mike Tsao." | sha256sum
+const std::string PASSPHRASE_CHECK_HEX =
+  "d961579ab5f288d5424816577a092435f32223347a562992811e71c31e2d12ea";
 
-  void PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
+
+void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
     dict["hex_id"] = to_hex(node->hex_id());
     dict["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
     dict["address"] = Base58::toAddress(node->public_key());
@@ -36,7 +55,7 @@ public:
     }
   }
 
-  virtual bool HandleGetNode(const Json::Value& args, Json::Value& result) {
+bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
     const std::string seed = args.get("seed", "").asString();
     const bytes_t seed_bytes(unhexlify(seed));
 
@@ -61,7 +80,7 @@ public:
     return true;
   }
 
-  virtual bool HandleCreateNode(const Json::Value& /*args*/,
+  bool API::HandleCreateNode(const Json::Value& /*args*/,
                                 Json::Value& result) {
     bytes_t seed_bytes(32, 0);
 
@@ -79,7 +98,7 @@ public:
     return true;
   }
 
-  virtual bool HandleGetAddresses(const Json::Value& args,
+  bool API::HandleGetAddresses(const Json::Value& args,
                                   Json::Value& result) {
     const std::string seed = args.get("seed", "").asString();
     const bytes_t seed_bytes(unhexlify(seed));
@@ -117,7 +136,7 @@ public:
     return true;
   }
 
-  virtual bool VerifyCredentials(const bytes_t& key,
+  bool API::VerifyCredentials(const bytes_t& key,
                                  const bytes_t& check,
                                  const bytes_t& internal_key_encrypted,
                                  bytes_t& internal_key,
@@ -143,7 +162,7 @@ public:
     return true;
   }
 
-  virtual bool HandleSetPassphrase(const Json::Value& args,
+  bool API::HandleSetPassphrase(const Json::Value& args,
                                    Json::Value& result) {
     bytes_t key(unhexlify(args("key", "").asString()));
     bytes_t check(unhexlify(args("check", "").asString()));
@@ -201,7 +220,7 @@ public:
     return true;
   }
 
-  virtual bool HandleUnlockWallet(const Json::Value& args,
+  bool API::HandleUnlockWallet(const Json::Value& args,
                                   Json::Value& result) {
     const bytes_t salt(unhexlify(args["salt"].asString()));
     const bytes_t check(unhexlify(args["check"].asString()));
@@ -234,7 +253,7 @@ public:
     return true;
   }
 
-  virtual bool HandleEncryptItem(const Json::Value& args,
+  bool API::HandleEncryptItem(const Json::Value& args,
                                  Json::Value& result) {
     bytes_t internal_key(unhexlify(args["internal_key"].asString()));
     const std::string item = args["item"].asString();
@@ -248,7 +267,7 @@ public:
     return true;
   }
 
-  virtual bool HandleDecryptItem(const Json::Value& args,
+  bool API::HandleDecryptItem(const Json::Value& args,
                                  Json::Value& result) {
     bytes_t internal_key(unhexlify(args["internal_key"].asString()));
     bytes_t item_encrypted(unhexlify(args["item_encrypted"].asString()));
@@ -262,83 +281,3 @@ public:
     }
     return true;
   }
-
-  /// Handler for messages coming in from the browser via
-  /// postMessage().  The @a var_message can contain be any pp:Var
-  /// type; for example int, string Array or Dictionary. Please see
-  /// the pp:Var documentation for more details.  @param[in]
-  /// var_message The message posted by the browser.
-  virtual void HandleMessage(const pp::Var& var_message) {
-    if (!var_message.is_string())
-      return;
-    std::string message = var_message.AsString();
-    Json::Value root;
-    Json::Reader reader;
-    bool parsingSuccessful = reader.parse(message, root);
-    if (!parsingSuccessful) {
-      //                 << reader.getFormattedErrorMessages();
-      return;
-    }
-    const std::string command = root.get("command", "UTF-8").asString();
-    Json::Value result;
-    bool handled = false;
-    if (command == "create-node") {
-      handled = HandleCreateNode(root, result);
-    }
-    if (command == "get-node") {
-      handled = HandleGetNode(root, result);
-    }
-    if (command == "get-addresses") {
-      handled = HandleGetAddresses(root, result);
-    }
-    if (command == "set-passphrase") {
-      handled = HandleSetPassphrase(root, result);
-    }
-    if (command == "unlock-wallet") {
-      handled = HandleUnlockWallet(root, result);
-    }
-    if (command == "encrypt-item") {
-      handled = HandleEncryptItem(root, result);
-    }
-    if (command == "decrypt-item") {
-      handled = HandleDecryptItem(root, result);
-    }
-    if (!handled) {
-      result["error_code"] = -999;
-    }
-    result["id"] = root["id"];
-    result["command"] = command;
-    Json::StyledWriter writer;
-    pp::Var reply_message(writer.write(result));
-    PostMessage(reply_message);
-  }
-};
-
-/// The Module class.  The browser calls the CreateInstance() method
-/// to create an instance of your NaCl module on the web page.  The
-/// browser creates a new instance for each <embed> tag with
-/// type="application/x-pnacl".
-class HDWalletDispatcherModule : public pp::Module {
-public:
-  HDWalletDispatcherModule() : pp::Module() {}
-  virtual ~HDWalletDispatcherModule() {}
-
-  /// Create and return a HDWalletDispatcherInstance object.
-  /// @param[in] instance The browser-side instance.
-  /// @return the plugin-side instance.
-  virtual pp::Instance* CreateInstance(PP_Instance instance) {
-    return new HDWalletDispatcherInstance(instance);
-  }
-};
-
-namespace pp {
-  /// Factory function called by the browser when the module is first
-  /// loaded.  The browser keeps a singleton of this module.  It calls
-  /// the CreateInstance() method on the object you return to make
-  /// instances.  There is one instance per <embed> tag on the page.
-  /// This is the main binding point for your NaCl module with the
-  /// browser.
-  Module* CreateModule() {
-    return new HDWalletDispatcherModule();
-  }
-}  // namespace pp

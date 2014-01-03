@@ -93,6 +93,14 @@ TEST(EncryptionTest, Basic) {
   EXPECT_EQ(plaintext.size(), plaintext_output_1.size());
   EXPECT_EQ(plaintext, plaintext_output_1);
 
+  // Just for fun, confirm the right way to convert bytes that
+  // were known to once be a string back to a std::string.
+  std::string
+    recovered_plaintext_string(reinterpret_cast<
+                                 char const*>(&plaintext_output_1[0]),
+                               plaintext_output_1.size());
+  EXPECT_EQ(plaintext_string, recovered_plaintext_string);
+
   // Different key: ciphertext different?
   bytes_t ciphertext_2;
   EXPECT_TRUE(Crypto::Encrypt(key_2, plaintext, ciphertext_2));

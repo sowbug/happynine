@@ -41,6 +41,7 @@ function Settings() {
 
   var SERIALIZED_FIELDS = [
     'masterKeyEncrypted',
+    'internalKeyEncrypted',
     'passphraseCheck',
     'passphraseSalt',
     'units',
@@ -88,8 +89,8 @@ function Settings() {
     return !!thisSettings.passphraseSalt;
   };
 
-  this.isPassphraseCached = function() {
-    return !!thisSettings.passphraseKey;
+  this.isWalletLocked = function() {
+    return !thisSettings.passphraseKey;
   };
 
   // echo -n "Bitcoin Wallet Copyright 2014 Mike Tsao." | sha256sum
@@ -181,7 +182,7 @@ function Settings() {
   };
 
   this.removePassphrase = function(callback) {
-    if (!thisSettings.isPassphraseCached()) {
+    if (thisSettings.isWalletLocked()) {
       callback.call(false);
     }
     if (!thisSettings.masterKeyEncrypted) {
@@ -211,7 +212,7 @@ function Settings() {
   };
 
   this.setMasterKey = function() {
-    if (!thisSettings.isPassphraseCached()) {
+    if (thisSettings.isWalletLocked()) {
       console.log("can't set master key; passphrase is not cached");
       return false;
     }

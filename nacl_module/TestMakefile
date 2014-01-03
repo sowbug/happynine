@@ -72,6 +72,7 @@ gtest_main.a : gtest-all.o gtest_main.o
 # function.
 
 SOURCES = \
+  api.cc \
   base58.cc \
   crypto.cc \
   node.cc \
@@ -83,17 +84,17 @@ OBJS = $(SOURCES:.cc=.o)
 LIBS = -lpthread -lssl -lcrypto -ljsoncpp
 OUT = out/x86
 
-all: crypto_unittest node_unittest
+all: crypto_unittest api_unittest node_unittest
 
 %.o : %.cc
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-node_unittest.o : $(USER_DIR)/node_unittest.cc \
-                  $(USER_DIR)/node.h \
-                  $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/node_unittest.cc
+api_unittest.o : $(USER_DIR)/api_unittest.cc \
+                    $(USER_DIR)/api.h \
+                    $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/api_unittest.cc
 
-node_unittest : $(OBJS) node_unittest.o gtest_main.a
+api_unittest : $(OBJS) api_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
 crypto_unittest.o : $(USER_DIR)/crypto_unittest.cc \
@@ -102,4 +103,12 @@ crypto_unittest.o : $(USER_DIR)/crypto_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/crypto_unittest.cc
 
 crypto_unittest : $(OBJS) crypto_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
+
+node_unittest.o : $(USER_DIR)/node_unittest.cc \
+                  $(USER_DIR)/node.h \
+                  $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/node_unittest.cc
+
+node_unittest : $(OBJS) node_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)

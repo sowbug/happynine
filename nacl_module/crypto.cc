@@ -4,7 +4,7 @@
 #include <openssl/rand.h>
 
 const int ROUNDS = 32768;
-const int AES_BLOCK_SIZE = 256 / 8;
+const size_t AES_BLOCK_SIZE = 256 / 8;
 
 bool Crypto::GetRandomBytes(bytes_t& bytes) {
   return RAND_bytes(&bytes[0], bytes.capacity()) == 1;
