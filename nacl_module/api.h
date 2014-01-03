@@ -27,6 +27,7 @@
 namespace Json {
   struct Value;
 }
+class Node;
 
 class API {
  public:
@@ -57,4 +58,4 @@ class API {
                          bytes_t& internal_key,
                          int& error_code,
                          std::string& error_message);
-}
+};
