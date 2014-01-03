@@ -31,10 +31,9 @@ class Node;
 
 class API {
  public:
-  bool HandleGetNode(const Json::Value& args, Json::Value& result);
+  bool HandleCreateNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleCreateNode(const Json::Value& /*args*/,
-                        Json::Value& result);
+  bool HandleGetNode(const Json::Value& args, Json::Value& result);
 
   bool HandleGetAddresses(const Json::Value& args,
                           Json::Value& result);

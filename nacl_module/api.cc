@@ -60,6 +60,29 @@ void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   }
 }
 
+bool API::HandleCreateNode(const Json::Value& args,
+                           Json::Value& result) {
+  bytes_t seed_bytes(32, 0);
+  const bytes_t
+    supplied_seed_bytes(unhexlify(args.get("seed", "00").asString()));
+
+  if (!Crypto::GetRandomBytes(seed_bytes)) {
+    result["error_code"] = -1;
+    result["error_message"] =
+      std::string("The PRNG has not been seeded with enough "
+                  "randomness to ensure an unpredictable byte sequence.");
+    return true;
+  }
+  seed_bytes.insert(seed_bytes.end(),
+                    supplied_seed_bytes.begin(),
+                    supplied_seed_bytes.end());
+
+  Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  PopulateDictionaryFromNode(result, node);
+  delete node;
+  return true;
+}
+
 bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
   const std::string seed = args.get("seed", "").asString();
   const bytes_t seed_bytes(unhexlify(seed));
@@ -82,24 +105,6 @@ bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
   PopulateDictionaryFromNode(result, node);
   delete node;
 
-  return true;
-}
-
-bool API::HandleCreateNode(const Json::Value& /*args*/,
-                           Json::Value& result) {
-  bytes_t seed_bytes(32, 0);
-
-  if (!Crypto::GetRandomBytes(seed_bytes)) {
-    result["error_code"] = -1;
-    result["error_message"] =
-      std::string("The PRNG has not been seeded with enough "
-                  "randomness to ensure an unpredictable byte sequence.");
-    return true;
-  }
-
-  Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
-  PopulateDictionaryFromNode(result, node);
-  delete node;
   return true;
 }
 
