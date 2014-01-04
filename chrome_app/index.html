@@ -264,19 +264,19 @@
                       <div class="form-group">
                         <label for="passphrase-new" class="col-md-2 control-label">New</label>
                         <div class="col-md-6">
-                          <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="settings.newPassphrase">
+                          <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="passphraseNew">
                         </div>
                       </div>
                       <div class="form-group">
                         <label for="passphrase-confirm" class="col-md-2 control-label">Confirm</label>
                         <div class="col-md-6">
-                          <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="settings.confirmPassphrase">
+                          <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="passphraseConfirm">
                         </div>
                       </div>
                       <div class="form-group">
                         <div class="col-md-offset-2 col-md-10">
-                          <button class="btn btn-primary" ng-click="settings.setPassphrase()" ng-if="!settings.isPassphraseSet()">Set</button>
-                          <button class="btn btn-primary" ng-click="settings.setPassphrase()" ng-if="settings.isPassphraseSet()">Change</button>
+                          <button class="btn btn-primary" ng-click="setPassphrase()" ng-if="!credentials.isPassphraseSet()">Set</button>
+                          <button class="btn btn-primary" ng-click="setPassphrase()" ng-if="credentials.isPassphraseSet()">Change</button>
                         </div>
                       </div>
                     </form>
@@ -290,7 +290,7 @@
                       <div class="form-group">
                         <label for="units-btc" class="col-md-2 control-label">Bitcoin Units</label>
                         <div class="col-md-4">
-                          <select class="form-control" ng-model="settings.units" ng-options="k as v for (k, v) in settings.availableUnits">
+                          <select class="form-control" ng-model="settings.storable.units" ng-options="k as v for (k, v) in settings.availableUnits">
                           </select>
                         </div>
                       </div>
@@ -305,7 +305,7 @@
                     <form class="form-horizontal" role="form">
                       <div class="form-group">
                         <div class="col-md-offset-2 col-md-10">
-                          <button class="btn btn-danger" ng-click="settings.clearEverything()">Clear Everything</button>
+                          <button class="btn btn-danger" ng-click="clearEverything()">Clear Everything</button>
                         </div>
                       </div>
                     </form>
@@ -329,7 +329,7 @@
           <a href="#" ng-if="!settings.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
             <span class="glyphicon glyphicon-lock"></span>
           </a>
-          <a href="#" ng-if="settings.isWalletUnlocked()" ng-click="settings.lockWallet()">
+          <a href="#" ng-if="settings.isWalletUnlocked()" ng-click="lockWallet()">
             <span class="glyphicon glyphicon-exclamation-sign"></span>
           </a>
         </li>
@@ -363,7 +363,7 @@
             <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
           </div>
           <div class="modal-body">
-            <form class="form-horizontal" role="form" ng-submit="settings.unlockWallet()">
+            <form class="form-horizontal" role="form" ng-submit="unlockWallet()">
               <div class="form-group">
                 <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
                 <div class="col-md-6">
@@ -383,10 +383,14 @@
     <script type="text/javascript" src="jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="bootstrap-3.0.3/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="angular.min.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript" src="storage.js"></script>
     <script type="text/javascript" src="settings.js"></script>
+    <script type="text/javascript" src="credentials.js"></script>
     <script type="text/javascript" src="account.js"></script>
     <script type="text/javascript" src="master_key.js"></script>
-    <script type="text/javascript" src="wallet_controller.js"></script>
+    <script type="text/javascript" src="controllers.js"></script>
+    <script type="text/javascript" src="messaging.js"></script>
     <script type="text/javascript" src="index.js"></script>
 
   </body>

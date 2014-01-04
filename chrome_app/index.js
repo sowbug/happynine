@@ -20,26 +20,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-var bitcoinWalletApp = angular.module('bitcoinWalletApp', []);
+'use strict';
 
-var callbacks = {};
-var callbackId = 1;
-
-var postMessageWithCallback = function(message, callback) {
-  message.id = callbackId++;
-  callbacks[message.id] = callback;
-  common.naclModule.postMessage(JSON.stringify(message));
-  console.log(message);
-};
-
-function handleMessage(message) {
-  var message_object = JSON.parse(message.data);
-  console.log(message_object);
-  var id = message_object.id;
-  if (callbacks[id]) {
-    callbacks[id].call(this, message_object);
-    delete callbacks[id];
-  }
+function moduleDidLoad() {
+  common.hideModule();
+  hideLoading();
 }
 
 var hideLoading = function() {
@@ -55,11 +40,6 @@ var showLoading = function() {
   $("#loading-container").show();
   $("#main-container").hide();
 };
-
-function moduleDidLoad() {
-  common.hideModule();
-  hideLoading();
-}
 
 window.onload = function() {
   var onTabClick = function(e) {

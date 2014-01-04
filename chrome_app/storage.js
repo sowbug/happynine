@@ -22,27 +22,41 @@
 
 'use strict';
 
-function MasterKey(xprv, xpub, fingerprint) {
-  this.showXprv = false;
-  this.xprv = xprv;
-  this.xpub = xpub;
+function loadStorage(saved_name, object, callback) {
+  if (!chrome || !chrome.storage) {
+    console.log("!chrome; skipping load of " + saved_name);
+    callback.call();
+  }
+  chrome.storage.local.get(saved_name, function(result) {
+    var items = result[name];
+    if (items) {
+      console.log("loaded " + saved_name + " from storage");
+      console.log(items);
+      for (var key in items) {
+        object[key] = items[key];
+      }
+    } else {
+      console.log("storage: " + saved_name + " is empty");
+    }
+    callback.call();
+  });
+}
 
-  var mk = this;
-  this.setFingerprint = function(fingerprint) {
-    mk.fingerprint = fingerprint;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://robohash.org/' + fingerprint +
-             '.png?set=set3&bgset=any&size=64x64', true);
-    xhr.responseType = 'blob';
-    xhr.onload = function(e) {
-      $("#fingerprint-img").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-      $("#fingerprint-img-big").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-    };
-    xhr.send();
-  };
-  this.setFingerprint(fingerprint);
+function saveStorage(saved_name, object) {
+  if (!chrome || !chrome.storage) {
+    console.log("!chrome; skipping save of " + saved_name);
+    return;
+  }
+  chrome.storage.local.set({saved_name: object}, function() {
+    console.log("saved " + saved_name + " to storage");
+  });
+}
+
+function clearAllStorage() {
+  if (!chrome || !chrome.storage) {
+    return;
+  }
+  chrome.storage.local.clear(function() {
+    console.log("storage cleared");
+  });
 }

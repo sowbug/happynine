@@ -22,27 +22,22 @@
 
 'use strict';
 
-function MasterKey(xprv, xpub, fingerprint) {
-  this.showXprv = false;
-  this.xprv = xprv;
-  this.xpub = xpub;
+var callbacks = {};
+var callbackId = 1;
 
-  var mk = this;
-  this.setFingerprint = function(fingerprint) {
-    mk.fingerprint = fingerprint;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://robohash.org/' + fingerprint +
-             '.png?set=set3&bgset=any&size=64x64', true);
-    xhr.responseType = 'blob';
-    xhr.onload = function(e) {
-      $("#fingerprint-img").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-      $("#fingerprint-img-big").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-    };
-    xhr.send();
-  };
-  this.setFingerprint(fingerprint);
+var postMessageWithCallback = function(message, callback) {
+  message.id = callbackId++;
+  callbacks[message.id] = callback;
+  common.naclModule.postMessage(JSON.stringify(message));
+  console.log(message);
+};
+
+function handleMessage(message) {
+  var message_object = JSON.parse(message.data);
+  console.log(message_object);
+  var id = message_object.id;
+  if (callbacks[id]) {
+    callbacks[id].call(this, message_object);
+    delete callbacks[id];
+  }
 }
