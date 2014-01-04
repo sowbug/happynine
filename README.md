@@ -11,10 +11,33 @@ Great Big Warning
 
 Even if/when this warning is removed, the applicable license still applies. Read it!
 
-System Requirements
+What Does Work
+===
+
+* Generating a new BIP0032 HD wallet
+* [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
+* Passphrase protection of wallet with 60-second unlock
+* Viewing wallet balances
+* Multiple BIP0032 accounts (m/i/0, where i is account number, 0=default)
+
+What Doesn't Work Yet
+===
+
+* Sending funds
+* Instant balance refresh when new transactions are detected
+* Importing an external BIP0032 xprv or xpub key
+* Safety features, such as requiring a confirmation before deleting keys
+
+System Requirements for Users
 ===
 
 * [Chrome](https://www.google.com/chrome/)
+* A basic understanding of [Bitcoin](http://bitcoin.org/)
+* (Optional) a [Chromebook](http://www.google.com/intl/en/chrome/devices/), which is an excellent device if you're interested in avoiding Windows malware
+
+Additional System Requirements for Development
+===
+
 * The [Native Client SDK](https://developers.google.com/native-client/sdk/download)
 * `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory in the NaCl SDK
 * [naclports](https://code.google.com/p/naclports/) with `./make_all.sh openssl` successfully executed on the local system (for what it's worth, I had to exclude the glibc versions to get it to build with unit tests.)
