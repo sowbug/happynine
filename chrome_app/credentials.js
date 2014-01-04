@@ -25,6 +25,12 @@
 // The Credentials model keeps track of secrets that lock/unlock and
 // encrypt/decrypt things.
 function Credentials(settings) {
+  var STORABLE = ['salt',
+                  'check',
+                  'internalKeyEncrypted',
+                  'masterKeyEncrypted',
+                  'masterKeyPublic'];
+
   this.settings = settings;
 
   // key is the passphrase key -- the thing that you get when you have
@@ -37,34 +43,34 @@ function Credentials(settings) {
   // re-encrypt everything in the world.
   this.internalKey = null;
 
-  this.storable = {};
-  this.storable.salt = null;
-  this.storable.check = null;
-  this.storable.internalKeyEncrypted = null;
-  this.storable.masterKeyEncrypted = null;
-  this.storable.masterKeyPublic = null;
+  // storable
+  this.salt = null;
+  this.check = null;
+  this.internalKeyEncrypted = null;
+  this.masterKeyEncrypted = null;
+  this.masterKeyPublic = null;
 
-  function key() { return key; }
-  function salt() { return storable.salt; }
-  function check() { return storable.check; }
-  function internalKey() { return internalKey; }
-  function internalKeyEncrypted() { return storable.internalKeyEncrypted; }
+  function key() { return this.key; }
+  function salt() { return this.salt; }
+  function check() { return this.check; }
+  function internalKey() { return this.internalKey; }
+  function internalKeyEncrypted() { return this.internalKeyEncrypted; }
 
   this.isPassphraseSet = function() {
-    return !!this.storable.internalKeyEncrypted;
-  }.bind(this);
+    return !!this.internalKeyEncrypted;
+  };
 
   // locked means either that a passphrase is set and the key is not cached,
   // or that there is no passphrase set.
   this.isWalletUnlocked = function() {
-    return isPassphraseSet() && !!passphraseKey;
-  }.bind(this);
+    return this.isPassphraseSet() && !!this.key;
+  };
 
   this.clearCachedKeys = function() {
     console.log("cached keys cleared");
-    key = null;
-    internalKey = null;
-  }.bind(this);
+    this.key = null;
+    this.internalKey = null;
+  };
 
   this.cacheKeys = function(key, internalKey, callback) {
     // TODO(miket): make clear time a pref
@@ -78,13 +84,13 @@ function Credentials(settings) {
       if (callback)
         callback.call();
     }, 1000 * 60 * 1);
-  }.bind(this);
+  };
 
   function handleSetPassphraseResponse(response) {
     this.cacheKeys(response.key, response.internal_key);
-    this.storable.salt = response.salt;
-    this.storable.check = response.check;
-    this.storable.internalKeyEncrypted = response.internal_key_encrypted;
+    this.salt = response.salt;
+    this.check = response.check;
+    this.internalKeyEncrypted = response.internal_key_encrypted;
     this.save();
   };
 
@@ -95,11 +101,11 @@ function Credentials(settings) {
         return;
       }
     } else {
-      if (this.storable.internalKeyEncrypted) {
+      if (this.internalKeyEncrypted) {
         console.log("PROBLEM: internalKeyEncrypted set but no passphrase");
         return;
       }
-      if (this.storable.masterKeyEncrypted) {
+      if (this.masterKeyEncrypted) {
         console.log("PROBLEM: masterKeyEncrypted set but no passphrase");
         return;
       }
@@ -112,42 +118,42 @@ function Credentials(settings) {
       if (message.key) {
         message.key = key;
         message.check = check;
-        message.internal_key_encrypted = this.storable.internalKeyEncrypted;
+        message.internal_key_encrypted = this.internalKeyEncrypted;
       }
     }
     postMessageWithCallback(message, this.handleSetPassphraseResponse);
 
-  }.bind(this);
+  };
 
-  function setMasterKey(newMasterKey) {
+  this.setMasterKey = function(newMasterKey) {
     if (!isWalletUnlocked()) {
       console.log("can't set master key; wallet is locked");
       return;
     }
-    storable.masterKeyPublic = newMasterKey.xpub;
+    this.masterKeyPublic = newMasterKey.xpub;
     if (newMasterKey.xprv) {
       var message = {};
       message.command = 'encrypt-item';
       message.item = newMasterKey.xprv;
-      message.internal_key = internalKey;
+      message.internal_key = this.internalKey;
 
       var t = this;
       postMessageWithCallback(message, function(response) {
         console.log("master key is now set.");
-        t.storable.masterKeyEncrypted = response.item_encrypted;
+        t.masterKeyEncrypted = response.item_encrypted;
         t.save();
       });
     } else {
-      storable.masterKeyEncrypted = null;
+      this.masterKeyEncrypted = null;
       save();
     }
   };
 
-  function load(callback) {
-    loadStorage('credentials', storable, callback);
+  this.load = function(callback) {
+    loadStorage('credentials', this, STORABLE, callback);
   };
 
-  function save() {
-    saveStorage('credentials', storable);
+  this.save = function() {
+    saveStorage('credentials', this, STORABLE);
   };
 }

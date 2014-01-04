@@ -27,6 +27,9 @@ function WalletController($scope) {
   $scope.account = null;
   $scope.settings = new Settings();
   $scope.credentials = new Credentials($scope.settings);
+  $scope.xettings = {};
+  $scope.xettings.availableUnits = {'x':'y', 'z': 'a'};
+  $scope.xettings.units = 'z';
 
   // Passphrase UI elements
   $scope.passphraseNew = "foo";
@@ -34,7 +37,6 @@ function WalletController($scope) {
 
   $scope.settings.load(function() {
     console.log("settings are loaded. do something!");
-    $scope.$apply();
   });
 
   $scope.newMasterKey = function() {
@@ -130,7 +132,6 @@ function WalletController($scope) {
   };
 
   $scope.setPassphrase = function() {
-    console.log($scope.setPassphrase);
     console.log($scope.passphraseNew);
     console.log($scope.passphraseConfirm);
     // TODO: angularjs can probably do this check for us
@@ -154,19 +155,9 @@ function WalletController($scope) {
     clearAllStorage();
   };
 
-  $scope.$watch(function() {
-    return $scope.settings.storable.units;
-  }, function(newVal, oldVal) {
-    console.log('settings', newVal, oldVal);
-  });
+  $scope.foo = 'asfasfs';
 
-  $scope.$watch('settings.storable.units', function(newVal, oldVal) {
-    console.log('settings 2', newVal, oldVal);
-  });
+  $scope.$watch('settings.units', function(newVal, oldVal) {console.log('units', newVal, oldVal);});
 
-  $scope.$watch(function() {
-    return $scope.passphraseNew;
-  }, function(newVal, oldVal) {
-    console.log('passphrase', newVal, oldVal);
-  });
+  $scope.$watch('foo', function(newVal, oldVal) {console.log('foo', newVal, oldVal);});
 }

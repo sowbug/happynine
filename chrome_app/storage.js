@@ -22,17 +22,18 @@
 
 'use strict';
 
-function loadStorage(saved_name, object, callback) {
+function loadStorage(saved_name, object, storables, callback) {
   if (!chrome || !chrome.storage) {
     console.log("!chrome; skipping load of " + saved_name);
     callback.call();
+    return;
   }
   chrome.storage.local.get(saved_name, function(result) {
     var items = result[name];
     if (items) {
       console.log("loaded " + saved_name + " from storage");
       console.log(items);
-      for (var key in items) {
+      for (var key in storables) {
         object[key] = items[key];
       }
     } else {
@@ -42,12 +43,16 @@ function loadStorage(saved_name, object, callback) {
   });
 }
 
-function saveStorage(saved_name, object) {
+function saveStorage(saved_name, object, storables) {
   if (!chrome || !chrome.storage) {
     console.log("!chrome; skipping save of " + saved_name);
     return;
   }
-  chrome.storage.local.set({saved_name: object}, function() {
+  var items = {};
+  for (var key in storables) {
+    items[key] = object[key];
+  }
+  chrome.storage.local.set({saved_name: items}, function() {
     console.log("saved " + saved_name + " to storage");
   });
 }

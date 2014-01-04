@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html data-ng-app="bitcoinWalletApp">
   <head>
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Bitcoin Wallet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="text/javascript" src="common.js"></script>
@@ -29,7 +28,7 @@
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
-            <p class="navbar-text" ng-bind="{{settings.satoshiToUnit(account.balance)}} <span>{{settings.unitLabel()}}"></span></p>
+            <p class="navbar-text" ng-bind="{{settings.satoshiToUnit(account.balance)}} {{settings.unitLabel()}}"><span></span></p>
           </li>
         </ul>
       </div><!--/.nav-collapse -->
@@ -60,7 +59,7 @@
           <li><a href="#home" data-toggle="tab">Home</a></li>
           <li ng-if="masterKey"><a href="#send" data-toggle="tab">Send</a></li>
           <li ng-if="masterKey"><a href="#receive" data-toggle="tab">Receive</a></li>
-          <li ng-if="settings.isWalletUnlocked()"><a href="#master-key" data-toggle="tab">Master Key</a></li>
+          <li ng-if="credentials.isWalletUnlocked()"><a href="#master-key" data-toggle="tab">Master Key</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -77,10 +76,11 @@
               <div class="panel-body">
                 <p class="lead">Welcome! Let's set up your wallet.</p>
                 <ul>
-                  <li ng-if="!settings.isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
-                  <li ng-if="!settings.isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
+                  <li ng-if="!credentials.isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
+                  <li ng-if="credentials.isPassphraseSet() && !credentials.isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
                   <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv/xpub-formatted BIP0032 master key, import it.</li>
                 </ul>
+                <input type="text" ng-model="foo">
               </div>
             </div>
 
@@ -181,7 +181,7 @@
           <div class="tab-pane fade" id="master-key">
 
             <!-- Management -->
-            <div class="panel panel-default" ng-if="settings.isWalletUnlocked()">
+            <div class="panel panel-default" ng-if="credentials.isWalletUnlocked()">
               <div class="panel-heading">Management</div>
               <div class="panel-body">
                 <div class="row">
@@ -205,7 +205,7 @@
                       <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
                     </div>
                     <div class="col-md-2">
-                      <img id="fingerprint-img-big" class="img-thumbnail" width="64" height="64" />
+                      <img id="fingerprint-img-big" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint }}"/>
                     </div>
                   </div>
                   <div class="form-group">
@@ -214,7 +214,7 @@
                       <input type="text" class="form-control" id="xpub-readonly" readonly value="{{masterKey.xpub}}">
                     </div>
                   </div>
-                  <div ng-if="settings.isWalletUnlocked()">
+                  <div ng-if="credentials.isWalletUnlocked()">
                     <div class="form-group">
                       <div class="col-md-4 col-md-offset-2">
                         <div class="checkbox">
@@ -257,7 +257,7 @@
             <div class="tab-content">
               <div class="tab-pane active fade" id="settings-basic">
                 <!-- Passphrase -->
-                <div class="panel panel-default" ng-if="!settings.isPassphraseSet() || settings.isWalletUnlocked()">
+                <div class="panel panel-default" ng-if="!credentials.isPassphraseSet() || credentials.isWalletUnlocked()">
                   <div class="panel-heading">Passphrase</div>
                   <div class="panel-body">
                     <form class="form-horizontal" role="form">
@@ -290,7 +290,7 @@
                       <div class="form-group">
                         <label for="units-btc" class="col-md-2 control-label">Bitcoin Units</label>
                         <div class="col-md-4">
-                          <select class="form-control" ng-model="settings.storable.units" ng-options="k as v for (k, v) in settings.availableUnits">
+                          <select id="units-btc" class="form-control" ng-model="settings.units" ng-options="k as v for (k, v) in settings.availableUnits">
                           </select>
                         </div>
                       </div>
@@ -325,11 +325,11 @@
     <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
 
       <ul class="nav navbar-nav">
-        <li class="active" ng-if="settings.isPassphraseSet()">
-          <a href="#" ng-if="!settings.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
+        <li class="active" ng-if="credentials.isPassphraseSet()">
+          <a href="#" ng-if="!credentials.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
             <span class="glyphicon glyphicon-lock"></span>
           </a>
-          <a href="#" ng-if="settings.isWalletUnlocked()" ng-click="lockWallet()">
+          <a href="#" ng-if="credentials.isWalletUnlocked()" ng-click="lockWallet()">
             <span class="glyphicon glyphicon-exclamation-sign"></span>
           </a>
         </li>
@@ -347,7 +347,7 @@
           <p class="navbar-text" id="fingerprint-navbar" ng-bind="{{masterKey.fingerprint}}"></p>
         </li>
         <li>
-          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" />
+          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{masterKey.fingerprint }}" />
         </li>
       </ul>
     </div><!-- footer -->
@@ -367,7 +367,7 @@
               <div class="form-group">
                 <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
                 <div class="col-md-6">
-                  <input type="password" class="form-control" id="passphrase-unlock" placeholder="Passphrase" ng-model="settings.newPassphrase">
+                  <input type="password" class="form-control" id="passphrase-unlock" placeholder="Passphrase" ng-model="passphraseNew">
                 </div>
               </div>
             </form>
