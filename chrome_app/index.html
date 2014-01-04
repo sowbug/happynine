@@ -28,7 +28,7 @@
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
-            <p class="navbar-text" ng-bind="{{settings.satoshiToUnit(account.balance)}} {{settings.unitLabel()}}"><span></span></p>
+            <p class="navbar-text"</p><span ng-bind="{{settings.satoshiToUnit(account.balance)}}"</span> <span ng-bind="{{settings.unitLabel()}}"></span></p>
           </li>
         </ul>
       </div><!--/.nav-collapse -->
@@ -59,7 +59,7 @@
           <li><a href="#home" data-toggle="tab">Home</a></li>
           <li ng-if="masterKey"><a href="#send" data-toggle="tab">Send</a></li>
           <li ng-if="masterKey"><a href="#receive" data-toggle="tab">Receive</a></li>
-          <li ng-if="credentials.isWalletUnlocked()"><a href="#master-key" data-toggle="tab">Master Key</a></li>
+          <li ng-if="credentials.isPassphraseSet()"><a href="#master-key" data-toggle="tab">Master Key</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -80,7 +80,6 @@
                   <li ng-if="credentials.isPassphraseSet() && !credentials.isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
                   <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv/xpub-formatted BIP0032 master key, import it.</li>
                 </ul>
-                <input type="text" ng-model="foo">
               </div>
             </div>
 
@@ -264,19 +263,19 @@
                       <div class="form-group">
                         <label for="passphrase-new" class="col-md-2 control-label">New</label>
                         <div class="col-md-6">
-                          <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="passphraseNew">
+                          <input type="password" class="form-control" id="passphrase-new" placeholder="New Passphrase" ng-model="w.passphraseNew">
                         </div>
                       </div>
                       <div class="form-group">
                         <label for="passphrase-confirm" class="col-md-2 control-label">Confirm</label>
                         <div class="col-md-6">
-                          <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="passphraseConfirm">
+                          <input type="password" class="form-control" id="passphrase-confirm" placeholder="Confirm Passphrase" ng-model="w.passphraseConfirm">
                         </div>
                       </div>
                       <div class="form-group">
                         <div class="col-md-offset-2 col-md-10">
-                          <button class="btn btn-primary" ng-click="setPassphrase()" ng-if="!credentials.isPassphraseSet()">Set</button>
-                          <button class="btn btn-primary" ng-click="setPassphrase()" ng-if="credentials.isPassphraseSet()">Change</button>
+                          <button type="submit" class="btn btn-primary" ng-click="setPassphrase()" ng-if="!credentials.isPassphraseSet()">Set</button>
+                          <button type="submit" class="btn btn-primary" ng-click="setPassphrase()" ng-if="credentials.isPassphraseSet()">Change</button>
                         </div>
                       </div>
                     </form>
@@ -339,7 +338,7 @@
         <li ng-if="account">
           <div class="btn-group navbar-pagination">
             <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-            <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="Account {{account.index}}"></button>
+            <button id="account" class="btn btn-default navbar-btn disabled">Account <span ng-bind="{{account.index}}"></span></button>
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>

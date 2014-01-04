@@ -50,12 +50,6 @@ function Credentials(settings) {
   this.masterKeyEncrypted = null;
   this.masterKeyPublic = null;
 
-  function key() { return this.key; }
-  function salt() { return this.salt; }
-  function check() { return this.check; }
-  function internalKey() { return this.internalKey; }
-  function internalKeyEncrypted() { return this.internalKeyEncrypted; }
-
   this.isPassphraseSet = function() {
     return !!this.internalKeyEncrypted;
   };
@@ -82,31 +76,26 @@ function Credentials(settings) {
     window.setTimeout(function() {
       t.clearCachedKeys();
       if (callback)
-        callback.call();
+        callback.call(this);
     }, 1000 * 60 * 1);
   };
 
-  function handleSetPassphraseResponse(response) {
-    this.cacheKeys(response.key, response.internal_key);
-    this.salt = response.salt;
-    this.check = response.check;
-    this.internalKeyEncrypted = response.internal_key_encrypted;
-    this.save();
-  };
-
-  this.setPassphrase = function(newPassphrase) {
+  this.setPassphrase = function(newPassphrase, callback) {
     if (this.isPassphraseSet()) {
       if (!this.isWalletUnlocked()) {
         console.log("Can't change passphrase because wallet is locked.");
+        callback.call(this, false);
         return;
       }
     } else {
       if (this.internalKeyEncrypted) {
         console.log("PROBLEM: internalKeyEncrypted set but no passphrase");
+        callback.call(this, false);
         return;
       }
       if (this.masterKeyEncrypted) {
         console.log("PROBLEM: masterKeyEncrypted set but no passphrase");
+        callback.call(this, false);
         return;
       }
     }
@@ -121,13 +110,19 @@ function Credentials(settings) {
         message.internal_key_encrypted = this.internalKeyEncrypted;
       }
     }
-    postMessageWithCallback(message, this.handleSetPassphraseResponse);
-
+    postMessageWithCallback(message, function(response) {
+      this.cacheKeys(response.key, response.internal_key);
+      this.salt = response.salt;
+      this.check = response.check;
+      this.internalKeyEncrypted = response.internal_key_encrypted;
+      callback.call(this, true);
+    }.bind(this));
   };
 
-  this.setMasterKey = function(newMasterKey) {
-    if (!isWalletUnlocked()) {
+  this.setMasterKey = function(newMasterKey, callback) {
+    if (!this.isWalletUnlocked()) {
       console.log("can't set master key; wallet is locked");
+      callback.call(this, false);
       return;
     }
     this.masterKeyPublic = newMasterKey.xpub;
@@ -139,13 +134,12 @@ function Credentials(settings) {
 
       var t = this;
       postMessageWithCallback(message, function(response) {
-        console.log("master key is now set.");
         t.masterKeyEncrypted = response.item_encrypted;
-        t.save();
+        callback.call(this, true);
       });
     } else {
       this.masterKeyEncrypted = null;
-      save();
+      callback.call(this, true);
     }
   };
 

@@ -27,25 +27,47 @@ function WalletController($scope) {
   $scope.account = null;
   $scope.settings = new Settings();
   $scope.credentials = new Credentials($scope.settings);
-  $scope.xettings = {};
-  $scope.xettings.availableUnits = {'x':'y', 'z': 'a'};
-  $scope.xettings.units = 'z';
 
-  // Passphrase UI elements
-  $scope.passphraseNew = "foo";
-  $scope.passphraseConfirm = "bar";
+  // For some crazy reason, angularjs won't reflect view changes in
+  // the model's scope-level objects, so I have to create another
+  // object and hang stuff off it. I picked w for wallet.
+  $scope.w = {};
 
-  $scope.settings.load(function() {
-    console.log("settings are loaded. do something!");
-  });
+  $scope.startLoading = function() {
+    $scope.settings.load(function() {
+      $scope.credentials.load(function() {
+        $scope.$apply();
+
+        // It's important not to add these watchers before initial load.
+        $scope.$watchCollection("settings", function(newVal, oldVal) {
+          if (newVal != oldVal) {
+            $scope.settings.save();
+          }
+        });
+
+        $scope.$watchCollection("credentials", function(newVal, oldVal) {
+          if (newVal != oldVal) {
+            $scope.credentials.save();
+          }
+        });
+
+        // TODO(miket): need to figure out how to deal with just public
+        // key vs. private key and maybe unlocked wallet
+        if ($scope.credentials.masterKeyPublic) {
+          $scope.setMasterKey($scope.credentials.masterKeyPublic);
+        }
+      });
+    });
+  };
 
   $scope.newMasterKey = function() {
     var message = {
       'command': 'create-node'
     };
-    thisScope = $scope;
     postMessageWithCallback(message, function(response) {
-      thisScope.setMasterKey(response.ext_prv_b58);
+      $scope.credentials.setMasterKey(masterKey, function(succeeded) {
+        $scope.setMasterKey(response.ext_prv_b58);
+      });
     });
   };
 
@@ -58,15 +80,13 @@ function WalletController($scope) {
       'command': 'get-node',
       'seed': extended_b58
     };
-    thisScope = $scope;
     postMessageWithCallback(message, function(response) {
-      $scope.$apply(function() {
-        var masterKey = new MasterKey(response.ext_prv_b58,
-                                      response.ext_pub_b58,
-                                      response.fingerprint);
-        $scope.masterKey = masterKey;
-        $scope.nextAccount();
-      });
+      var masterKey = new MasterKey(response.ext_prv_b58,
+                                    response.ext_pub_b58,
+                                    response.fingerprint);
+      $scope.masterKey = masterKey;
+      $scope.nextAccount();
+      $scope.$apply();
     });
   };
 
@@ -107,9 +127,9 @@ function WalletController($scope) {
   $scope.unlockWallet = function() {
     var message = {};
     message.command = 'unlock-wallet';
-    message.salt = $scope.credentials.salt();
-    message.check = $scope.credentials.check();
-    message.internal_key_encrypted = $scope.credentials.internalKeyEncrypted();
+    message.salt = $scope.credentials.salt;
+    message.check = $scope.credentials.check;
+    message.internal_key_encrypted = $scope.credentials.internalKeyEncrypted;
     message.passphrase = $scope.passphraseNew;
 
     postMessageWithCallback(message, function(response) {
@@ -132,22 +152,25 @@ function WalletController($scope) {
   };
 
   $scope.setPassphrase = function() {
-    console.log($scope.passphraseNew);
-    console.log($scope.passphraseConfirm);
     // TODO: angularjs can probably do this check for us
-    if (!$scope.passphraseNew || $scope.passphraseNew.length == 0) {
+    if (!$scope.w.passphraseNew || $scope.w.passphraseNew.length == 0) {
       console.log("missing new passphrase");
       return;
     }
-    if ($scope.passphraseNew != $scope.passphraseConfirm) {
-      console.log("new didn't match confirm:" + $scope.passphraseNew);
+    if ($scope.w.passphraseNew != $scope.w.passphraseConfirm) {
+      console.log("new didn't match confirm:" + $scope.w.passphraseNew);
       return;
     }
-    $scope.setPassphrase($scope.passphraseNew);
+    $scope.credentials.setPassphrase($scope.w.passphraseNew,
+                                     function(succeeded) {
+                                       if (succeeded) {
+                                         $scope.$apply();
+                                       }
+                                     });
 
     // We don't want these items lurking in the DOM.
-    $scope.passphraseNew = null;
-    $scope.passphraseConfirm = null;
+    $scope.w.passphraseNew = null;
+    $scope.w.passphraseConfirm = null;
   };
 
   $scope.clearEverything = function() {
@@ -155,9 +178,9 @@ function WalletController($scope) {
     clearAllStorage();
   };
 
-  $scope.foo = 'asfasfs';
-
-  $scope.$watch('settings.units', function(newVal, oldVal) {console.log('units', newVal, oldVal);});
-
-  $scope.$watch('foo', function(newVal, oldVal) {console.log('foo', newVal, oldVal);});
+  // TODO(miket): this might be a race with moduleDidLoad.
+  var listenerDiv = document.getElementById('listener');
+  listenerDiv.addEventListener('load', function() {
+    $scope.startLoading();
+  }, true);
 }
