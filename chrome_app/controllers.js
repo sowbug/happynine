@@ -28,7 +28,14 @@ function WalletController($scope, $http) {
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
 
-  $scope.app_name = "Happynine";
+  if (chrome && chrome.runtime) {
+    var manifest = chrome.runtime.getManifest();
+    $scope.app_name = manifest.name;
+    $scope.app_version = "v" + manifest.version;
+  } else {
+    $scope.app_name = "[name]";
+    $scope.app_version = "v0.0.0.0";
+  }
 
   $scope.startLoading = function() {
     $scope.settings.load(function() {

@@ -331,7 +331,7 @@
     <div id="footer" class="navbar navbar-default navbar-fixed-bottom">
 
       <ul class="nav navbar-nav">
-        <li class="active" ng-if="credentials.isPassphraseSet()">
+        <li ng-if="credentials.isPassphraseSet()">
           <a href="#" ng-if="!credentials.isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
             <span class="glyphicon glyphicon-lock"></span>
           </a>
@@ -339,10 +339,11 @@
             <span class="glyphicon glyphicon-exclamation-sign"></span>
           </a>
         </li>
+        <li><p class="navbar-text text-info small" ng-bind="app_version"</p></li>
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
-        <li ng-if="account">
+        <li ng-if="credentials.hasMultipleAccounts()">
           <div class="btn-group navbar-pagination">
             <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
             <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="account.name()"></button>
@@ -350,10 +351,10 @@
           </div>
         </li>
         <li>
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="{{masterKey.fingerprint}}"></p>
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="masterKey.fingerprint"></p>
         </li>
         <li>
-          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{masterKey.fingerprint }}" />
+          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{masterKey.fingerprint}}" ng-if="masterKey"/>
         </li>
       </ul>
     </div><!-- footer -->

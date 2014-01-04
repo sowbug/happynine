@@ -181,6 +181,10 @@ function Credentials(settings) {
     }
   };
 
+  this.hasMultipleAccounts = function() {
+    return false;
+  };
+
   this.load = function(callback) {
     loadStorage('credentials', this, STORABLE, callback);
   };
