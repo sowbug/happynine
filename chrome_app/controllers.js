@@ -23,11 +23,6 @@
 'use strict';
 
 function WalletController($scope) {
-  $scope.masterKey = null;
-  $scope.account = null;
-  $scope.settings = new Settings();
-  $scope.credentials = new Credentials($scope.settings);
-
   // For some crazy reason, angularjs won't reflect view changes in
   // the model's scope-level objects, so I have to create another
   // object and hang stuff off it. I picked w for wallet.
@@ -50,39 +45,56 @@ function WalletController($scope) {
             $scope.credentials.save();
           }
         });
-
-        // TODO(miket): need to figure out how to deal with just public
-        // key vs. private key and maybe unlocked wallet
-        if ($scope.credentials.masterKeyPublic) {
-          $scope.setMasterKey($scope.credentials.masterKeyPublic);
-        }
       });
     });
   };
+
+  $scope.$watch('credentials.extendedPrivateBase58',
+                function(newVal, oldVal) {
+                  if (newVal != oldVal) {
+                    $scope.updateMasterKey();
+                  }
+                });
+  $scope.$watch('credentials.extendedPublicBase58',
+                function(newVal, oldVal) {
+                  if (newVal != oldVal) {
+                    $scope.updateMasterKey();
+                  }
+                });
 
   $scope.newMasterKey = function() {
     var message = {
       'command': 'create-node'
     };
     postMessageWithCallback(message, function(response) {
-      $scope.credentials.setMasterKey(masterKey, function(succeeded) {
-        $scope.setMasterKey(response.ext_prv_b58);
-      });
+      $scope.credentials.setMasterKey(response.ext_pub_b58,
+                                      response.ext_prv_b58,
+                                      function() {
+                                        $scope.$apply();
+                                      });
     });
   };
 
-  $scope.setMasterKey = function(extended_b58) {
-    if (!extended_b58 ||
-        ($scope.masterKey && $scope.masterKey.xpub == extended_b58)) {
+  $scope.updateMasterKey = function() {
+    if (!$scope.credentials.extendedPublicBase58) {
+      console.log("updated master key to null");
+      masterKey = null;
       return;
+    }
+    var b58 = $scope.credentials.extendedPublicBase58;
+    if ($scope.credentials.extendedPrivateBase58) {
+      console.log("using xprv");
+      b58 = $scope.credentials.extendedPrivateBase58;
+    } else {
+      console.log("using xpub");
     }
     var message = {
       'command': 'get-node',
-      'seed': extended_b58
+      'seed': b58
     };
     postMessageWithCallback(message, function(response) {
-      var masterKey = new MasterKey(response.ext_prv_b58,
-                                    response.ext_pub_b58,
+      var masterKey = new MasterKey(response.ext_pub_b58,
+                                    response.ext_prv_b58,
                                     response.fingerprint);
       $scope.masterKey = masterKey;
       $scope.nextAccount();
@@ -107,9 +119,9 @@ function WalletController($scope) {
   $scope.nextAccount = function() {
     if ($scope.account) {
       $scope.account =
-        new Account($scope, $scope.account.index + 1);
+        new Account($scope, $scope.account.index + 1, $scope.masterKey);
     } else {
-      $scope.account = new Account($scope, 0);
+      $scope.account = new Account($scope, 0, $scope.masterKey);
     }
   };
 
@@ -117,10 +129,10 @@ function WalletController($scope) {
     if ($scope.account) {
       if ($scope.account.index > 0) {
         $scope.account =
-          new Account($scope, $scope.account.index - 1);
+          new Account($scope, $scope.account.index - 1, $scope.masterKey);
       }
     } else {
-      $scope.account = new Account($scope, 0);
+      $scope.account = new Account($scope, 0, $scope.masterKey);
     }
   };
 
@@ -135,14 +147,23 @@ function WalletController($scope) {
     postMessageWithCallback(message, function(response) {
       if (response.key) {
         $("#unlock-wallet-modal").modal('hide');
+
+        // This deserves some explanation. We are asking the
+        // credentials object to cache the key and internal key
+        // (asynchronously, because it needs to message the NaCl
+        // module), after which it should call us to zero out the
+        // passphrase and update the UI. And when the cache expires,
+        // update the UI once again.
         $scope.credentials.cacheKeys(response.key,
                                      response.internal_key,
                                      function() {
                                        $scope.$apply();
+                                     },
+                                     function() {
+                                       $scope.$apply(function() {
+                                         $scope.passphraseNew = null;
+                                       });
                                      });
-        $scope.$apply(function() {
-          $scope.passphraseNew = null;
-        });
       }
     });
   };
@@ -173,8 +194,16 @@ function WalletController($scope) {
     $scope.w.passphraseConfirm = null;
   };
 
+  $scope.initializeEverything = function() {
+    $scope.masterKey = null;
+    $scope.account = null;
+    $scope.settings = new Settings();
+    $scope.credentials = new Credentials($scope.settings);
+  };
+
   $scope.clearEverything = function() {
     // TODO(miket): confirmation
+    $scope.initializeEverything();
     clearAllStorage();
   };
 
@@ -183,4 +212,6 @@ function WalletController($scope) {
   listenerDiv.addEventListener('load', function() {
     $scope.startLoading();
   }, true);
+
+  $scope.initializeEverything();
 }

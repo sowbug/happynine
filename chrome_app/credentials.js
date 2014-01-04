@@ -28,8 +28,8 @@ function Credentials(settings) {
   var STORABLE = ['salt',
                   'check',
                   'internalKeyEncrypted',
-                  'masterKeyEncrypted',
-                  'masterKeyPublic'];
+                  'extendedPrivateBase58Encrypted',
+                  'extendedPublicBase58'];
 
   this.settings = settings;
 
@@ -43,12 +43,16 @@ function Credentials(settings) {
   // re-encrypt everything in the world.
   this.internalKey = null;
 
+  // This is the family jewels. It's normally encrypted with
+  // internalKey.
+  this.extendedPrivateBase58 = null;
+
   // storable
   this.salt = null;
   this.check = null;
   this.internalKeyEncrypted = null;
-  this.masterKeyEncrypted = null;
-  this.masterKeyPublic = null;
+  this.extendedPrivateBase58Encrypted = null;
+  this.extendedPublicBase58 = null;
 
   this.isPassphraseSet = function() {
     return !!this.internalKeyEncrypted;
@@ -64,20 +68,50 @@ function Credentials(settings) {
     console.log("cached keys cleared");
     this.key = null;
     this.internalKey = null;
+    this.extendedPrivateBase58 = null;
   };
 
-  this.cacheKeys = function(key, internalKey, callback) {
+  this.decrypt = function(item, callback) {
+    var message = {};
+    message.command = 'decrypt-item';
+    message.item_encrypted = item;
+    message.internal_key = this.internalKey;
+
+    var t = this;
+    postMessageWithCallback(message, function(response) {
+      if (response.item) {
+        callback.call(this, response.item);
+      } else {
+        callback.call(this);
+      }
+    });
+  };
+
+  this.cacheKeys = function(key,
+                            internalKey,
+                            cacheExpirationCallback,
+                            callback) {
     // TODO(miket): make clear time a pref
-    console.log("caching keys");
     this.key = key;
     this.internalKey = internalKey;
 
     var t = this;
     window.setTimeout(function() {
       t.clearCachedKeys();
-      if (callback)
-        callback.call(this);
+      if (cacheExpirationCallback)
+        cacheExpirationCallback.call(this);
     }, 1000 * 60 * 1);
+
+    if (this.extendedPrivateBase58Encrypted) {
+      this.decrypt(this.extendedPrivateBase58Encrypted, function(item) {
+        if (item) {
+          this.extendedPrivateBase58 = item;
+        }
+        callback.call(this);
+      }.bind(this));
+    } else {
+      callback.call(this);
+    }
   };
 
   this.setPassphrase = function(newPassphrase, callback) {
@@ -93,8 +127,9 @@ function Credentials(settings) {
         callback.call(this, false);
         return;
       }
-      if (this.masterKeyEncrypted) {
-        console.log("PROBLEM: masterKeyEncrypted set but no passphrase");
+      if (this.extendedPrivateBase58Encrypted) {
+        console.log(
+          "PROBLEM: extendedPrivateBase58Encrypted set but no passphrase");
         callback.call(this, false);
         return;
       }
@@ -104,41 +139,44 @@ function Credentials(settings) {
     message.command = 'set-passphrase';
     message.new_passphrase = newPassphrase;
     if (this.isPassphraseSet()) {
-      if (message.key) {
-        message.key = key;
-        message.check = check;
+      if (this.key) {
+        message.key = this.key;
+        message.check = this.check;
         message.internal_key_encrypted = this.internalKeyEncrypted;
       }
     }
     postMessageWithCallback(message, function(response) {
-      this.cacheKeys(response.key, response.internal_key);
-      this.salt = response.salt;
-      this.check = response.check;
-      this.internalKeyEncrypted = response.internal_key_encrypted;
-      callback.call(this, true);
+      this.cacheKeys(response.key, response.internal_key, null, function() {
+        this.salt = response.salt;
+        this.check = response.check;
+        this.internalKeyEncrypted = response.internal_key_encrypted;
+        callback.call(this, true);
+      }.bind(this));
     }.bind(this));
   };
 
-  this.setMasterKey = function(newMasterKey, callback) {
+  this.setMasterKey = function(extendedPublicBase58,
+                               extendedPrivateBase58,
+                               callback) {
     if (!this.isWalletUnlocked()) {
       console.log("can't set master key; wallet is locked");
       callback.call(this, false);
       return;
     }
-    this.masterKeyPublic = newMasterKey.xpub;
-    if (newMasterKey.xprv) {
+    this.extendedPublicBase58 = extendedPublicBase58;
+    if (extendedPrivateBase58) {
       var message = {};
       message.command = 'encrypt-item';
-      message.item = newMasterKey.xprv;
+      message.item = extendedPrivateBase58;
       message.internal_key = this.internalKey;
 
       var t = this;
       postMessageWithCallback(message, function(response) {
-        t.masterKeyEncrypted = response.item_encrypted;
+        t.extendedPrivateBase58Encrypted = response.item_encrypted;
         callback.call(this, true);
       });
     } else {
-      this.masterKeyEncrypted = null;
+      this.extendedPrivateBase58Encrypted = null;
       callback.call(this, true);
     }
   };

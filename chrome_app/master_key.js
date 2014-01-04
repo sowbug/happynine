@@ -22,10 +22,10 @@
 
 'use strict';
 
-function MasterKey(xprv, xpub, fingerprint) {
+function MasterKey(xpub, xprv, fingerprint) {
   this.showXprv = false;
-  this.xprv = xprv;
   this.xpub = xpub;
+  this.xprv = xprv;
 
   var mk = this;
   this.setFingerprint = function(fingerprint) {
