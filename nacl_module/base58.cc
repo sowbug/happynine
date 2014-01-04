@@ -21,6 +21,10 @@ inline unsigned int countLeading0s(const std::string& numeral,
 }
 
 std::string Base58::toBase58Check(const bytes_t& bytes) {
+  if (bytes.size() == 0) {
+    return std::string();
+  }
+
   bytes_t digest;
   digest.resize(SHA256_DIGEST_LENGTH);
 
@@ -70,6 +74,10 @@ bytes_t Base58::fromBase58Check(const std::string s) {
 
 // https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
 std::string Base58::toAddress(const bytes_t& bytes) {
+  if (bytes.size() == 0) {
+    return std::string();
+  }
+
   bytes_t digest;
   digest.resize(SHA256_DIGEST_LENGTH);
 
@@ -96,6 +104,10 @@ std::string Base58::toAddress(const bytes_t& bytes) {
 
 // http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript
 std::string Base58::toPrivateKey(const bytes_t& bytes) {
+  if (bytes.size() == 0) {
+    return std::string();
+  }
+
   bytes_t private_key_bytes(1, 0x80);
 
   private_key_bytes.insert(private_key_bytes.end(),

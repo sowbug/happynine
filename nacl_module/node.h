@@ -25,6 +25,7 @@ class Node {
   bytes_t toSerialized(bool public_if_available) const;
   bytes_t toSerialized() const;
   bytes_t toSerializedPublic() const;
+  bytes_t toSerializedPrivate() const;
 
  private:
   void set_key(const bytes_t& new_key);

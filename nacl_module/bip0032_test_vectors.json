@@ -2,6 +2,7 @@
     {
         "name": "Test Vector 1",
         "seed": "000102030405060708090a0b0c0d0e0f",
+        "ext_pub_hex": "0488b21e000000000000000000873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d5080339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2",
         "chains": [
             {
                 "chain": "m",
@@ -91,6 +92,7 @@
     },
     { "name": "Test Vector 2",
       "seed": "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
+      "ext_pub_hex": "0488b21e00000000000000000060499f801b896d83179a4374aeb7822aaeaceaa0db1f85ee3e904c4defbd968903cbcaa9c98c877a26977d00825c956a238e8dddfbd322cce4f74b0b5bd6ace4a7",
       "chains": [
           {
               "chain": "m",

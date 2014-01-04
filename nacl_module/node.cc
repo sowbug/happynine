@@ -130,6 +130,13 @@ bytes_t Node::toSerializedPublic() const {
   return toSerialized(false);
 }
 
+bytes_t Node::toSerializedPrivate() const {
+  if (!is_private()) {
+    return bytes_t();
+  }
+  return toSerialized(false);
+}
+
 bytes_t Node::toSerialized() const {
   return toSerialized(true);
 }
