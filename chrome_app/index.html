@@ -2,7 +2,7 @@
 <html data-ng-app="bitcoinWalletApp">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Bitcoin Wallet</title>
+    <title ng-bind="app_name"></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="text/javascript" src="common.js"></script>
     <link href="bootstrap-3.0.3/css/bootstrap.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="#">Bitcoin Wallet</a>
+        <a class="navbar-brand" href="#" ng-bind="app_name"></a>
       </div>
 
       <div class="navbar-collapse collapse">
@@ -29,8 +29,8 @@
           </li>
           <li>
             <p class="navbar-text">
-              {{settings.satoshiToUnit(account.balance)}}
-              {{settings.unitLabel()}}
+              <span ng-bind="settings.satoshiToUnit(account.balance)"></span>
+              <span ng-bind="settings.unitLabel()"></span>
             </p>
           </li>
         </ul>
@@ -345,7 +345,7 @@
         <li ng-if="account">
           <div class="btn-group navbar-pagination">
             <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
-            <button id="account" class="btn btn-default navbar-btn disabled">Account {{account.index}}</button>
+            <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="account.name()"></button>
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>

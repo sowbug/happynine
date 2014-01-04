@@ -36,7 +36,7 @@ function Account($scope, $http, index, masterKey) {
   var account = this;
   var message = { 'command': 'get-addresses',
                   'seed': this.masterKey.xprvIfAvailable(),
-                  'path': "m/" + index + "/0",
+                  'path': "m/" + index + "'/0",
                   'start': this.nextAddress, 'count': this.batchCount };
   postMessageWithCallback(message, function(response) {
     var balanceURL = ['https://blockchain.info/multiaddr?active='];
@@ -92,5 +92,13 @@ function Account($scope, $http, index, masterKey) {
 
   this.hasTransactions = function() {
     return this.transactions.length > 0;
+  };
+
+  this.name = function() {
+    if (this.index > 0) {
+      return "Account " + this.index;
+    } else {
+      return "Default Account";
+    }
   };
 }

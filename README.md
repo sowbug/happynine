@@ -18,7 +18,6 @@ What Does Work
 * [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 * Passphrase protection of wallet with 60-second unlock
 * Viewing wallet balances
-* Multiple BIP0032 accounts (m/i/0, where i is account number, 0=default)
 
 What Doesn't Work Yet
 ===
@@ -26,6 +25,7 @@ What Doesn't Work Yet
 * Sending funds
 * Instant balance refresh when new transactions are detected
 * Importing an external BIP0032 xprv or xpub key
+* Multiple BIP0032 accounts (m/i'/0, where i is account number, 0=default). This is close to working.
 * Safety features, such as requiring a confirmation before deleting keys
 
 System Requirements for Users

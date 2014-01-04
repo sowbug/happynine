@@ -28,6 +28,8 @@ function WalletController($scope, $http) {
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
 
+  $scope.app_name = "Happynine";
+
   $scope.startLoading = function() {
     $scope.settings.load(function() {
       $scope.credentials.load(function() {
