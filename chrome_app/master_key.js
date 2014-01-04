@@ -27,9 +27,15 @@ function MasterKey(xpub, xprv, fingerprint) {
   this.xpub = xpub;
   this.xprv = xprv;
 
-  var mk = this;
+  this.xprvIfAvailable = function() {
+    if (this.xprv) {
+      return this.xprv;
+    }
+    return this.xpub;
+  };
+
   this.setFingerprint = function(fingerprint) {
-    mk.fingerprint = fingerprint;
+    this.fingerprint = fingerprint;
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'http://robohash.org/' + fingerprint +
              '.png?set=set3&bgset=any&size=64x64', true);

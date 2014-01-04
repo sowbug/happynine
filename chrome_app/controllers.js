@@ -81,12 +81,10 @@ function WalletController($scope) {
       masterKey = null;
       return;
     }
+    $scope.w.showPrivateKeys = false;
     var b58 = $scope.credentials.extendedPublicBase58;
     if ($scope.credentials.extendedPrivateBase58) {
-      console.log("using xprv");
       b58 = $scope.credentials.extendedPrivateBase58;
-    } else {
-      console.log("using xpub");
     }
     var message = {
       'command': 'get-node',
@@ -97,7 +95,7 @@ function WalletController($scope) {
                                     response.ext_prv_b58,
                                     response.fingerprint);
       $scope.masterKey = masterKey;
-      $scope.nextAccount();
+      $scope.firstAccount();
       $scope.$apply();
     });
   };
@@ -114,6 +112,10 @@ function WalletController($scope) {
 
   $scope.importMasterKey = function() {
     console.log("not implemented");
+  };
+
+  $scope.firstAccount = function() {
+    $scope.account = new Account($scope, 0, $scope.masterKey);
   };
 
   $scope.nextAccount = function() {

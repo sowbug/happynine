@@ -135,7 +135,7 @@ bool API::HandleGetAddresses(const Json::Value& args,
     result["addresses"][i]["path"] = node_path.str();
     result["addresses"][i]["address"] =
       Base58::toAddress(node->public_key());
-    if (node->is_private()) {
+    if (node->secret_key().size() != 0) {
       result["addresses"][i]["key"] =
         Base58::toPrivateKey(node->secret_key());
     }

@@ -36,15 +36,18 @@ function Account($scope, index, masterKey) {
 
   var account = this;
   var message = { 'command': 'get-addresses',
-                  'seed': this.masterKey.xpub,
+                  'seed': this.masterKey.xprvIfAvailable(),
                   'path': "m/" + index + "/0",
                   'start': 0, 'count': 5 };
   postMessageWithCallback(message, function(response) {
     for (var i in response.addresses) {
       var address = response.addresses[i];
       account.addresses.push(
-        { 'index': address.index, 'address': address.address,
-          'balance': 0, 'tx_count': 0 });
+        { 'index': address.index,
+          'address': address.address,
+          'key': address.key,
+          'balance': 0,
+          'tx_count': 0 });
     }
     account.calculateBalance();
     account.$scope.$apply();
