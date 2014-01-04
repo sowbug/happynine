@@ -146,7 +146,7 @@
             <div class="panel panel-default">
               <div class="panel-heading">Receive Bitcoin</div>
               <div class="panel-body">
-                <table class="table table-striped" id="accordion">
+                <table class="table table-striped">
                   <thead>
                     <tr>
                       <th>Receiving Address</th><th>Balance</th>
@@ -155,13 +155,14 @@
                   <tbody>
                     <tr data-ng-repeat="addr in account.addresses">
                       <td>
-                        <div data-toggle="collapse" data-parent="#accordion" data-target="#accordion-{{addr.address}}">
-                          <a href="https://blockchain.info/address/{{addr.address}}" target="_blank">{{addr.address}}</a>
-                        </div>
-                        <div id="accordion-{{addr.address}}" ng-class="{in : $first}" class="collapse">
-                          {{addr.tx_count}}
-                          <button type="button" class="btn btn-primary btn-sm">Use</button>
-                          <span ng-if="credentials.isWalletUnlocked() && w.showPrivateKeys">{{addr.key}}</span>
+                        <div class="dropdown">
+                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
+                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+<li><a href="https://blockchain.info/address/{{addr.address}}" target="_blank" >Visit Blockchain.info for this address</a></li>
+                            <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
+                            <li><a href="#">Generate receiving QR code</a></li>
+                            <li ng-if="credentials.isWalletUnlocked() && w.showPrivateKeys"><a href="#">Private key: {{addr.key}}</a></li>
+                          </ul>
                         </div>
                       </td>
                       <td>{{settings.satoshiToUnit(addr.balance)}}</td>
