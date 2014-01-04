@@ -1,8 +1,7 @@
-bitcoin-wallet-app
+Happynine
 ===
 
-A Bitcoin Wallet Chrome App that implements a BIP0032 hierarchical
-deterministic wallet.
+A Bitcoin Wallet Chrome App that implements a [BIP0032 hierarchical deterministic wallet](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki).
 
 Great Big Warning
 ===
@@ -15,9 +14,10 @@ What Does Work
 ===
 
 * Generating a new BIP0032 HD wallet
-* [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 * Passphrase protection of wallet with 60-second unlock
 * Viewing wallet balances
+* BIP0032 account m/0'/0, which will generate keys m/0'/0/k for any 32-bit k (actually 31-bit, but nobody will get that far).
+* [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 
 What Doesn't Work Yet
 ===
@@ -49,6 +49,13 @@ Installation/Development
 1. Clone the repository.
 2. `make`.
 3. In Chrome, load the unpacked extension in `out/zip`.
+
+FAQ
+===
+
+* *What is BIP0032?* You can [read the spec](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki) if you want, but the idea is that your entire wallet can be backed up with a single 78-character string that looks like this: `xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi`. It's like [Electrum](https://electrum.org/) in this respect, but the BIP0032 spec has a few more features than Electrum's deterministic wallet.
+* *Why a Chrome App?* Because [Chrome Apps](http://developer.chrome.com/apps/about_apps.html) are awesome! They're easy to write and quite secure. Security is an important reason why Chrome Apps are a good platform for anything related to Bitcoin.
+* *What does "Happynine" mean?* I was looking for a catchier name than "Bitcoin Wallet App," and looked up the significance of the number 32. It turns out 32 is the [ninth happy number](http://en.wikipedia.org/wiki/Happy_number). So "happy nine." There you go.
 
 Acknowledgments
 ===
