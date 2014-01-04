@@ -161,7 +161,6 @@
 <li><a href="https://blockchain.info/address/{{addr.address}}" target="_blank" >Visit Blockchain.info for this address</a></li>
                             <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
                             <li><a href="#">Generate receiving QR code</a></li>
-                            <li ng-if="credentials.isWalletUnlocked() && w.showPrivateKeys"><a href="#">Private key: {{addr.key}}</a></li>
                           </ul>
                         </div>
                       </td>
@@ -169,13 +168,6 @@
                     </tr>
                   </tbody>
                 </table>
-
-                <div class="checkbox" ng-if="credentials.isWalletUnlocked()">
-                  <label>
-                    <input type="checkbox" ng-model="w.showPrivateKeys">
-                    Show private keys
-                  </label>
-                </div>
 
                 <ul class="pagination">
                   <li><a href="#">&laquo;</a></li>

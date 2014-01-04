@@ -22,7 +22,7 @@
 
 'use strict';
 
-function WalletController($scope) {
+function WalletController($scope, $http) {
   // For some crazy reason, angularjs won't reflect view changes in
   // the model's scope-level objects, so I have to create another
   // object and hang stuff off it. I picked w for wallet.
@@ -81,7 +81,6 @@ function WalletController($scope) {
       masterKey = null;
       return;
     }
-    $scope.w.showPrivateKeys = false;
     var b58 = $scope.credentials.extendedPublicBase58;
     if ($scope.credentials.extendedPrivateBase58) {
       b58 = $scope.credentials.extendedPrivateBase58;
@@ -115,15 +114,18 @@ function WalletController($scope) {
   };
 
   $scope.firstAccount = function() {
-    $scope.account = new Account($scope, 0, $scope.masterKey);
+    $scope.account = new Account($scope, $http, 0, $scope.masterKey);
   };
 
   $scope.nextAccount = function() {
     if ($scope.account) {
       $scope.account =
-        new Account($scope, $scope.account.index + 1, $scope.masterKey);
+        new Account($scope,
+                    $http,
+                    $scope.account.index + 1,
+                    $scope.masterKey);
     } else {
-      $scope.account = new Account($scope, 0, $scope.masterKey);
+      $scope.account = new Account($scope, $http, 0, $scope.masterKey);
     }
   };
 
@@ -131,10 +133,13 @@ function WalletController($scope) {
     if ($scope.account) {
       if ($scope.account.index > 0) {
         $scope.account =
-          new Account($scope, $scope.account.index - 1, $scope.masterKey);
+          new Account($scope,
+                      $http,
+                      $scope.account.index - 1,
+                      $scope.masterKey);
       }
     } else {
-      $scope.account = new Account($scope, 0, $scope.masterKey);
+      $scope.account = new Account($scope, $http, 0, $scope.masterKey);
     }
   };
 

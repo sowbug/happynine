@@ -22,42 +22,71 @@
 
 'use strict';
 
-function Account($scope, index, masterKey) {
+function Account($scope, $http, index, masterKey) {
   this.$scope = $scope;
   this.masterKey = masterKey;
   this.index = index;
   this.balance = 0;
   this.addresses = [];
-  this.transactions = [
-    { 'date': '3 Jan 2009', 'address': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'amount': 234000000 },
-    { 'date': '4 Jan 2009', 'address': '1JKMcZibd5MBn3sn4u3WVnFvHWMFiny59', 'amount': 500000000 },
-    { 'date': '5 Jan 2009', 'address': '17sz256snXYak5VMX8EdE4p4Pab8X8iMGn', 'amount': -500000000 }
-  ];
+  this.addressMap = {};
+  this.transactions = [];
+  this.nextAddress = 0;
+  this.batchCount = 20;
 
   var account = this;
   var message = { 'command': 'get-addresses',
                   'seed': this.masterKey.xprvIfAvailable(),
                   'path': "m/" + index + "/0",
-                  'start': 0, 'count': 5 };
+                  'start': this.nextAddress, 'count': this.batchCount };
   postMessageWithCallback(message, function(response) {
+    var balanceURL = ['https://blockchain.info/multiaddr?active='];
+
     for (var i in response.addresses) {
       var address = response.addresses[i];
-      account.addresses.push(
-        { 'index': address.index,
-          'address': address.address,
-          'key': address.key,
-          'balance': 0,
-          'tx_count': 0 });
+      account.addressMap[address.address] = { 'index': address.index,
+                                              'address': address.address,
+                                              'key': address.key,
+                                              'balance': 0,
+                                              'tx_count': 0 };
+      if (balanceURL.length > 1) {
+        balanceURL.push('|');
+      }
+      balanceURL.push(address.address);
     }
-    account.calculateBalance();
-    account.$scope.$apply();
+    balanceURL.push('&format=json');
+    balanceURL = balanceURL.join('');
+
+    $http({method: 'GET', url: balanceURL}).
+      success(function(data, status, headers, config) {
+        for (var i in data.addresses) {
+          var addr = data.addresses[i];
+          account.addressMap[addr.address].balance = addr.final_balance;
+          account.addressMap[addr.address].tx_count = addr.n_tx;
+        }
+        for (var i in data.txs) {
+          var tx = data.txs[i];
+          account.transactions.push({
+            'date': tx.time,
+            'address': tx.inputs[0].prev_out.addr,
+            'hash': tx.hash,
+            'amount': Math.floor(Math.random() * 1000000000)
+          });
+        }
+        account.calculateBalance();
+       }).
+      error(function(data, status, headers, config) {
+        console.log("error", status, data);
+        account.calculateBalance();
+      });
   });
 
   this.calculateBalance = function() {
-    account.balance = 0;
-    for (var i in account.addresses) {
-      var address = account.addresses[i];
-      account.balance += address.balance;
+    this.balance = 0;
+    this.addresses = [];
+    for (var i in this.addressMap) {
+      var address = this.addressMap[i];
+      this.balance += address.balance;
+      this.addresses.push(address);
     }
   };
 
