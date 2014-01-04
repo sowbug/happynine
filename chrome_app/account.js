@@ -22,9 +22,8 @@
 
 'use strict';
 
-function Account($scope, $http, index, masterKey) {
+function Account($scope, $http, index) {
   this.$scope = $scope;
-  this.masterKey = masterKey;
   this.index = index;
   this.balance = 0;
   this.addresses = [];
@@ -34,10 +33,11 @@ function Account($scope, $http, index, masterKey) {
   this.batchCount = 20;
 
   var account = this;
-  var message = { 'command': 'get-addresses',
-                  'seed': this.masterKey.xprvIfAvailable(),
-                  'path': "m/" + index + "'/0",
-                  'start': this.nextAddress, 'count': this.batchCount };
+  var message = {
+    'command': 'get-addresses',
+    'seed': $scope.credentials.accountXprvIfAvailable(index),
+    'path': "m/0",  // external addresses
+    'start': this.nextAddress, 'count': this.batchCount };
   postMessageWithCallback(message, function(response) {
     var balanceURL = ['https://blockchain.info/multiaddr?active='];
 
@@ -101,4 +101,19 @@ function Account($scope, $http, index, masterKey) {
       return "Default Account";
     }
   };
+
+  this.setFingerprint = function(fingerprint) {
+    this.fingerprint = fingerprint;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'http://robohash.org/' + fingerprint +
+             '.png?set=set3&bgset=any&size=64x64', true);
+    xhr.responseType = 'blob';
+    xhr.onload = function(e) {
+      $("#account-fingerprint-img").attr(
+        "src",
+        window.webkitURL.createObjectURL(this.response));
+    };
+    xhr.send();
+  };
+  this.setFingerprint($scope.credentials.accounts[index].fingerprint);
 }

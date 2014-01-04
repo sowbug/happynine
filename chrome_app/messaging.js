@@ -25,16 +25,20 @@
 var callbacks = {};
 var callbackId = 1;
 
+var shouldLog = false;
+
 var postMessageWithCallback = function(message, callback) {
   message.id = callbackId++;
   callbacks[message.id] = callback;
   common.naclModule.postMessage(JSON.stringify(message));
-  console.log(message);
+  if (shouldLog)
+    console.log(message);
 };
 
 function handleMessage(message) {
   var message_object = JSON.parse(message.data);
-  console.log(message_object);
+  if (shouldLog)
+    console.log(message_object);
   var id = message_object.id;
   if (callbacks[id]) {
     callbacks[id].call(this, message_object);

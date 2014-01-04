@@ -29,7 +29,8 @@ function Credentials(settings) {
                   'check',
                   'internalKeyEncrypted',
                   'extendedPrivateBase58Encrypted',
-                  'extendedPublicBase58'];
+                  'extendedPublicBase58',
+                  'accounts'];
 
   this.settings = settings;
 
@@ -53,6 +54,10 @@ function Credentials(settings) {
   this.internalKeyEncrypted = null;
   this.extendedPrivateBase58Encrypted = null;
   this.extendedPublicBase58 = null;
+  this.accounts = [];
+
+  this.needsAccountsRetrieval = false;
+  this.accountsChanged = false;
 
   this.isPassphraseSet = function() {
     return !!this.internalKeyEncrypted;
@@ -62,6 +67,11 @@ function Credentials(settings) {
   // or that there is no passphrase set.
   this.isWalletUnlocked = function() {
     return this.isPassphraseSet() && !!this.key;
+  };
+
+  // Used for a $watch in controller.
+  this.digestMasterKey = function() {
+    return this.extendedPublicBase58 + ':' + !! this.extendedPrivateBase58;
   };
 
   this.clearCachedKeys = function() {
@@ -155,15 +165,13 @@ function Credentials(settings) {
     }.bind(this));
   };
 
-  this.setMasterKey = function(extendedPublicBase58,
-                               extendedPrivateBase58,
+  this.setMasterKey = function(extendedPublicBase58, extendedPrivateBase58,
                                callback) {
     if (!this.isWalletUnlocked()) {
       console.log("can't set master key; wallet is locked");
-      callback.call(this, false);
+      callback.call(this);
       return;
     }
-    this.extendedPublicBase58 = extendedPublicBase58;
     if (extendedPrivateBase58) {
       var message = {};
       message.command = 'encrypt-item';
@@ -172,17 +180,73 @@ function Credentials(settings) {
 
       var t = this;
       postMessageWithCallback(message, function(response) {
+        t.extendedPublicBase58 = extendedPublicBase58;
+        t.extendedPrivateBase58 = extendedPrivateBase58;
         t.extendedPrivateBase58Encrypted = response.item_encrypted;
-        callback.call(this, true);
+        t.accounts = []
+        t.needsAccountsRetrieval = true;
+        callback.call(this);
       });
     } else {
+      this.extendedPublicBase58 = extendedPublicBase58;
+      this.extendedPrivateBase58 = null;
       this.extendedPrivateBase58Encrypted = null;
-      callback.call(this, true);
+      this.accounts = [];
+
+      // We can't retrieve accounts with an xpub-only wallet.
+      this.needsAccountsRetrieval = false;
+      callback.call(this);
     }
   };
 
   this.hasMultipleAccounts = function() {
-    return false;
+    return this.accounts.length > 1;
+  };
+
+  this.retrieveAccounts = function(callback) {
+    if (!this.isWalletUnlocked()) {
+      console.log("Can't add account when wallet is unlocked");
+      callback(this, false);
+      return;
+    }
+    this.accounts = [];
+    this.needsAccountsRetrieval = false;
+    var message = {
+      'command': 'get-node',
+      'seed': this.extendedPrivateBase58,
+      'path': "m/0'"  // Get the 0th (prime) account of master key
+    };
+    postMessageWithCallback(message, function(response) {
+      var account = {};
+      account.extendedPublicBase58 = response.ext_pub_b58;
+      account.extendedPrivateBase58 = response.ext_prv_b58;
+      account.fingerprint = response.fingerprint;
+
+      var message = {};
+      message.command = 'encrypt-item';
+      message.item = account.extendedPrivateBase58;
+      message.internal_key = this.internalKey;
+
+      var t = this;
+      postMessageWithCallback(message, function(response) {
+        account.extendedPrivateBase58Encrypted = response.item_encrypted;
+        t.accounts.push(account);
+        t.accountsChanged = true;
+        callback(this, true);
+      });
+    }.bind(this));
+  };
+
+  this.accountXprvIfAvailable = function(index) {
+    if (this.accounts.length <= index) {
+      return null;
+    }
+    var account = this.accounts[index];
+    if (account.extendedPrivateBase58) {
+      return account.extendedPrivateBase58;
+    } else {
+      return account.extendedPublicBase58;
+    }
   };
 
   this.load = function(callback) {

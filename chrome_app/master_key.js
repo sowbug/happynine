@@ -41,10 +41,7 @@ function MasterKey(xpub, xprv, fingerprint) {
              '.png?set=set3&bgset=any&size=64x64', true);
     xhr.responseType = 'blob';
     xhr.onload = function(e) {
-      $("#fingerprint-img").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-      $("#fingerprint-img-big").attr(
+      $("#master-key-fingerprint-img").attr(
         "src",
         window.webkitURL.createObjectURL(this.response));
     };

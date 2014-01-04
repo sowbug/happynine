@@ -40,6 +40,13 @@ function WalletController($scope, $http) {
   $scope.startLoading = function() {
     $scope.settings.load(function() {
       $scope.credentials.load(function() {
+
+        // TODO(miket): I hate this, but I can't get
+        // $scope.credentials.accounts to be watchable.
+        if ($scope.credentials.accounts.length > 0) {
+          $scope.credentials.accountsChanged = true;
+        }
+
         $scope.$apply();
 
         // It's important not to add these watchers before initial load.
@@ -58,16 +65,31 @@ function WalletController($scope, $http) {
     });
   };
 
-  $scope.$watch('credentials.extendedPrivateBase58',
+  // Something about credentials.extended changed. We should generate
+  // a MasterKey.
+  $scope.$watch('credentials.digestMasterKey()',
                 function(newVal, oldVal) {
                   if (newVal != oldVal) {
-                    $scope.updateMasterKey();
+                    $scope.generateMasterKey();
                   }
                 });
-  $scope.$watch('credentials.extendedPublicBase58',
+
+  $scope.$watch('credentials.needsAccountsRetrieval',
                 function(newVal, oldVal) {
-                  if (newVal != oldVal) {
-                    $scope.updateMasterKey();
+                  if (newVal != oldVal && newVal) {
+                    $scope.credentials.retrieveAccounts(function() {
+                      $scope.$apply();
+                    });
+                  }
+                });
+
+  $scope.$watch('credentials.accountsChanged',
+                function(newVal, oldVal) {
+                  if (newVal != oldVal && newVal) {
+                    // TODO(miket): will probably change to
+                    // lastAccount() when we have > 1.
+                    $scope.firstAccount();
+                    $scope.credentials.accountsChanged = false;
                   }
                 });
 
@@ -84,10 +106,10 @@ function WalletController($scope, $http) {
     });
   };
 
-  $scope.updateMasterKey = function() {
+  $scope.generateMasterKey = function() {
     if (!$scope.credentials.extendedPublicBase58) {
       console.log("updated master key to null");
-      masterKey = null;
+      $scope.masterKey = null;
       return;
     }
     var b58 = $scope.credentials.extendedPublicBase58;
@@ -99,11 +121,9 @@ function WalletController($scope, $http) {
       'seed': b58
     };
     postMessageWithCallback(message, function(response) {
-      var masterKey = new MasterKey(response.ext_pub_b58,
-                                    response.ext_prv_b58,
-                                    response.fingerprint);
-      $scope.masterKey = masterKey;
-      $scope.firstAccount();
+      $scope.masterKey = new MasterKey(response.ext_pub_b58,
+                                       response.ext_prv_b58,
+                                       response.fingerprint);
       $scope.$apply();
     });
   };
@@ -123,10 +143,12 @@ function WalletController($scope, $http) {
   };
 
   $scope.firstAccount = function() {
-    $scope.account = new Account($scope, $http, 0, $scope.masterKey);
+    if ($scope.credentials.accounts.length > 0) {
+      $scope.account = new Account($scope, $http, 0);
+    }
   };
 
-  $scope.nextAccount = function() {
+  $scope._nextAccount = function() {
     if ($scope.account) {
       $scope.account =
         new Account($scope,
@@ -138,7 +160,7 @@ function WalletController($scope, $http) {
     }
   };
 
-  $scope.prevAccount = function() {
+  $scope._prevAccount = function() {
     if ($scope.account) {
       if ($scope.account.index > 0) {
         $scope.account =

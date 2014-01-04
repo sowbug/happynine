@@ -211,7 +211,7 @@
                       <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
                     </div>
                     <div class="col-md-2">
-                      <img id="fingerprint-img-big" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint }}"/>
+                      <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint}}"/>
                     </div>
                   </div>
                   <div class="form-group">
@@ -350,11 +350,11 @@
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>
-        <li>
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="masterKey.fingerprint"></p>
+        <li ng-if="account">
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="account.fingerprint"></p>
         </li>
         <li>
-          <img id="fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{masterKey.fingerprint}}" ng-if="masterKey"/>
+          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{account.fingerprint}}" ng-if="account"/>
         </li>
       </ul>
     </div><!-- footer -->
