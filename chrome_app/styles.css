@@ -44,3 +44,11 @@ html, body {
   margin-left: 15px;
   margin-right: 15px;
 }
+
+.danger {
+  color: red;
+}
+
+.ok {
+  color: green;
+}

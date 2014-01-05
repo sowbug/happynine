@@ -249,6 +249,14 @@ function WalletController($scope, $http) {
     chrome.runtime.reload();
   };
 
+  $scope.isWalletUnlocked = function() {
+    return $scope.credentials.isWalletUnlocked();
+  }
+
+  $scope.isPassphraseSet = function() {
+    return $scope.credentials.isPassphraseSet();
+  }
+
   // TODO(miket): this might be a race with moduleDidLoad.
   var listenerDiv = document.getElementById('listener');
   listenerDiv.addEventListener('load', function() {
