@@ -30,7 +30,7 @@ function Account($scope, $http, index) {
   this.addressMap = {};
   this.transactions = [];
   this.nextAddress = 0;
-  this.batchCount = 20;
+  this.batchCount = 8;
 
   var account = this;
   var message = {
