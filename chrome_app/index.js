@@ -53,6 +53,9 @@ window.onload = function() {
   $('#unlock-wallet-modal').on('shown.bs.modal', function (e) {
     $('#passphrase-unlock').focus();
   })
+  $('#import-master-key-modal').on('shown.bs.modal', function (e) {
+    $('#imported-master-key').focus();
+  })
   if (chrome && chrome.runtime) {
     showLoading();
   } else {

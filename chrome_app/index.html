@@ -182,7 +182,7 @@
                 <div class="row">
                   <div class="col-md-6 col-md-offset-2">
                     <button class="btn btn-success" ng-click="newMasterKey()">New Master Key</button>
-                    <button class="btn btn-primary" ng-click="importMasterKey()">Import Master Key &hellip;</button>
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#import-master-key-modal">Import Master Key &hellip;</button>
                   </div>
                 </div>
 
@@ -353,26 +353,52 @@
     <!-- Unlock wallet modal -->
     <div class="modal fade" id="unlock-wallet-modal" tabindex="-1" role="dialog" aria-labelledby="unlock-wallet-label" aria-hidden="true">
       <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
-          </div>
-          <div class="modal-body">
-            <form class="form-horizontal" role="form" ng-submit="unlockWallet()">
+        <form class="form-horizontal" role="form" ng-submit="unlockWallet()">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="unlock-wallet-label">Unlock Wallet</h4>
+            </div>
+            <div class="modal-body">
               <div class="form-group">
                 <label for="passphrase-unlock" class="col-md-2 control-label">Passphrase</label>
                 <div class="col-md-6">
                   <input type="password" class="form-control" id="passphrase-unlock" placeholder="Passphrase" ng-model="w.passphraseNew">
                 </div>
               </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-default" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">Unlock for One Minute</button>
-          </div>
-        </div><!-- /.modal-content -->
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Unlock for One Minute</button>
+            </div>
+          </div><!-- /.modal-content -->
+        </form>
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <!-- Import master key modal -->
+    <div class="modal fade" id="import-master-key-modal" tabindex="-1" role="dialog" aria-labelledby="import-master-key-label" aria-hidden="true">
+      <div class="modal-dialog">
+        <form class="form-horizontal" role="form" ng-submit="console.log(222);importMasterKey()">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title">Import Master Key</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="imported-master-key" class="col-md-3 control-label">Master Key</label>
+                <div class="col-md-9">
+                  <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xpub, xprv, or hex BIP0032 master key" ng-model="w.importMasterKey"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Import</button>
+            </div>
+          </div><!-- /.modal-content -->
+        </form>
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 

@@ -139,7 +139,21 @@ function WalletController($scope, $http) {
   };
 
   $scope.importMasterKey = function() {
-    console.log("not implemented");
+    var message = {
+      'command': 'get-node',
+      'seed': $scope.w.importMasterKey
+    };
+    postMessageWithCallback(message, function(response) {
+      if (response.ext_pub_b58) {
+        $scope.w.importMasterKey = null;
+        $("#import-master-key-modal").modal('hide');
+      }
+      $scope.credentials.setMasterKey(response.ext_pub_b58,
+                                      response.ext_prv_b58,
+                                      function() {
+                                        $scope.$apply();
+                                      });
+    });
   };
 
   $scope.firstAccount = function() {
