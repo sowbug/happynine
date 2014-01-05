@@ -16,7 +16,7 @@ What Does Work
 * Generating a new BIP0032 HD wallet
 * Passphrase protection of wallet with 60-second unlock
 * Viewing wallet balances
-* BIP0032 account m/0'/0, which will generate keys m/0'/0/k for any 32-bit k (actually 31-bit, but nobody will get that far).
+* BIP0032 account m/0'/0, which will generate keys m/0'/0/k for any 32-bit k (actually 31-bit, but nobody will get that far)
 * [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 
 What Doesn't Work Yet
@@ -25,8 +25,15 @@ What Doesn't Work Yet
 * Sending funds
 * Instant balance refresh when new transactions are detected
 * Importing an external BIP0032 xprv or xpub key
-* Multiple BIP0032 accounts (m/i'/0, where i is account number, 0=default). This is close to working.
+* Multiple BIP0032 accounts (m/i'/0, where i is account number, 0=default). This is close to working
+* Generating offline transactions
 * Safety features, such as requiring a confirmation before deleting keys
+
+Known Issues
+===
+
+* Lots of UI nits
+* Refresh button doesn't do anything
 
 System Requirements for Users
 ===
