@@ -26,6 +26,7 @@ What Doesn't Work Yet
 * Sending funds
 * Generating unsigned transactions for offline signing
 * Instant balance refresh when new transactions are detected
+* Any concept of fiat currencies (e.g., Bitstamp's USD/BTC exchange rate)
 * Direct communication with the Bitcoin network; currently the app relies on Blockchain's API for all its live functionality
 * Multiple BIP 0032 accounts: `m/i'/0`, where i is account number; this is close to working
 * *Meaningful* BIP 0032 usage, which is the ability to install multiple master keys, some of which might turn out to be children of others
