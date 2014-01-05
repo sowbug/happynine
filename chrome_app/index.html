@@ -206,7 +206,7 @@
                   <div class="form-group">
                     <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
                     <div class="col-md-10">
-                      <input type="text" class="form-control" id="xpub-readonly" readonly value="{{masterKey.xpub}}">
+                      <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="masterKey.xpub"></textarea>
                     </div>
                   </div>
                   <div ng-if="isWalletUnlocked()">
@@ -222,7 +222,7 @@
                     <div class="form-group" ng-if="masterKey.showXprv && masterKey.xprv">
                       <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
                       <div class="col-md-10">
-                        <input type="text" class="form-control" id="xprv-readonly" readonly value="{{masterKey.xprv}}">
+                        <textarea class="form-control" id="xprv-readonly" readonly ng-bind="masterKey.xprv"></textarea>
                       </div>
                     </div>
 
