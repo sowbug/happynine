@@ -180,7 +180,7 @@ function WalletController($scope, $http) {
     message.salt = $scope.credentials.salt;
     message.check = $scope.credentials.check;
     message.internal_key_encrypted = $scope.credentials.internalKeyEncrypted;
-    message.passphrase = $scope.passphraseNew;
+    message.passphrase = $scope.w.passphraseNew;
 
     postMessageWithCallback(message, function(response) {
       if (response.key) {
@@ -199,7 +199,7 @@ function WalletController($scope, $http) {
                                      },
                                      function() {
                                        $scope.$apply(function() {
-                                         $scope.passphraseNew = null;
+                                         $scope.w.passphraseNew = null;
                                        });
                                      });
       }
@@ -221,6 +221,9 @@ function WalletController($scope, $http) {
       return;
     }
     $scope.credentials.setPassphrase($scope.w.passphraseNew,
+                                     function() {
+                                       $scope.$apply();
+                                     },
                                      function(succeeded) {
                                        if (succeeded) {
                                          $scope.$apply();
@@ -243,6 +246,7 @@ function WalletController($scope, $http) {
     // TODO(miket): confirmation
     $scope.initializeEverything();
     clearAllStorage();
+    chrome.runtime.reload();
   };
 
   // TODO(miket): this might be a race with moduleDidLoad.

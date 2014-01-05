@@ -87,14 +87,13 @@ function Credentials(settings) {
     message.item_encrypted = item;
     message.internal_key = this.internalKey;
 
-    var t = this;
     postMessageWithCallback(message, function(response) {
       if (response.item) {
         callback.call(this, response.item);
       } else {
         callback.call(this);
       }
-    });
+    }.bind(this));
   };
 
   this.cacheKeys = function(key,
@@ -105,12 +104,11 @@ function Credentials(settings) {
     this.key = key;
     this.internalKey = internalKey;
 
-    var t = this;
     window.setTimeout(function() {
-      t.clearCachedKeys();
+      this.clearCachedKeys();
       if (cacheExpirationCallback)
         cacheExpirationCallback.call(this);
-    }, 1000 * 60 * 1);
+    }.bind(this), 1000 * 60 * 1);
 
     if (this.extendedPrivateBase58Encrypted) {
       this.decrypt(this.extendedPrivateBase58Encrypted, function(item) {
@@ -124,7 +122,9 @@ function Credentials(settings) {
     }
   };
 
-  this.setPassphrase = function(newPassphrase, callback) {
+  this.setPassphrase = function(newPassphrase,
+                                cacheExpirationCallback,
+                                callback) {
     if (this.isPassphraseSet()) {
       if (!this.isWalletUnlocked()) {
         console.log("Can't change passphrase because wallet is locked.");
@@ -156,12 +156,16 @@ function Credentials(settings) {
       }
     }
     postMessageWithCallback(message, function(response) {
-      this.cacheKeys(response.key, response.internal_key, null, function() {
-        this.salt = response.salt;
-        this.check = response.check;
-        this.internalKeyEncrypted = response.internal_key_encrypted;
-        callback.call(this, true);
-      }.bind(this));
+      this.cacheKeys(response.key,
+                     response.internal_key,
+                     cacheExpirationCallback,
+                     function() {
+                       this.salt = response.salt;
+                       this.check = response.check;
+                       this.internalKeyEncrypted =
+                         response.internal_key_encrypted;
+                       callback.call(this, true);
+                     }.bind(this));
     }.bind(this));
   };
 
@@ -178,15 +182,14 @@ function Credentials(settings) {
       message.item = extendedPrivateBase58;
       message.internal_key = this.internalKey;
 
-      var t = this;
       postMessageWithCallback(message, function(response) {
-        t.extendedPublicBase58 = extendedPublicBase58;
-        t.extendedPrivateBase58 = extendedPrivateBase58;
-        t.extendedPrivateBase58Encrypted = response.item_encrypted;
-        t.accounts = []
-        t.needsAccountsRetrieval = true;
+        this.extendedPublicBase58 = extendedPublicBase58;
+        this.extendedPrivateBase58 = extendedPrivateBase58;
+        this.extendedPrivateBase58Encrypted = response.item_encrypted;
+        this.accounts = [];
+        this.needsAccountsRetrieval = true;
         callback.call(this);
-      });
+      }.bind(this));
     } else {
       this.extendedPublicBase58 = extendedPublicBase58;
       this.extendedPrivateBase58 = null;
@@ -227,13 +230,12 @@ function Credentials(settings) {
       message.item = account.extendedPrivateBase58;
       message.internal_key = this.internalKey;
 
-      var t = this;
       postMessageWithCallback(message, function(response) {
         account.extendedPrivateBase58Encrypted = response.item_encrypted;
-        t.accounts.push(account);
-        t.accountsChanged = true;
+        this.accounts.push(account);
+        this.accountsChanged = true;
         callback(this, true);
-      });
+      }.bind(this));
     }.bind(this));
   };
 
