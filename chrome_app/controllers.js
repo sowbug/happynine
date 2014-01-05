@@ -251,11 +251,19 @@ function WalletController($scope, $http) {
 
   $scope.isWalletUnlocked = function() {
     return $scope.credentials.isWalletUnlocked();
-  }
+  };
 
   $scope.isPassphraseSet = function() {
     return $scope.credentials.isPassphraseSet();
-  }
+  };
+
+  $scope.satoshiToUnit = function(satoshis) {
+    return $scope.settings.satoshiToUnit(satoshis);
+  };
+
+  $scope.unitLabel = function() {
+    return $scope.settings.unitLabel();
+  };
 
   // TODO(miket): this might be a race with moduleDidLoad.
   var listenerDiv = document.getElementById('listener');

@@ -29,8 +29,8 @@
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="settings.satoshiToUnit(account.balance)"></span>
-              <span ng-bind="settings.unitLabel()"></span>
+              <span ng-bind="satoshiToUnit(account.balance)"></span>
+              <span ng-bind="unitLabel()"></span>
             </p>
           </li>
         </ul>
@@ -98,7 +98,7 @@
                   </thead>
                   <tbody>
                     <tr data-ng-repeat="tx in account.transactions">
-                      <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{settings.satoshiToUnit(tx.amount)}}</td>
+                      <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{satoshiToUnit(tx.amount)}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -121,13 +121,13 @@
                   <div class="form-group">
                     <label for="send-amount" class="col-md-2 control-label">Amount</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-amount" placeholder="{{settings.unitLabel()}} To Send">
+                      <input type="number" class="form-control" id="send-amount" placeholder="{{unitLabel()}} To Send">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-fee" class="col-md-2 control-label">Fee</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-fee" placeholder="Transaction Fee in {{settings.unitLabel()}}">
+                      <input type="number" class="form-control" id="send-fee" placeholder="Transaction Fee in {{unitLabel()}}">
                     </div>
                   </div>
                   <div class="form-group">
@@ -164,7 +164,7 @@
                           </ul>
                         </div>
                       </td>
-                      <td>{{settings.satoshiToUnit(addr.balance)}}</td>
+                      <td>{{satoshiToUnit(addr.balance)}}</td>
                     </tr>
                   </tbody>
                 </table>
