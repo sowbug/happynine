@@ -57,7 +57,7 @@ function Credentials(settings) {
   this.accounts = [];
 
   this.needsAccountsRetrieval = false;
-  this.accountsChanged = false;
+  this.accountChangeCounter = 0;
 
   this.isPassphraseSet = function() {
     return !!this.internalKeyEncrypted;
@@ -245,7 +245,7 @@ function Credentials(settings) {
       postMessageWithCallback(message, function(response) {
         account.extendedPrivateBase58Encrypted = response.item_encrypted;
         this.accounts.push(account);
-        this.accountsChanged = true;
+        this.accountChangeCounter++;
         callback(this, true);
       }.bind(this));
     }.bind(this));

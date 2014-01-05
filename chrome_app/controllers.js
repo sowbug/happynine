@@ -44,7 +44,7 @@ function WalletController($scope, $http) {
         // TODO(miket): I hate this, but I can't get
         // $scope.credentials.accounts to be watchable.
         if ($scope.credentials.accounts.length > 0) {
-          $scope.credentials.accountsChanged = true;
+          $scope.credentials.accountChangeCounter++;
         }
 
         $scope.$apply();
@@ -83,13 +83,12 @@ function WalletController($scope, $http) {
                   }
                 });
 
-  $scope.$watch('credentials.accountsChanged',
+  $scope.$watch('credentials.accountChangeCounter',
                 function(newVal, oldVal) {
-                  if (newVal != oldVal && newVal) {
+                  if (newVal != oldVal) {
                     // TODO(miket): will probably change to
                     // lastAccount() when we have > 1.
                     $scope.firstAccount();
-                    $scope.credentials.accountsChanged = false;
                   }
                 });
 
