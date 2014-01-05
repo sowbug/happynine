@@ -28,6 +28,7 @@ What Doesn't Work Yet
 * Multiple BIP 0032 accounts: `m/i'/0`, where i is account number; this is close to working
 * *Meaningful* BIP 0032 usage, which is the ability to install multiple master keys, some of which might turn out to be children of others
 * Being able to view the xpub/xprv of an account, which is essential for controlling individual account access
+* Properly treating the account chain as a chain (basically, reading up on Electrum's gap limit concept and confirming it's the right way to go)
 
 Known Issues
 ===
@@ -52,21 +53,25 @@ The root master key xprv is used to generate master keys for *accounts*. A BIP 0
 
 The simplest BIP 0032 use case: one account, one user. Generate the root master key and account zero. Use that single chain of addresses as the user's wallet.
 
-A more interesting use case: one family of parents Alice and Bob, with kids Carol, Dan, and Eve. The parents generate the root master key and back up the xprv (for example by printing it out, putting a copy in a safe deposit box at a bank, and giving another copy to the trusted family attorney). Using the root master key, the parents generate many accounts: a spending account for each of the five people in the family, a joint spending account for the parents, and a savings account for each kid. That's a total of nine accounts. Now, Mom and Dad distribute the account master keys as follows:
+A more interesting use case: one family of parents Alice and Bob, with kids Carol, Dan, and Eve. The parents generate the root master key and back up the xprv (for example by printing it out, putting a paper copy in a safe deposit box at a bank, and giving another paper copy to the trusted family attorney). Using the root master key, the parents generate many accounts: a spending account for each of the five people in the family, a joint spending account for the parents, and a savings account for each kid. That's a total of nine accounts. Now, Mom and Dad distribute the account master keys as follows:
 
 * Each family member gets his or her own spending account's xprv.
 * Each parent gets the joint account's xprv.
 * The family attorney is instructed to disclose each child's savings account's xprv to the child on that child's 18th birthday.
-* The grandparents get the kids' savings xpubs.
+* The grandparents get three Bitcoin addresses, one from each of the kids' savings xpubs.
+* Aunt Olive gets three different Bitcoin addresses for the kids' savings.
 * The parents get the kids' spending xpubs.
 * The parents do not keep the master key xpub/xprv online.
 
 This gives the family the following abilities:
 
-* Each kid has complete control over his or her own savings account (because he or she has the xprv). Same with each parent.
-* Each parent can monitor the kids' savings accounts (because they have the xpub).
-* Extended family can give gifts straight to each kids' savings account, but the kids can't spend it until their 18th birthday.
+* Each kid has complete control over his or her own savings account (because he or she has the xprv). Same with each parent. As with normal Bitcoin wallets, the kid can give out any Bitcoin address from that account to anyone, and spend the funds in any address belonging to that account.
+* The parents can monitor the kids' entire savings accounts because they have the xpub.
+* Extended family can give gifts straight to each kids' savings account (because they have Bitcoin addresses belonging to those accounts), but the kids can't spend it until their 18th birthday.
+* Because the grandparents and Aunt Olive got different addresses, they can't spy on how generous the others are being. Because they have only addresses and not xpubs, they cannot spy on the overall savings balance of any of the kids.
+* Eve (who, being named Eve, is cryptologically likely to be evil) cannot steal from her siblings, monitor their balances, or eavesdrop on their transactions.
 * The parents can each spend from the joint account, but nobody else can.
+* When the parents need to prove assets for a boat loan, they supply their joint xpub to their banker, who can easily verify the balance.
 * If the family's house burns down, they can go to the bank, get the root master xprv, regenerate all the account keys, and get back all their bitcoin.
 
 There are other ways to slice and dice a BIP 0032 tree. Another option in this scenario is to generate only one first-level child account for each person, then to generate further children (savings/spending) from each of those. One might also wonder why the parents have no savings account. Are they planning on living off the kids during retirement? Anyway, it's all up to you.
