@@ -28,7 +28,7 @@ function loadStorage(saved_name, object, storables, callback) {
     callback.call(this);
     return;
   }
-  chrome.storage.local.get(saved_name, function(result) {
+  chrome.storage.sync.get(saved_name, function(result) {
     var items = result[saved_name];
     if (items) {
       console.log("loaded " + saved_name + " from storage", items);
@@ -55,7 +55,7 @@ function saveStorage(saved_name, object, storables) {
   }
   var toSave = {};
   toSave[saved_name] = items;
-  chrome.storage.local.set(toSave, function() {
+  chrome.storage.sync.set(toSave, function() {
     console.log("saved " + saved_name + " to storage");
   });
 }
@@ -64,7 +64,7 @@ function clearAllStorage() {
   if (!chrome || !chrome.storage) {
     return;
   }
-  chrome.storage.local.clear(function() {
+  chrome.storage.sync.clear(function() {
     console.log("storage cleared");
   });
 }
