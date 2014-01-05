@@ -14,8 +14,8 @@ clean:
 	rm -f $(ZIPBASE)/*.html
 	rm -f $(ZIPBASE)/*.js
 	rm -f $(ZIPBASE)/*.json
-	rm -f $(ZIPBASE)/$(BOOTSTRAP)
-	rm -f $(ZIPBASE)/$(IMAGES)
+	rm -rf $(ZIPBASE)/$(BOOTSTRAP)
+	rm -rf $(ZIPBASE)/$(IMAGES)
 
 force_look:
 	true
