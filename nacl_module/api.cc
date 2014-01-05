@@ -39,10 +39,9 @@
 #include "node_factory.h"
 #include "types.h"
 
-// echo -n "Bitcoin Wallet Copyright 2014 Mike Tsao." | sha256sum
+// echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
 const std::string PASSPHRASE_CHECK_HEX =
-  "d961579ab5f288d5424816577a092435f32223347a562992811e71c31e2d12ea";
-
+  "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   dict["hex_id"] = to_hex(node->hex_id());

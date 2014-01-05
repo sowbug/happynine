@@ -2,7 +2,7 @@ DIRS := chrome_app nacl_module
 OUTBASE ?= $(PWD)/out
 ZIPBASE := $(OUTBASE)/zip
 APP_FILES := chrome_app/index.html
-ZIP := bitcoin_wallet_app.zip
+ZIP := happynine.zip
 
 all: $(ZIP)
 
