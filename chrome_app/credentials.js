@@ -202,6 +202,18 @@ function Credentials(settings) {
     }
   };
 
+  this.removeMasterKey = function() {
+    if (!this.isWalletUnlocked()) {
+      console.log("can't remove master key; wallet is locked");
+      callback.call(this);
+      return;
+    }
+    this.extendedPublicBase58 = null;
+    this.extendedPrivateBase58 = null;
+    this.extendedPrivateBase58Encrypted = null;
+    this.accounts = [];
+  };
+
   this.hasMultipleAccounts = function() {
     return this.accounts.length > 1;
   };

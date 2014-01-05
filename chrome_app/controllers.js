@@ -134,8 +134,7 @@ function WalletController($scope, $http) {
     // confirm up the wazoo before actually deleting.
     //
     // Less of a big deal if the master key is public.
-    $scope.account = null;
-    $scope.masterKey = null;
+    $scope.credentials.removeMasterKey();
   };
 
   $scope.importMasterKey = function() {
