@@ -60,13 +60,13 @@ A more interesting use case: one family of parents Alice and Bob, with kids Caro
 * The family attorney is instructed to disclose each child's savings account's xprv to the child on that child's 18th birthday.
 * The grandparents get three Bitcoin addresses, one from each of the kids' savings xpubs.
 * Aunt Olive gets three different Bitcoin addresses for the kids' savings.
-* The parents get the kids' spending xpubs.
+* The parents keep all the xpubs, including particularly the kids' spending xpubs.
 * The parents do not keep the master key xpub/xprv online.
 
 This gives the family the following abilities:
 
 * Each kid has complete control over his or her own savings account (because he or she has the xprv). Same with each parent. As with normal Bitcoin wallets, the kid can give out any Bitcoin address from that account to anyone, and spend the funds in any address belonging to that account.
-* The parents can monitor the kids' entire savings accounts because they have the xpub.
+* The parents can monitor the kids' savings accounts for unauthorized spending sprees.
 * Extended family can give gifts straight to each kids' savings account (because they have Bitcoin addresses belonging to those accounts), but the kids can't spend it until their 18th birthday.
 * Because the grandparents and Aunt Olive got different addresses, they can't spy on how generous the others are being. Because they have only addresses and not xpubs, they cannot spy on the overall savings balance of any of the kids.
 * Eve (who, being named Eve, is cryptologically likely to be evil) cannot steal from her siblings, monitor their balances, or eavesdrop on their transactions.
