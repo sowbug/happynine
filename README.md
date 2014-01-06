@@ -40,11 +40,11 @@ Known Issues
 * Refresh button doesn't do anything
 * There are no safety features, such as requiring a confirmation before deleting keys
 
-System Requirements for Users
+User Requirements
 ===
 
 * A basic understanding of [Bitcoin](http://bitcoin.org/)
-* [Chrome](https://www.google.com/chrome/)
+* [Chrome](https://www.google.com/chrome/). You don't actually have to use this as your browser, but it does need to be installed on your computer.
 * (Optional) a [Chromebook](http://www.google.com/intl/en/chrome/devices/), which is an excellent device if you're interested in avoiding Windows malware. [Buy one today!](http://www.amazon.com/gp/product/B00FNPD1VW?tag=sowbug-20)
 
 BIP 0032 Overview
