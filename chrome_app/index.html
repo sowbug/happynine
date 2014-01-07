@@ -77,7 +77,7 @@
             <div class="panel panel-success" ng-if="!masterKey">
               <div class="panel-heading">Get Started</div>
               <div class="panel-body">
-                <p class="lead">Welcome! Let's set up your wallet.</p>
+                <p class="lead">Welcome to {{app_name}}! Let's set up your wallet.</p>
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
@@ -322,10 +322,10 @@
       <ul class="nav navbar-nav">
         <li ng-if="isPassphraseSet()">
           <a href="#" ng-if="!isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal">
-            <span class="glyphicon glyphicon-lock ok"></span>
+            <span class="glyphicon glyphicon-lock ok" title="Your wallet is locked"></span>
           </a>
           <a href="#" ng-if="isWalletUnlocked()" ng-click="lockWallet()">
-            <span class="glyphicon glyphicon-exclamation-sign danger"></span>
+            <span class="glyphicon glyphicon-exclamation-sign danger" title="Your wallet is unlocked"></span>
           </a>
         </li>
         <li>
