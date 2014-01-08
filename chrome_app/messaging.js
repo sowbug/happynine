@@ -25,7 +25,7 @@
 var callbacks = {};
 var callbackId = 1;
 
-var shouldLog = false;
+var shouldLog = true;
 
 var postMessageWithCallback = function(message, callback) {
   message.id = callbackId++;

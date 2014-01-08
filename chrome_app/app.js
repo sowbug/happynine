@@ -22,4 +22,23 @@
 
 'use strict';
 
-var bitcoinWalletApp = angular.module('bitcoinWalletApp', []);
+var walletApp = angular.module('walletApp', []);
+
+walletApp.factory('settings', function() {
+  return new Settings();
+});
+
+walletApp.factory('credentials', function() {
+  return new Credentials();
+});
+
+walletApp.factory('wallet', ['credentials', function(credentials) {
+  return new Wallet(credentials);
+}]);
+
+walletApp.controller('MainCtrl', ['$scope',
+                                  '$http',
+                                  'settings',
+                                  'credentials',
+                                  'wallet',
+                                  walletAppController]);

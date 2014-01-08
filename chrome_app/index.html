@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-ng-app="bitcoinWalletApp">
+<html data-ng-app="walletApp">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title ng-bind="app_name"></title>
@@ -9,7 +9,7 @@
     <link href="styles.css" rel="stylesheet">
   </head>
 
-  <body data-name="hd_wallet" data-tools="newlib glibc pnacl" data-configs="Release Debug" data-path="{tc}/{config}" data-ng-controller="WalletController">
+  <body data-name="hd_wallet" data-tools="newlib glibc pnacl" data-configs="Release Debug" data-path="{tc}/{config}" data-ng-controller="MainCtrl">
 
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
@@ -60,9 +60,8 @@
       <div class="col-md-2">
         <ul class="nav nav-pills nav-stacked" id="main-tabs">
           <li><a href="#home" data-toggle="tab">Home</a></li>
-          <li ng-if="masterKey"><a href="#send" data-toggle="tab">Send</a></li>
-          <li ng-if="masterKey"><a href="#receive" data-toggle="tab">Receive</a></li>
-          <li ng-if="isWalletUnlocked() || masterKey"><a href="#master-key" data-toggle="tab">Master Key</a></li>
+          <li ng-if="accounts"><a href="#send" data-toggle="tab">Send</a></li>
+          <li ng-if="accounts"><a href="#receive" data-toggle="tab">Receive</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -87,7 +86,7 @@
             </div>
 
             <div class="panel panel-default" ng-if="masterKey">
-              <div class="panel-heading">Transactions</div>
+              <div class="panel-heading">Recent Transactions</div>
               <div class="panel-body">
                 <p id="no-transactions" ng-if="!(account && account.hasTransactions())">None.</p>
                 <table id="transaction-table" class="table table-striped"  ng-if="account && account.hasTransactions()">
@@ -172,84 +171,21 @@
             </div>
           </div>
 
-          <!-- Key -->
-          <div class="tab-pane fade" id="master-key">
-
-            <!-- Management -->
-            <div class="panel panel-default" ng-if="isWalletUnlocked() && !masterKey">
-              <div class="panel-heading">Management</div>
-              <div class="panel-body">
-                <div class="row">
-                  <div class="col-md-6 col-md-offset-2">
-                    <button class="btn btn-success" ng-click="newMasterKey()">New Master Key</button>
-                    <button class="btn btn-primary" data-toggle="modal" data-target="#import-master-key-modal">Import Master Key &hellip;</button>
-                  </div>
-                </div>
-
-              </div>
-            </div><!-- panel-default -->
-
-            <!-- Installed Master Key -->
-            <div class="panel panel-default" ng-if="masterKey">
-              <div class="panel-heading">Installed Master Key</div>
-              <div class="panel-body">
-                <form class="form-horizontal" role="form">
-                  <div class="form-group">
-                    <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
-                    <div class="col-md-3">
-                      <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
-                    </div>
-                    <div class="col-md-2">
-                      <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint}}"/>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
-                    <div class="col-md-10">
-                      <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="masterKey.xpub"></textarea>
-                    </div>
-                  </div>
-                  <div ng-if="isWalletUnlocked()">
-                    <div class="form-group">
-                      <div class="col-md-4 col-md-offset-2">
-                        <div class="checkbox">
-                          <label>
-                            <input type="checkbox" ng-model="masterKey.showXprv">Show Private Key
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="form-group" ng-if="masterKey.showXprv && masterKey.xprv">
-                      <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
-                      <div class="col-md-10">
-                        <textarea class="form-control" id="xprv-readonly" readonly ng-bind="masterKey.xprv"></textarea>
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <div class="col-md-4 col-md-offset-2">
-                        <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
-                      </div>
-                    </div>
-                  </div><!-- isWalletUnlocked -->
-
-                </form>
-              </div>
-            </div><!-- panel-default -->
-
-          </div><!-- Key -->
-
           <!-- Settings -->
           <div class="tab-pane fade" id="settings">
 
             <div class="btn-toolbar">
               <ul class="nav nav-pills" id="settings-tabs">
                 <li><a href="#settings-basic" data-toggle="tab">Basic</a></li>
+                <li ng-if="isWalletUnlocked() || masterKey"><a href="#settings-master-key" data-toggle="tab">Master Key</a></li>
+                <li><a href="#settings-accounts" data-toggle="tab">Accounts</a></li>
                 <li><a href="#settings-advanced" data-toggle="tab">Advanced</a></li>
               </ul>
             </div>
 
             <div class="tab-content">
+
+              <!-- Settings - Basic -->
               <div class="tab-pane active fade" id="settings-basic">
                 <!-- Passphrase -->
                 <div class="panel panel-default" ng-if="!isPassphraseSet() || isWalletUnlocked()">
@@ -293,6 +229,114 @@
                   </div>
                 </div><!-- panel-default -->
               </div>
+
+              <!-- Settings - Master Key -->
+              <div class="tab-pane active fade" id="settings-master-key">
+
+                <!-- Management -->
+                <div class="panel panel-default" ng-if="isWalletUnlocked() && !masterKey">
+                  <div class="panel-heading">Management</div>
+                  <div class="panel-body">
+                    <div class="row">
+                      <div class="col-md-6 col-md-offset-2">
+                        <button class="btn btn-success" ng-click="newMasterKey()">New Master Key</button>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#import-master-key-modal">Import Master Key &hellip;</button>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- panel-default -->
+
+                <!-- Master Key -->
+                <div class="panel panel-default" ng-if="masterKey">
+                  <div class="panel-heading">Installed Master Key</div>
+                  <div class="panel-body">
+                    <form class="form-horizontal" role="form">
+                      <div class="form-group">
+                        <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
+                        <div class="col-md-3">
+                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
+                        </div>
+                        <div class="col-md-2">
+                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint}}"/>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
+                        <div class="col-md-10">
+                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="masterKey.xpub"></textarea>
+                        </div>
+                      </div>
+                      <div ng-if="isWalletUnlocked()">
+                        <div class="form-group">
+                          <div class="col-md-4 col-md-offset-2">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" ng-model="masterKey.showXprv">Show Private Key
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="form-group" ng-if="masterKey.showXprv && masterKey.xprv">
+                          <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
+                          <div class="col-md-10">
+                            <textarea class="form-control" id="xprv-readonly" readonly ng-bind="masterKey.xprv"></textarea>
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <div class="col-md-4 col-md-offset-2">
+                            <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
+                          </div>
+                        </div>
+                      </div><!-- isWalletUnlocked -->
+
+                    </form>
+                  </div>
+                </div><!-- panel-default -->
+              </div><!-- master key tab-pane -->
+
+              <!-- Settings - Accounts -->
+              <div class="tab-pane fade" id="settings-accounts">
+
+                <div class="panel panel-default">
+                  <div class="panel-heading">Management</div>
+                  <div class="panel-body">
+                    <div class="row">
+                      <div class="col-md-10 col-md-offset-2">
+                        <button class="btn btn-success" ng-click="generateNextAccount()">Generate {{nextAccountName()}}</button>
+                      </div>
+                    </div>
+                  </div><!-- /panel-body -->
+                </div><!-- /panel-default -->
+
+                <div class="panel panel-default">
+                  <div class="panel-heading">Installed Accounts</div>
+                  <div class="panel-body">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Parent</th><th>Index</th><th>Fingerprint</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr data-ng-repeat="account in accounts">
+                          <td>
+                            {{account.parent}}
+                          </td>
+                          <td>
+                            {{account.index}}
+                          </td>
+                          <td>
+                            {{account.fingerprint}}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div><!-- /panel-body -->
+                </div><!-- /panel-default -->
+              </div><!-- account tab-pane -->
+
+              <!-- Settings - Advanced -->
               <div class="tab-pane fade" id="settings-advanced">
                 <div class="panel panel-danger">
                   <div class="panel-heading">Danger</div>
@@ -407,15 +451,16 @@
     <script type="text/javascript" src="js/jquery/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="js/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/angular/angular.min.js"></script>
-    <script type="text/javascript" src="app.js"></script>
     <script type="text/javascript" src="storage.js"></script>
     <script type="text/javascript" src="settings.js"></script>
     <script type="text/javascript" src="credentials.js"></script>
+    <script type="text/javascript" src="wallet.js"></script>
     <script type="text/javascript" src="account.js"></script>
     <script type="text/javascript" src="master_key.js"></script>
-    <script type="text/javascript" src="controllers.js"></script>
     <script type="text/javascript" src="messaging.js"></script>
     <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="controllers.js"></script>
+    <script type="text/javascript" src="app.js"></script>
 
   </body>
 </html>

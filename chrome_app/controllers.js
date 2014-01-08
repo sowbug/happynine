@@ -22,7 +22,16 @@
 
 'use strict';
 
-function WalletController($scope, $http) {
+var walletAppController = function($scope,
+                                   $http,
+                                   settings,
+                                   credentials,
+                                   wallet) {
+  console.log("here I am", settings, credentials, wallet);
+  $scope.settings = settings;
+  $scope.credentials = credentials;
+  $scope.wallet = wallet;
+
   // For some crazy reason, angularjs won't reflect view changes in
   // the model's scope-level objects, so I have to create another
   // object and hang stuff off it. I picked w for wallet.
@@ -92,19 +101,6 @@ function WalletController($scope, $http) {
                   }
                 });
 
-  $scope.newMasterKey = function() {
-    var message = {
-      'command': 'create-node'
-    };
-    postMessageWithCallback(message, function(response) {
-      $scope.credentials.setMasterKey(response.ext_pub_b58,
-                                      response.ext_prv_b58,
-                                      function() {
-                                        $scope.$apply();
-                                      });
-    });
-  };
-
   $scope.generateMasterKey = function() {
     if (!$scope.credentials.extendedPublicBase58) {
       console.log("updated master key to null");
@@ -127,31 +123,31 @@ function WalletController($scope, $http) {
     });
   };
 
+  $scope.newMasterKey = function() {
+    $scope.wallet.createRandomMasterKey(function() {
+      $scope.$apply();
+    });
+  };
+
+  $scope.importMasterKey = function() {
+    $scope.wallet.importMasterKey(
+      $scope.w.importMasterKey,
+      function(succeeded) {
+        if (succeeded) {
+          $scope.w.importMasterKey = null;
+          $("#import-master-key-modal").modal('hide');
+        }
+        $scope.$apply();
+      });
+  };
+
   $scope.removeMasterKey = function() {
     // TODO(miket): ideally we'll track whether this key was backed
     // up, and make this button available only if yes. Then we'll
     // confirm up the wazoo before actually deleting.
     //
     // Less of a big deal if the master key is public.
-    $scope.credentials.removeMasterKey();
-  };
-
-  $scope.importMasterKey = function() {
-    var message = {
-      'command': 'get-node',
-      'seed': $scope.w.importMasterKey
-    };
-    postMessageWithCallback(message, function(response) {
-      if (response.ext_pub_b58) {
-        $scope.w.importMasterKey = null;
-        $("#import-master-key-modal").modal('hide');
-      }
-      $scope.credentials.setMasterKey(response.ext_pub_b58,
-                                      response.ext_prv_b58,
-                                      function() {
-                                        $scope.$apply();
-                                      });
-    });
+    $scope.wallet.removeMasterKey();
   };
 
   $scope.firstAccount = function() {
@@ -186,40 +182,37 @@ function WalletController($scope, $http) {
     }
   };
 
+  $scope.nextAccountName = function() {
+    return "Account Foo";
+  };
+
+  $scope.generateNextAccount = function() {
+    $scope.accounts.push({ 'parent': '0x11112222',
+                           'index': 1,
+                           'fingerprint': '0x44445555'});
+    console.log("not implemented");
+  };
+
   $scope.unlockWallet = function() {
-    var message = {};
-    message.command = 'unlock-wallet';
-    message.salt = $scope.credentials.salt;
-    message.check = $scope.credentials.check;
-    message.internal_key_encrypted = $scope.credentials.internalKeyEncrypted;
-    message.passphrase = $scope.w.passphraseNew;
-
-    postMessageWithCallback(message, function(response) {
-      if (response.key) {
+    var unlockCallback = function(succeeded) {
+      if (succeeded) {
         $("#unlock-wallet-modal").modal('hide');
-
-        // This deserves some explanation. We are asking the
-        // credentials object to cache the key and internal key
-        // (asynchronously, because it needs to message the NaCl
-        // module), after which it should call us to zero out the
-        // passphrase and update the UI. And when the cache expires,
-        // update the UI once again.
-        $scope.credentials.cacheKeys(response.key,
-                                     response.internal_key,
-                                     function() {
-                                       $scope.$apply();
-                                     },
-                                     function() {
-                                       $scope.$apply(function() {
-                                         $scope.w.passphraseNew = null;
-                                       });
-                                     });
       }
-    });
+      $scope.w.passphraseNew = null;
+      $scope.$apply();
+    };
+
+    var relockCallback = function() {
+      $scope.$apply();
+    };
+
+    $scope.wallet.unlock($scope.w.passphraseNew,
+                         relockCallback.bind(this),
+                         unlockCallback.bind(this));
   };
 
   $scope.lockWallet = function() {
-    $scope.credentials.clearCachedKeys();
+    $scope.wallet.lock();
   };
 
   $scope.setPassphrase = function() {
@@ -248,10 +241,19 @@ function WalletController($scope, $http) {
   };
 
   $scope.initializeEverything = function() {
-    $scope.masterKey = null;
-    $scope.account = null;
-    $scope.settings = new Settings();
-    $scope.credentials = new Credentials($scope.settings);
+
+    // TODO(miket): figure out how to re-get injected parameters
+    if (false) {
+      $scope.masterKey = null;
+      $scope.account = null;
+      $scope.accounts = [
+        { 'parent': '0x11112222',
+          'index': 0,
+          'fingerprint': '0x22223333'},
+      ];
+//      $scope.settings = new Settings();
+//    $scope.credentials = new Credentials($scope.settings);
+    }
   };
 
   $scope.clearEverything = function() {
@@ -284,4 +286,4 @@ function WalletController($scope, $http) {
   }, true);
 
   $scope.initializeEverything();
-}
+};
