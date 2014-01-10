@@ -23,13 +23,13 @@
       </div>
 
       <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav navbar-right" ng-if="account">
+        <ul class="nav navbar-nav navbar-right" ng-if="currentAccount()">
           <li>
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="satoshiToUnit(account.balance)"></span>
+              <span ng-bind="satoshiToUnit(currentAccount().balance)"></span>
               <span ng-bind="unitLabel()"></span>
             </p>
           </li>
@@ -60,8 +60,8 @@
       <div class="col-md-2">
         <ul class="nav nav-pills nav-stacked" id="main-tabs">
           <li><a href="#home" data-toggle="tab">Home</a></li>
-          <li ng-if="accounts"><a href="#send" data-toggle="tab">Send</a></li>
-          <li ng-if="accounts"><a href="#receive" data-toggle="tab">Receive</a></li>
+          <li ng-if="currentAccount()"><a href="#send" data-toggle="tab">Send</a></li>
+          <li ng-if="currentAccount()"><a href="#receive" data-toggle="tab">Receive</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -73,30 +73,30 @@
           <!-- Home -->
           <div class="tab-pane fade" id="home">
 
-            <div class="panel panel-success" ng-if="!masterKey">
+            <div class="panel panel-success" ng-if="!isWalletKeySet()">
               <div class="panel-heading">Get Started</div>
               <div class="panel-body">
                 <p class="lead">Welcome to {{app_name}}! Let's set up your wallet.</p>
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
-                  <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock"></span> to enter your wallet passphrase.</li>
+                  <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
                   <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv/xpub-formatted BIP0032 master key, import it.</li>
                 </ul>
               </div>
             </div>
 
-            <div class="panel panel-default" ng-if="masterKey">
+            <div class="panel panel-default" ng-if="isWalletKeySet()">
               <div class="panel-heading">Recent Transactions</div>
               <div class="panel-body">
-                <p id="no-transactions" ng-if="!(account && account.hasTransactions())">None.</p>
-                <table id="transaction-table" class="table table-striped"  ng-if="account && account.hasTransactions()">
+                <p id="no-transactions" ng-if="!(currentAccount() && currentAccount().hasTransactions())">None.</p>
+                <table id="transaction-table" class="table table-striped"  ng-if="currentAccount() && currentAccount().hasTransactions()">
                   <thead>
                     <tr>
                       <th>Date</th><th>Address</th><th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in account.transactions">
+                    <tr data-ng-repeat="tx in currentAccount().transactions">
                       <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{satoshiToUnit(tx.amount)}}</td>
                     </tr>
                   </tbody>
@@ -152,7 +152,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in account.addresses">
+                    <tr data-ng-repeat="addr in currentAccount().addresses">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
@@ -177,7 +177,7 @@
             <div class="btn-toolbar">
               <ul class="nav nav-pills" id="settings-tabs">
                 <li><a href="#settings-basic" data-toggle="tab">Basic</a></li>
-                <li ng-if="isWalletUnlocked() || masterKey"><a href="#settings-master-key" data-toggle="tab">Master Key</a></li>
+                <li ng-if="isWalletUnlocked() || isWalletKeySet()"><a href="#settings-master-key" data-toggle="tab">Master Key</a></li>
                 <li><a href="#settings-accounts" data-toggle="tab">Accounts</a></li>
                 <li><a href="#settings-advanced" data-toggle="tab">Advanced</a></li>
               </ul>
@@ -234,7 +234,7 @@
               <div class="tab-pane active fade" id="settings-master-key">
 
                 <!-- Management -->
-                <div class="panel panel-default" ng-if="isWalletUnlocked() && !masterKey">
+                <div class="panel panel-default" ng-if="isWalletUnlocked() && !isWalletKeySet()">
                   <div class="panel-heading">Management</div>
                   <div class="panel-body">
                     <div class="row">
@@ -247,39 +247,39 @@
                 </div><!-- panel-default -->
 
                 <!-- Master Key -->
-                <div class="panel panel-default" ng-if="masterKey">
+                <div class="panel panel-default" ng-if="isWalletKeySet()">
                   <div class="panel-heading">Installed Master Key</div>
                   <div class="panel-body">
                     <form class="form-horizontal" role="form">
                       <div class="form-group">
                         <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
                         <div class="col-md-3">
-                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{masterKey.fingerprint}}">
+                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{getWalletKeyFingerprint()}}">
                         </div>
                         <div class="col-md-2">
-                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{masterKey.fingerprint}}"/>
+                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getWalletKeyFingerprint()}}"/>
                         </div>
                       </div>
                       <div class="form-group">
                         <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
                         <div class="col-md-10">
-                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="masterKey.xpub"></textarea>
+                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="getWalletKeyPublic()"></textarea>
                         </div>
                       </div>
                       <div ng-if="isWalletUnlocked()">
-                        <div class="form-group">
+                        <div class="form-group" ng-if="isWalletKeyPrivateSet()">
                           <div class="col-md-4 col-md-offset-2">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" ng-model="masterKey.showXprv">Show Private Key
+                                <input type="checkbox" ng-model="w.showPrivateKey">Show Private Key
                               </label>
                             </div>
                           </div>
                         </div>
-                        <div class="form-group" ng-if="masterKey.showXprv && masterKey.xprv">
+                        <div class="form-group" ng-if="w.showPrivateKey && isWalletKeyPrivateSet()">
                           <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
                           <div class="col-md-10">
-                            <textarea class="form-control" id="xprv-readonly" readonly ng-bind="masterKey.xprv"></textarea>
+                            <textarea class="form-control" id="xprv-readonly" readonly ng-bind="getWalletKeyPrivate()"></textarea>
                           </div>
                         </div>
 
@@ -298,7 +298,7 @@
               <!-- Settings - Accounts -->
               <div class="tab-pane fade" id="settings-accounts">
 
-                <div class="panel panel-default">
+                <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
                   <div class="panel-heading">Management</div>
                   <div class="panel-body">
                     <div class="row">
@@ -312,14 +312,23 @@
                 <div class="panel panel-default">
                   <div class="panel-heading">Installed Accounts</div>
                   <div class="panel-body">
-                    <table class="table table-striped">
+                    <div ng-if="!wallet.accountCount()">
+                      <p id="no-accounts">None. To create an account:</p>
+                      <ul>
+                        <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
+                        <li ng-if="!isWalletUnlocked()">Unlock your wallet by clicking the lock icon <span class="glyphicon glyphicon-lock ok"></span> below.</li>
+                        <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Click the <span class="label label-success">Generate Account</span> button above.</li>
+                      </ul>
+                    </div>
+
+                    <table class="table table-striped" ng-if="wallet.accountCount()">
                       <thead>
                         <tr>
                           <th>Parent</th><th>Index</th><th>Fingerprint</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr data-ng-repeat="account in accounts">
+                        <tr data-ng-repeat="account in wallet.currentAccount()">
                           <td>
                             {{account.parent}}
                           </td>
@@ -385,11 +394,11 @@
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>
-        <li ng-if="account">
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="account.fingerprint"></p>
+        <li ng-if="currentAccount()">
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="currentAccount().fingerprint"></p>
         </li>
         <li>
-          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{account.fingerprint}}" ng-if="account"/>
+          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{currentAccount().fingerprint}}" ng-if="currentAccount()"/>
         </li>
       </ul>
     </div><!-- footer -->

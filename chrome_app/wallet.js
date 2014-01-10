@@ -25,39 +25,78 @@
 // The Wallet model holds master keys and addresses that make up a
 // BIP-0032 HD wallet.
 function Wallet(credentials) {
-  var STORABLE = ['salt',
-                  'check',
-                  'internalKeyEncrypted',
-                  'extendedPrivateBase58Encrypted',
-                  'extendedPublicBase58',
-                  'accounts'];
-
   this.credentials = credentials;
 
   // ephemeral
   this.clearEphemeral = function() {
     this.ephemeral = {};
     this.ephemeral.accounts = {};
-    this.ephemeral.extendedPrivateBase58Encrypted = null;
+    this.ephemeral.extendedPrivateBase58 = null;
   };
   this.clearEphemeral();
 
   // storable
   this.clearStorable = function() {
     this.storable = {};
-    this.storable.extendedPrivateBase58 = null;
-    this.storable.extendedPublicBase58 = null;
     this.storable.accounts = {};
+    this.storable.extendedPrivateBase58Encrypted = null;
+    this.storable.extendedPublicBase58 = null;
+    this.storable.fingerprint = null;
     this.storable.nextAccount = 0;
   };
   this.clearStorable();
 
   this.unlock = function(passphrase, relockCallback, callback) {
-    this.credentials.generateAndCacheKeys(passphrase, relockCallback, callback);
+    this.credentials.generateAndCacheKeys(
+      passphrase,
+      relockCallback,
+      callback);
   };
 
   this.lock = function() {
     this.credentials.clearCachedKeys();
+  };
+
+  this.isKeySet = function() {
+    return !!this.storable.extendedPublicBase58;
+  };
+
+  this.decryptSecrets = function(callback) {
+    if (!this.credentials.isKeyAvailable()) {
+      console.log("can't decrypt without key");
+      callback.call(this, false);
+      return;
+    }
+    if (this.storable.extendedPrivateBase58Encrypted) {
+      this.credentials.decrypt(
+        this.storable.extendedPrivateBase58Encrypted,
+        function(item) {
+          this.ephemeral.extendedPrivateBase58 = item;
+          callback.call(this, !!item);
+        }.bind(this));
+    } else {
+      // Callers are depending on this method to be asynchonous.
+      window.setTimeout(callback.bind(this, true), 0);
+    }
+  }
+
+  this.getExtendedPrivateBase58 = function() {
+    if (!this.credentials.isKeyAvailable()) {
+      console.log("warning: getPrivateBase58 with locked wallet");
+    }
+    return this.ephemeral.extendedPrivateBase58;
+  };
+
+  this.isExtendedPrivateSet = function() {
+    return !!this.storable.extendedPrivateBase58Encrypted;
+  };
+
+  this.getExtendedPublicBase58 = function() {
+    return this.storable.extendedPublicBase58;
+  };
+
+  this.getFingerprint = function() {
+    return this.storable.fingerprint;
   };
 
   this.createRandomMasterKey = function(callback) {
@@ -65,10 +104,10 @@ function Wallet(credentials) {
       'command': 'create-node'
     };
     postMessageWithCallback(message, function(response) {
-      this.setMasterKey(response.ext_pub_b58,
-                        response.ext_prv_b58,
-                        response.fingerprint);
-      callback.call(this);
+      this._setMasterKey(response.ext_pub_b58,
+                         response.ext_prv_b58,
+                         response.fingerprint,
+                         callback.bind(this));
     }.bind(this));
   };
 
@@ -79,62 +118,59 @@ function Wallet(credentials) {
     };
     postMessageWithCallback(message, function(response) {
       if (response.ext_pub_b58) {
-        this.setMasterKey(response.ext_pub_b58,
-                          response.ext_prv_b58,
-                          callback.bind(this, true));
+        this._setMasterKey(response.ext_pub_b58,
+                           response.ext_prv_b58,
+                           response.fingerprint,
+                           callback.bind(this, true));
       } else {
         callback.call(this, false);
       }
     }.bind(this));
   };
 
-  this.setMasterKey = function(extendedPublicBase58, extendedPrivateBase58,
-                               callback) {
-    if (!this.credentials.isWalletUnlocked()) {
+  this._setMasterKey = function(extendedPublicBase58,
+                                extendedPrivateBase58,
+                                fingerprint,
+                                callback) {
+    if (!this.credentials.isKeyAvailable()) {
       console.log("can't set master key; wallet is locked");
       callback.call(this);
       return;
     }
     if (extendedPrivateBase58) {
-      var message = {};
-      message.command = 'encrypt-item';
-      message.item = extendedPrivateBase58;
-      message.internal_key = this.internalKey;
-
-      postMessageWithCallback(message, function(response) {
+      console.log("calling encrypt");
+      this.credentials.encrypt(extendedPrivateBase58, function(itemEncrypted) {
         this.clearEphemeral();
         this.clearStorable();
         this.ephemeral.extendedPrivateBase58 = extendedPrivateBase58;
 
+        this.storable.extendedPrivateBase58Encrypted = itemEncrypted;
         this.storable.extendedPublicBase58 = extendedPublicBase58;
-        this.storable.extendedPrivateBase58Encrypted = response.item_encrypted;
+        this.storable.fingerprint = fingerprint;
         callback.call(this);
       }.bind(this));
     } else {
       this.clearEphemeral();
       this.clearStorable();
       this.storable.extendedPublicBase58 = extendedPublicBase58;
+      this.storable.fingerprint = fingerprint;
       callback.call(this);
     }
   };
 
   this.removeMasterKey = function() {
-    if (!this.credentials.isWalletUnlocked()) {
+    if (!this.credentials.isKeyAvailable()) {
       console.log("can't remove master key; wallet is locked");
-      callback.call(this);
       return;
     }
     this.ephemeral.extendedPublicBase58 = null;
-    this.storable.extendedPrivateBase58 = null;
+    this.storable.extendedPrivateBase58Encrypted = null;
     this.storable.extendedPublicBase58 = null;
-  };
-
-  this.hasMultipleAccounts = function() {
-    return this.storable.accounts.length > 1;
+    console.log('removeMasterKey');
   };
 
   this.deriveNextAccount = function(callback) {
-    if (!this.isWalletUnlocked()) {
+    if (!this.credentials.isKeyAvailable()) {
       console.log("Can't derive account when wallet is unlocked");
       callback(this, false);
       return;
@@ -159,6 +195,18 @@ function Wallet(credentials) {
           callback(this, true);
         }.bind(this));
     }.bind(this));
+  };
+
+  this.accountCount = function() {
+    return this.storable.accounts.length;
+  };
+
+  this.hasMultipleAccounts = function() {
+    return this.accountCount() > 1;
+  };
+
+  this.getAccounts = function(callback) {
+    return this.storable.accounts.length;
   };
 
   ////////////////////////////////////////////////
@@ -228,7 +276,7 @@ function Wallet(credentials) {
                                 cacheExpirationCallback,
                                 callback) {
     if (this.isPassphraseSet()) {
-      if (!this.isWalletUnlocked()) {
+      if (!this.credentials.isKeyAvailable()) {
         console.log("Can't change passphrase because wallet is locked.");
         callback.call(this, false);
         return;
@@ -272,7 +320,7 @@ function Wallet(credentials) {
   };
 
   this.retrieveAccounts = function(callback) {
-    if (!this.isWalletUnlocked()) {
+    if (!this.credentials.isKeyAvailable()) {
       console.log("Can't add account when wallet is unlocked");
       callback(this, false);
       return;
@@ -317,10 +365,17 @@ function Wallet(credentials) {
   };
 
   this.load = function(callback) {
-    loadStorage('credentials', this, STORABLE, callback);
+    loadStorage2('wallet', function(items) {
+      if (items) {
+        this.storable = items;
+      } else {
+        this.clearStorable();
+      }
+      callback.call(this);
+    }.bind(this));
   };
 
   this.save = function() {
-    saveStorage('credentials', this, STORABLE);
+    saveStorage2('wallet', this.storable);
   };
 }

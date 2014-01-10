@@ -24,15 +24,11 @@
 
 // The Credentials model keeps track of secrets that lock/unlock and
 // encrypt/decrypt things.
-function Credentials(settings) {
+function Credentials() {
   var STORABLE = ['salt',
                   'check',
                   'internalKeyEncrypted',
-                  'extendedPrivateBase58Encrypted',
-                  'extendedPublicBase58',
-                  'accounts'];
-
-  this.settings = settings;
+                 ];
 
   // key is the passphrase key -- the thing that you get when you have
   // the passphrase and salt and run them through PBKDF2.
@@ -44,16 +40,10 @@ function Credentials(settings) {
   // re-encrypt everything in the world.
   this.internalKey = null;
 
-  // This is the family jewels. It's normally encrypted with
-  // internalKey.
-  this.extendedPrivateBase58 = null;
-
   // storable
   this.salt = null;
   this.check = null;
   this.internalKeyEncrypted = null;
-  this.extendedPrivateBase58Encrypted = null;
-  this.extendedPublicBase58 = null;
   this.accounts = [];
 
   this.needsAccountsRetrieval = false;
@@ -63,16 +53,9 @@ function Credentials(settings) {
     return !!this.internalKeyEncrypted;
   };
 
-  // locked means either that a passphrase is set and the key is not cached,
-  // or that there is no passphrase set.
-  this.isWalletUnlocked = function() {
-    return this.isPassphraseSet() && !!this.key;
-  };
-
-  // Used for a $watch in controller.
-  this.digestMasterKey = function() {
-    return this.extendedPublicBase58 + ':' + !! this.extendedPrivateBase58;
-  };
+  this.isKeyAvailable = function() {
+    return !!this.key;
+  }
 
   this.generateAndCacheKeys = function(passphrase, relockCallback, callback) {
     var message = {};
@@ -136,7 +119,8 @@ function Credentials(settings) {
   };
 
   this.encrypt = function(item, callback) {
-    if (!!this.key) {
+    if (!this.key) {
+      console.log("no key available");
       callback.call(this);
       return;
     }
@@ -146,7 +130,7 @@ function Credentials(settings) {
     message.internal_key = this.internalKey;
 
     postMessageWithCallback(message, function(response) {
-      if (response.item) {
+      if (response.item_encrypted) {
         callback.call(this, response.item_encrypted);
       } else {
         callback.call(this);
@@ -155,7 +139,8 @@ function Credentials(settings) {
   };
 
   this.decrypt = function(item, callback) {
-    if (!!this.key) {
+    if (!this.key) {
+      console.log("no key available");
       callback.call(this);
       return;
     }
@@ -218,100 +203,6 @@ function Credentials(settings) {
                        callback.call(this, true);
                      }.bind(this));
     }.bind(this));
-  };
-
-  this.setMasterKey = function(extendedPublicBase58, extendedPrivateBase58,
-                               callback) {
-    if (!this.isWalletUnlocked()) {
-      console.log("can't set master key; wallet is locked");
-      callback.call(this);
-      return;
-    }
-    if (extendedPrivateBase58) {
-      var message = {};
-      message.command = 'encrypt-item';
-      message.item = extendedPrivateBase58;
-      message.internal_key = this.internalKey;
-
-      postMessageWithCallback(message, function(response) {
-        this.extendedPublicBase58 = extendedPublicBase58;
-        this.extendedPrivateBase58 = extendedPrivateBase58;
-        this.extendedPrivateBase58Encrypted = response.item_encrypted;
-        this.accounts = [];
-        this.needsAccountsRetrieval = true;
-        callback.call(this);
-      }.bind(this));
-    } else {
-      this.extendedPublicBase58 = extendedPublicBase58;
-      this.extendedPrivateBase58 = null;
-      this.extendedPrivateBase58Encrypted = null;
-      this.accounts = [];
-
-      // We can't retrieve accounts with an xpub-only wallet.
-      this.needsAccountsRetrieval = false;
-      callback.call(this);
-    }
-  };
-
-  this.removeMasterKey = function() {
-    if (!this.isWalletUnlocked()) {
-      console.log("can't remove master key; wallet is locked");
-      callback.call(this);
-      return;
-    }
-    this.extendedPublicBase58 = null;
-    this.extendedPrivateBase58 = null;
-    this.extendedPrivateBase58Encrypted = null;
-    this.accounts = [];
-  };
-
-  this.hasMultipleAccounts = function() {
-    return this.accounts.length > 1;
-  };
-
-  this.retrieveAccounts = function(callback) {
-    if (!this.isWalletUnlocked()) {
-      console.log("Can't add account when wallet is unlocked");
-      callback(this, false);
-      return;
-    }
-    this.accounts = [];
-    this.needsAccountsRetrieval = false;
-    var message = {
-      'command': 'get-node',
-      'seed': this.extendedPrivateBase58,
-      'path': "m/0'"  // Get the 0th (prime) account of master key
-    };
-    postMessageWithCallback(message, function(response) {
-      var account = {};
-      account.extendedPublicBase58 = response.ext_pub_b58;
-      account.extendedPrivateBase58 = response.ext_prv_b58;
-      account.fingerprint = response.fingerprint;
-
-      var message = {};
-      message.command = 'encrypt-item';
-      message.item = account.extendedPrivateBase58;
-      message.internal_key = this.internalKey;
-
-      postMessageWithCallback(message, function(response) {
-        account.extendedPrivateBase58Encrypted = response.item_encrypted;
-        this.accounts.push(account);
-        this.accountChangeCounter++;
-        callback(this, true);
-      }.bind(this));
-    }.bind(this));
-  };
-
-  this.accountXprvIfAvailable = function(index) {
-    if (this.accounts.length <= index) {
-      return null;
-    }
-    var account = this.accounts[index];
-    if (account.extendedPrivateBase58) {
-      return account.extendedPrivateBase58;
-    } else {
-      return account.extendedPublicBase58;
-    }
   };
 
   this.load = function(callback) {

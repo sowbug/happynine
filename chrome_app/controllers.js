@@ -36,6 +36,7 @@ var walletAppController = function($scope,
   // the model's scope-level objects, so I have to create another
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
+  $scope.w.showPrivateKey = false;
 
   if (chrome && chrome.runtime) {
     var manifest = chrome.runtime.getManifest();
@@ -46,29 +47,60 @@ var walletAppController = function($scope,
     $scope.app_version = "v0.0.0.0";
   }
 
+  $scope.addPostLoadWatchers = function() {
+    // It's important not to add these watchers before initial load.
+    $scope.$watchCollection("settings", function(newVal, oldVal) {
+      if (newVal != oldVal) {
+        $scope.settings.save();
+      }
+    });
+
+    $scope.$watchCollection("credentials", function(newVal, oldVal) {
+      if (newVal != oldVal) {
+        $scope.credentials.save();
+      }
+    });
+
+    $scope.$watchCollection("wallet.storable", function(newVal, oldVal) {
+      console.log("wallet changed", newVal, oldVal);
+      if (newVal != oldVal) {
+        // A small hack: if the wallet ever changes, it's a good
+        // time to hide this checkbox.
+        $scope.showPrivateKey = false;
+        $scope.wallet.save();
+      }
+    });
+
+    $scope.$watch('isWalletUnlocked()',
+                  function(newVal, oldVal) {
+                    if (newVal == oldVal) {
+                      return;
+                    }
+                    if (newVal) {
+                      this.wallet.decryptSecrets(function(succeeded) {
+                        if (succeeded) {
+                          $scope.$apply();
+                        }
+                      });
+                    }
+                  }.bind(this));
+
+
+  };
+
   $scope.startLoading = function() {
     $scope.settings.load(function() {
       $scope.credentials.load(function() {
+        $scope.wallet.load(function() {
 
-        // TODO(miket): I hate this, but I can't get
-        // $scope.credentials.accounts to be watchable.
-        if ($scope.credentials.accounts.length > 0) {
-          $scope.credentials.accountChangeCounter++;
-        }
-
-        $scope.$apply();
-
-        // It's important not to add these watchers before initial load.
-        $scope.$watchCollection("settings", function(newVal, oldVal) {
-          if (newVal != oldVal) {
-            $scope.settings.save();
+          // TODO(miket): I hate this, but I can't get
+          // $scope.credentials.accounts to be watchable.
+          if ($scope.credentials.accounts.length > 0) {
+            $scope.credentials.accountChangeCounter++;
           }
-        });
 
-        $scope.$watchCollection("credentials", function(newVal, oldVal) {
-          if (newVal != oldVal) {
-            $scope.credentials.save();
-          }
+          $scope.$apply();
+          $scope.addPostLoadWatchers();
         });
       });
     });
@@ -100,6 +132,37 @@ var walletAppController = function($scope,
                     $scope.firstAccount();
                   }
                 });
+
+  $scope.$watchCollection('wallet.accounts',
+                          function(newItems, oldItems) {
+                            console.log('wallet.accounts', newItems, oldItems);
+                            if (oldItems.length == 0 && newItems.length > 0) {
+                              $scope.wallet.deriveNextAccount(function() {
+                                $scope.$apply();
+                              });
+                            }
+                          });
+
+  $scope.$watch(
+    'getWalletKeyFingerprint()',
+    function(newVal, oldVal) {
+      if (newVal != oldVal) {
+        if (newVal) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://robohash.org/' + newVal +
+                   '.png?set=set3&bgset=any&size=64x64', true);
+          xhr.responseType = 'blob';
+          xhr.onload = function(e) {
+            $("#master-key-fingerprint-img").attr(
+              "src",
+              window.webkitURL.createObjectURL(this.response));
+          };
+          xhr.send();
+        } else {
+          $("#master-key-fingerprint-img").attr("src", "");
+        }
+      }
+    });
 
   $scope.generateMasterKey = function() {
     if (!$scope.credentials.extendedPublicBase58) {
@@ -187,9 +250,6 @@ var walletAppController = function($scope,
   };
 
   $scope.generateNextAccount = function() {
-    $scope.accounts.push({ 'parent': '0x11112222',
-                           'index': 1,
-                           'fingerprint': '0x44445555'});
     console.log("not implemented");
   };
 
@@ -203,17 +263,23 @@ var walletAppController = function($scope,
     };
 
     var relockCallback = function() {
+      $scope.showPrivateKey = false;
       $scope.$apply();
     };
 
-    $scope.wallet.unlock($scope.w.passphraseNew,
-                         relockCallback.bind(this),
-                         unlockCallback.bind(this));
+    $scope.wallet.unlock(
+      $scope.w.passphraseNew,
+      relockCallback.bind(this),
+      unlockCallback.bind(this));
   };
 
   $scope.lockWallet = function() {
     $scope.wallet.lock();
   };
+
+  $scope.currentAccount = function() {
+    return $scope.w.currentAccount;
+  }
 
   $scope.setPassphrase = function() {
     // TODO: angularjs can probably do this check for us
@@ -263,12 +329,32 @@ var walletAppController = function($scope,
     chrome.runtime.reload();
   };
 
-  $scope.isWalletUnlocked = function() {
-    return $scope.credentials.isWalletUnlocked();
-  };
-
   $scope.isPassphraseSet = function() {
     return $scope.credentials.isPassphraseSet();
+  };
+
+  $scope.isWalletUnlocked = function() {
+    return $scope.credentials.isKeyAvailable();
+  };
+
+  $scope.isWalletKeySet = function() {
+    return $scope.wallet.isKeySet();
+  };
+
+  $scope.isWalletKeyPrivateSet = function() {
+    return $scope.wallet.isExtendedPrivateSet();
+  };
+
+  $scope.getWalletKeyPrivate = function() {
+    return $scope.wallet.getExtendedPrivateBase58();
+  };
+
+  $scope.getWalletKeyPublic = function() {
+    return $scope.wallet.getExtendedPublicBase58();
+  };
+
+  $scope.getWalletKeyFingerprint = function() {
+    return $scope.wallet.getFingerprint();
   };
 
   $scope.satoshiToUnit = function(satoshis) {

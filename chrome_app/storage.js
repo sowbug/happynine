@@ -43,6 +43,23 @@ function loadStorage(saved_name, object, storables, callback) {
   });
 }
 
+function loadStorage2(saved_name, callback) {
+  if (!chrome || !chrome.storage) {
+    console.log("!chrome; skipping load of " + saved_name);
+    callback.call(this, null);
+    return;
+  }
+  chrome.storage.sync.get(saved_name, function(result) {
+    var items = result[saved_name];
+    if (items) {
+      console.log("loaded " + saved_name + " from storage", items);
+    } else {
+      console.log("storage: " + saved_name + " is empty");
+    }
+    callback.call(this, items);
+  });
+}
+
 function saveStorage(saved_name, object, storables) {
   if (!chrome || !chrome.storage) {
     console.log("!chrome; skipping save of " + saved_name);
@@ -55,6 +72,18 @@ function saveStorage(saved_name, object, storables) {
   }
   var toSave = {};
   toSave[saved_name] = items;
+  chrome.storage.sync.set(toSave, function() {
+    console.log("saved " + saved_name + " to storage");
+  });
+}
+
+function saveStorage2(saved_name, object) {
+  if (!chrome || !chrome.storage) {
+    console.log("!chrome; skipping save of " + saved_name);
+    return;
+  }
+  var toSave = {};
+  toSave[saved_name] = object;
   chrome.storage.sync.set(toSave, function() {
     console.log("saved " + saved_name + " to storage");
   });
