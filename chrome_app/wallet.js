@@ -38,7 +38,7 @@ function Wallet(credentials) {
   // storable
   this.clearStorable = function() {
     this.storable = {};
-    this.storable.accounts = {};
+    this.storable.accounts = [];
     this.storable.extendedPrivateBase58Encrypted = null;
     this.storable.extendedPublicBase58 = null;
     this.storable.fingerprint = null;
@@ -78,7 +78,11 @@ function Wallet(credentials) {
       // Callers are depending on this method to be asynchonous.
       window.setTimeout(callback.bind(this, true), 0);
     }
-  }
+  };
+
+  this.getNextAccountNumber = function() {
+    return this.storable.nextAccount;
+  };
 
   this.getExtendedPrivateBase58 = function() {
     if (!this.credentials.isKeyAvailable()) {
@@ -181,9 +185,9 @@ function Wallet(credentials) {
       'seed': this.extendedPrivateBase58,
       'path': "m/" + this.storable.nextAccount++ + "'"
     };
-    postMessageWithCallback(message, function(getNodeResponse) {
+    postMessageWithCallback(message, function(response) {
       this.credentials.encrypt(
-        getNodeResponse.ext_prv_b58,
+        response.ext_prv_b58,
         function(encryptedItem) {
           var newAccount = {};
           newAccount.path = message.path;
@@ -197,16 +201,16 @@ function Wallet(credentials) {
     }.bind(this));
   };
 
-  this.accountCount = function() {
-    return this.storable.accounts.length;
+  this.getAccounts = function() {
+    return this.storable.accounts;
+  };
+
+  this.getAccountCount = function() {
+    return this.getAccounts().length;
   };
 
   this.hasMultipleAccounts = function() {
-    return this.accountCount() > 1;
-  };
-
-  this.getAccounts = function(callback) {
-    return this.storable.accounts.length;
+    return this.getAccountCount() > 1;
   };
 
   ////////////////////////////////////////////////

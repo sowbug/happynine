@@ -62,7 +62,6 @@ var walletAppController = function($scope,
     });
 
     $scope.$watchCollection("wallet.storable", function(newVal, oldVal) {
-      console.log("wallet changed", newVal, oldVal);
       if (newVal != oldVal) {
         // A small hack: if the wallet ever changes, it's a good
         // time to hide this checkbox.
@@ -71,21 +70,24 @@ var walletAppController = function($scope,
       }
     });
 
-    $scope.$watch('isWalletUnlocked()',
-                  function(newVal, oldVal) {
-                    if (newVal == oldVal) {
-                      return;
-                    }
-                    if (newVal) {
-                      this.wallet.decryptSecrets(function(succeeded) {
-                        if (succeeded) {
-                          $scope.$apply();
-                        }
-                      });
-                    }
-                  }.bind(this));
+    $scope.$watchCollection('getAccounts()', function(newItems, oldItems) {
+      if (newItems != oldItems) {
+        $scope.wallet.save();
+      }
+    });
 
-
+    $scope.$watch('isWalletUnlocked()', function(newVal, oldVal) {
+      if (newVal == oldVal) {
+        return;
+      }
+      if (newVal) {
+        this.wallet.decryptSecrets(function(succeeded) {
+          if (succeeded) {
+            $scope.$apply();
+          }
+        });
+      }
+    }.bind(this));
   };
 
   $scope.startLoading = function() {
@@ -105,6 +107,13 @@ var walletAppController = function($scope,
       });
     });
   };
+
+  $scope.$watch('getAccountCount()', function(newVal, oldVal) {
+    if (newVal > 0 && oldVal == 0) {
+      $scope.selectFirstAccount();
+    }
+  });
+
 
   // Something about credentials.extended changed. We should generate
   // a MasterKey.
@@ -133,16 +142,6 @@ var walletAppController = function($scope,
                   }
                 });
 
-  $scope.$watchCollection('wallet.accounts',
-                          function(newItems, oldItems) {
-                            console.log('wallet.accounts', newItems, oldItems);
-                            if (oldItems.length == 0 && newItems.length > 0) {
-                              $scope.wallet.deriveNextAccount(function() {
-                                $scope.$apply();
-                              });
-                            }
-                          });
-
   $scope.$watch(
     'getWalletKeyFingerprint()',
     function(newVal, oldVal) {
@@ -160,6 +159,27 @@ var walletAppController = function($scope,
           xhr.send();
         } else {
           $("#master-key-fingerprint-img").attr("src", "");
+        }
+      }
+    });
+
+  $scope.$watch(
+    'getCurrentAccountFingerprint()',
+    function(newVal, oldVal) {
+      if (newVal != oldVal) {
+        if (newVal) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://robohash.org/' + newVal +
+                   '.png?set=set3&bgset=any&size=64x64', true);
+          xhr.responseType = 'blob';
+          xhr.onload = function(e) {
+            $("#account-fingerprint-img").attr(
+              "src",
+              window.webkitURL.createObjectURL(this.response));
+          };
+          xhr.send();
+        } else {
+          $("#account-fingerprint-img").attr("src", "");
         }
       }
     });
@@ -213,12 +233,6 @@ var walletAppController = function($scope,
     $scope.wallet.removeMasterKey();
   };
 
-  $scope.firstAccount = function() {
-    if ($scope.credentials.accounts.length > 0) {
-      $scope.account = new Account($scope, $http, 0);
-    }
-  };
-
   $scope._nextAccount = function() {
     if ($scope.account) {
       $scope.account =
@@ -246,11 +260,16 @@ var walletAppController = function($scope,
   };
 
   $scope.nextAccountName = function() {
-    return "Account Foo";
+    return "Account " + $scope.wallet.getNextAccountNumber();
   };
 
   $scope.generateNextAccount = function() {
-    console.log("not implemented");
+    $scope.wallet.deriveNextAccount(function(succeeded) {
+      if (succeeded) {
+        console.log("succeeded, account count is " + $scope.getAccountCount());
+        $scope.$apply();
+      }
+    });
   };
 
   $scope.unlockWallet = function() {
@@ -276,10 +295,6 @@ var walletAppController = function($scope,
   $scope.lockWallet = function() {
     $scope.wallet.lock();
   };
-
-  $scope.currentAccount = function() {
-    return $scope.w.currentAccount;
-  }
 
   $scope.setPassphrase = function() {
     // TODO: angularjs can probably do this check for us
@@ -355,6 +370,35 @@ var walletAppController = function($scope,
 
   $scope.getWalletKeyFingerprint = function() {
     return $scope.wallet.getFingerprint();
+  };
+
+  $scope.getAccountCount = function() {
+    return $scope.wallet.getAccountCount();
+  };
+
+  $scope.getAccounts = function() {
+    return $scope.wallet.getAccounts();
+  };
+
+  $scope.getCurrentAccount = function() {
+    return $scope.w.currentAccount;
+  }
+
+  $scope.getCurrentAccountFingerprint = function() {
+    if (!$scope.getCurrentAccount()) {
+      return null;
+    }
+    return $scope.getCurrentAccount().fingerprint;
+  }
+
+  $scope.setCurrentAccountByIndex = function(index) {
+    $scope.w.currentAccount = $scope.getAccounts()[index];
+  }
+
+  $scope.selectFirstAccount = function() {
+    if ($scope.getAccountCount() > 0) {
+      $scope.setCurrentAccountByIndex(0);
+    }
   };
 
   $scope.satoshiToUnit = function(satoshis) {

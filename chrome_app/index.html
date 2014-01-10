@@ -23,13 +23,13 @@
       </div>
 
       <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav navbar-right" ng-if="currentAccount()">
+        <ul class="nav navbar-nav navbar-right" ng-if="getCurrentAccount()">
           <li>
             <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="satoshiToUnit(currentAccount().balance)"></span>
+              <span ng-bind="satoshiToUnit(getCurrentAccount().balance)"></span>
               <span ng-bind="unitLabel()"></span>
             </p>
           </li>
@@ -60,8 +60,8 @@
       <div class="col-md-2">
         <ul class="nav nav-pills nav-stacked" id="main-tabs">
           <li><a href="#home" data-toggle="tab">Home</a></li>
-          <li ng-if="currentAccount()"><a href="#send" data-toggle="tab">Send</a></li>
-          <li ng-if="currentAccount()"><a href="#receive" data-toggle="tab">Receive</a></li>
+          <li ng-if="getCurrentAccount()"><a href="#send" data-toggle="tab">Send</a></li>
+          <li ng-if="getCurrentAccount()"><a href="#receive" data-toggle="tab">Receive</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -88,15 +88,15 @@
             <div class="panel panel-default" ng-if="isWalletKeySet()">
               <div class="panel-heading">Recent Transactions</div>
               <div class="panel-body">
-                <p id="no-transactions" ng-if="!(currentAccount() && currentAccount().hasTransactions())">None.</p>
-                <table id="transaction-table" class="table table-striped"  ng-if="currentAccount() && currentAccount().hasTransactions()">
+                <p id="no-transactions" ng-if="!(getCurrentAccount() && getCurrentAccount().hasTransactions())">None.</p>
+                <table id="transaction-table" class="table table-striped"  ng-if="getCurrentAccount() && getCurrentAccount().hasTransactions()">
                   <thead>
                     <tr>
                       <th>Date</th><th>Address</th><th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in currentAccount().transactions">
+                    <tr data-ng-repeat="tx in getCurrentAccount().transactions">
                       <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{satoshiToUnit(tx.amount)}}</td>
                     </tr>
                   </tbody>
@@ -152,7 +152,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in currentAccount().addresses">
+                    <tr data-ng-repeat="addr in getCurrentAccount().addresses">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
@@ -312,7 +312,7 @@
                 <div class="panel panel-default">
                   <div class="panel-heading">Installed Accounts</div>
                   <div class="panel-body">
-                    <div ng-if="!wallet.accountCount()">
+                    <div ng-if="!getAccountCount()">
                       <p id="no-accounts">None. To create an account:</p>
                       <ul>
                         <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
@@ -321,19 +321,19 @@
                       </ul>
                     </div>
 
-                    <table class="table table-striped" ng-if="wallet.accountCount()">
+                    <table class="table table-striped" ng-if="wallet.getAccountCount()">
                       <thead>
                         <tr>
                           <th>Parent</th><th>Index</th><th>Fingerprint</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr data-ng-repeat="account in wallet.currentAccount()">
+                        <tr data-ng-repeat="account in getAccounts()">
                           <td>
-                            {{account.parent}}
+                            {{account.parentFingerprint}}
                           </td>
                           <td>
-                            {{account.index}}
+                            {{account.path}}
                           </td>
                           <td>
                             {{account.fingerprint}}
@@ -394,11 +394,11 @@
             <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
           </div>
         </li>
-        <li ng-if="currentAccount()">
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="currentAccount().fingerprint"></p>
+        <li ng-if="getCurrentAccount()">
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentAccount().fingerprint"></p>
         </li>
         <li>
-          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{currentAccount().fingerprint}}" ng-if="currentAccount()"/>
+          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentAccountFingerprint()}}" ng-if="getCurrentAccount()"/>
         </li>
       </ul>
     </div><!-- footer -->
