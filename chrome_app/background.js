@@ -13,6 +13,6 @@ chrome.app.runtime.onLaunched.addListener(function() {
     'frame': 'chrome',
     'width': WIDTH,
     'height': HEIGHT,
-    'resizable': true
+    'resizable': false
   }, onCreate);
 });
