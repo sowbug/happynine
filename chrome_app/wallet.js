@@ -27,24 +27,42 @@
 function Wallet(credentials) {
   this.credentials = credentials;
 
-  // ephemeral
-  this.clearEphemeral = function() {
-    this.ephemeral = {};
-    this.ephemeral.accounts = {};
-    this.ephemeral.extendedPrivateBase58 = null;
+  this.init = function() {
+    this.accounts = [];
+    this.extendedPrivateBase58 = null;
+    this.extendedPrivateBase58Encrypted = null;
+    this.extendedPublicBase58 = null;
+    this.fingerprint = null;
+    this.nextAccount = 0;
   };
-  this.clearEphemeral();
+  this.init();
 
-  // storable
-  this.clearStorable = function() {
-    this.storable = {};
-    this.storable.accounts = [];
-    this.storable.extendedPrivateBase58Encrypted = null;
-    this.storable.extendedPublicBase58 = null;
-    this.storable.fingerprint = null;
-    this.storable.nextAccount = 0;
+  this.toStorableObject = function() {
+    var o = {};
+    o.accounts = [];
+    for (var i in this.accounts) {
+      o.accounts.push(this.accounts[i].toStorableObject());
+    }
+    o.extendedPrivateBase58Encrypted = this.extendedPrivateBase58Encrypted;
+    o.extendedPublicBase58 = this.extendedPublicBase58;
+    o.fingerprint = this.fingerprint;
+    o.nextAccount = this.nextAccount;
+
+    return o;
   };
-  this.clearStorable();
+
+  this.loadStorableObject = function(o) {
+    this.init();
+    this.accounts = [];
+    for (var i in o.accounts) {
+      console.log("pushing an account");
+      this.accounts.push(Account.fromStorableObject(o.accounts[i]));
+    }
+    this.extendedPrivateBase58Encrypted = o.extendedPrivateBase58Encrypted;
+    this.extendedPublicBase58 = o.extendedPublicBase58;
+    this.fingerprint = o.fingerprint;
+    this.nextAccount = o.nextAccount;
+  }
 
   this.unlock = function(passphrase, relockCallback, callback) {
     this.credentials.generateAndCacheKeys(
@@ -58,7 +76,7 @@ function Wallet(credentials) {
   };
 
   this.isKeySet = function() {
-    return !!this.storable.extendedPublicBase58;
+    return !!this.extendedPublicBase58;
   };
 
   this.decryptSecrets = function(callback) {
@@ -67,11 +85,11 @@ function Wallet(credentials) {
       callback.call(this, false);
       return;
     }
-    if (this.storable.extendedPrivateBase58Encrypted) {
+    if (this.extendedPrivateBase58Encrypted) {
       this.credentials.decrypt(
-        this.storable.extendedPrivateBase58Encrypted,
+        this.extendedPrivateBase58Encrypted,
         function(item) {
-          this.ephemeral.extendedPrivateBase58 = item;
+          this.extendedPrivateBase58 = item;
           callback.call(this, !!item);
         }.bind(this));
     } else {
@@ -81,26 +99,26 @@ function Wallet(credentials) {
   };
 
   this.getNextAccountNumber = function() {
-    return this.storable.nextAccount;
+    return this.nextAccount;
   };
 
   this.getExtendedPrivateBase58 = function() {
     if (!this.credentials.isKeyAvailable()) {
       console.log("warning: getPrivateBase58 with locked wallet");
     }
-    return this.ephemeral.extendedPrivateBase58;
+    return this.extendedPrivateBase58;
   };
 
   this.isExtendedPrivateSet = function() {
-    return !!this.storable.extendedPrivateBase58Encrypted;
+    return !!this.extendedPrivateBase58Encrypted;
   };
 
   this.getExtendedPublicBase58 = function() {
-    return this.storable.extendedPublicBase58;
+    return this.extendedPublicBase58;
   };
 
   this.getFingerprint = function() {
-    return this.storable.fingerprint;
+    return this.fingerprint;
   };
 
   this.createRandomMasterKey = function(callback) {
@@ -144,20 +162,18 @@ function Wallet(credentials) {
     if (extendedPrivateBase58) {
       console.log("calling encrypt");
       this.credentials.encrypt(extendedPrivateBase58, function(itemEncrypted) {
-        this.clearEphemeral();
-        this.clearStorable();
-        this.ephemeral.extendedPrivateBase58 = extendedPrivateBase58;
+        this.init();
+        this.extendedPrivateBase58 = extendedPrivateBase58;
 
-        this.storable.extendedPrivateBase58Encrypted = itemEncrypted;
-        this.storable.extendedPublicBase58 = extendedPublicBase58;
-        this.storable.fingerprint = fingerprint;
+        this.extendedPrivateBase58Encrypted = itemEncrypted;
+        this.extendedPublicBase58 = extendedPublicBase58;
+        this.fingerprint = fingerprint;
         callback.call(this);
       }.bind(this));
     } else {
-      this.clearEphemeral();
-      this.clearStorable();
-      this.storable.extendedPublicBase58 = extendedPublicBase58;
-      this.storable.fingerprint = fingerprint;
+      this.init();
+      this.extendedPublicBase58 = extendedPublicBase58;
+      this.fingerprint = fingerprint;
       callback.call(this);
     }
   };
@@ -167,15 +183,16 @@ function Wallet(credentials) {
       console.log("can't remove master key; wallet is locked");
       return;
     }
-    this.ephemeral.extendedPublicBase58 = null;
-    this.storable.extendedPrivateBase58Encrypted = null;
-    this.storable.extendedPublicBase58 = null;
+    this.extendedPublicBase58 = null;
+    this.extendedPrivateBase58Encrypted = null;
+    this.extendedPublicBase58 = null;
     console.log('removeMasterKey');
   };
 
   this.deriveNextAccount = function(callback) {
     if (!this.credentials.isKeyAvailable()) {
       console.log("Can't derive account when wallet is unlocked");
+      // TODO(miket): all these synchronous callbacks need to be async
       callback(this, false);
       return;
     }
@@ -183,26 +200,27 @@ function Wallet(credentials) {
     var message = {
       'command': 'get-node',
       'seed': this.extendedPrivateBase58,
-      'path': "m/" + this.storable.nextAccount++ + "'"
+      'path': "m/" + this.nextAccount++ + "'"
     };
     postMessageWithCallback(message, function(response) {
       this.credentials.encrypt(
         response.ext_prv_b58,
         function(encryptedItem) {
-          var newAccount = {};
-          newAccount.path = message.path;
-          newAccount.parentFingerprint = this.storable.fingerprint;
-          newAccount.extendedPublicBase58 = response.ext_pub_b58;
-          newAccount.fingerprint = response.fingerprint;
-          newAccount.extendedPrivateBase58Encrypted = encryptedItem;
-          this.storable.accounts.push(newAccount);
+          this.accounts.push(Account.fromStorableObject({
+            'hexId': response.hex_id,
+            'fingerprint': response.fingerprint,
+            'parentFingerprint': this.fingerprint,
+            'path': message.path,
+            'extendedPublicBase58': response.ext_pub_b58,
+            'extendedPrivateBase58Encrypted': encryptedItem
+          }));
           callback(this, true);
         }.bind(this));
     }.bind(this));
   };
 
   this.getAccounts = function() {
-    return this.storable.accounts;
+    return this.accounts;
   };
 
   this.getAccountCount = function() {
@@ -211,6 +229,21 @@ function Wallet(credentials) {
 
   this.hasMultipleAccounts = function() {
     return this.getAccountCount() > 1;
+  };
+
+  this.load = function(callback) {
+    loadStorage2('wallet', function(object) {
+      if (object) {
+        this.loadStorableObject(object);
+      } else {
+        this.init();
+      }
+      callback.call(this);
+    }.bind(this));
+  };
+
+  this.save = function() {
+    saveStorage2('wallet', this.toStorableObject());
   };
 
   ////////////////////////////////////////////////
@@ -366,20 +399,5 @@ function Wallet(credentials) {
     } else {
       return account.extendedPublicBase58;
     }
-  };
-
-  this.load = function(callback) {
-    loadStorage2('wallet', function(items) {
-      if (items) {
-        this.storable = items;
-      } else {
-        this.clearStorable();
-      }
-      callback.call(this);
-    }.bind(this));
-  };
-
-  this.save = function() {
-    saveStorage2('wallet', this.storable);
   };
 }

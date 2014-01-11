@@ -61,14 +61,14 @@ var walletAppController = function($scope,
       }
     });
 
-    $scope.$watchCollection("wallet.storable", function(newVal, oldVal) {
+    $scope.$watch("wallet", function(newVal, oldVal) {
       if (newVal != oldVal) {
         // A small hack: if the wallet ever changes, it's a good
         // time to hide this checkbox.
         $scope.showPrivateKey = false;
         $scope.wallet.save();
       }
-    });
+    }, true);
 
     $scope.$watchCollection('getAccounts()', function(newItems, oldItems) {
       if (newItems != oldItems) {
@@ -392,7 +392,17 @@ var walletAppController = function($scope,
   }
 
   $scope.setCurrentAccountByIndex = function(index) {
+    if ($scope.w.currentAccount == $scope.getAccounts()[index]) {
+      return;
+    }
     $scope.w.currentAccount = $scope.getAccounts()[index];
+    console.log("current account", $scope.w.currentAccount);
+    $scope.w.currentAccount.fetchAddresses(function() {
+      $scope.w.currentAccount.fetchBalances($http,
+                                            function(succeeded) {
+                                              console.log("wow");
+                                            });
+    });
   }
 
   $scope.selectFirstAccount = function() {

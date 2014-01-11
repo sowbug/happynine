@@ -22,32 +22,87 @@
 
 'use strict';
 
-function Account($scope, $http, index) {
-  this.$scope = $scope;
-  this.index = index;
-  this.balance = 0;
-  this.addresses = [];
-  this.addressMap = {};
-  this.transactions = [];
-  this.nextAddress = 0;
-  this.batchCount = 8;
+function Account() {
+  this.init = function() {
+    this.addressMap = {};
+    this.addresses = [];
+    this.balance = 0;
+    this.batchCount = 8;
+    this.extendedPrivateBase58 = undefined;
+    this.extendedPrivateBase58Encrypted = undefined;
+    this.extendedPublicBase58 = undefined;
+    this.fingerprint = undefined;
+    this.hexId = undefined;
+    this.nextAddress = 0;
+    this.parentFingerprint = undefined;
+    this.path = undefined;
+    this.transactions = [];
+  };
+  this.init();
 
-  var account = this;
-  var message = {
-    'command': 'get-addresses',
-    'seed': $scope.credentials.accountXprvIfAvailable(index),
-    'path': "m/0",  // external addresses
-    'start': this.nextAddress, 'count': this.batchCount };
-  postMessageWithCallback(message, function(response) {
+  this.toStorableObject = function() {
+    var o = {};
+    o.addresses = [];
+    for (var i in this.addresses) {
+      o.addresses.push(this.addresses[i].toStorableObject());
+    }
+    o.balance = this.balance;
+    o.batchCount = this.batchCount;
+    o.extendedPrivateBase58Encrypted = this.extendedPrivateBase58Encrypted;
+    o.extendedPublicBase58 = this.extendedPublicBase58;
+    o.fingerprint = this.fingerprint;
+    o.hexId = this.hexId;
+    o.nextAddress = this.nextAddress;
+    o.parentFingerprint = this.parentFingerprint;
+    o.path = this.path;
+    o.transactions = this.transactions;
+
+    console.log("account.toStorableObject", o, this);
+
+    return o;
+  };
+
+  this.getHexId = function() {
+    return this.hexId;
+  };
+
+  this.extendedPrivateOrPublic = function() {
+    if (this.extendedPrivateBase58) {
+      return this.extendedPrivateBase58;
+    }
+    return this.extendedPublicBase58;
+  };
+
+  this.fetchAddresses = function(callback) {
+    var message = {
+      'command': 'get-addresses',
+      'seed': this.extendedPrivateOrPublic(),
+      'path': "m/0",  // external addresses
+      'start': this.nextAddress,
+      'count': this.batchCount
+    };
+    postMessageWithCallback(message, function(response) {
+      for (var i in response.addresses) {
+        var a = response.addresses[i];
+        var address = Address.fromStorableObject({
+          'address': a.address,
+          'key': a.key,
+          'index': a.index,
+          'path': a.path
+        });
+        if (!this.addressMap[address.address]) {
+          this.addresses.push(address);
+          this.addressMap[address.address] = address;
+        }
+      }
+      callback.call(this);
+    }.bind(this));
+  };
+
+  this.fetchBalances = function($http, callback) {
     var balanceURL = ['https://blockchain.info/multiaddr?active='];
-
-    for (var i in response.addresses) {
-      var address = response.addresses[i];
-      account.addressMap[address.address] = { 'index': address.index,
-                                              'address': address.address,
-                                              'key': address.key,
-                                              'balance': 0,
-                                              'tx_count': 0 };
+    for (var addr in this.addressMap) {
+      var address = this.addressMap[addr];
       if (balanceURL.length > 1) {
         balanceURL.push('|');
       }
@@ -55,38 +110,37 @@ function Account($scope, $http, index) {
     }
     balanceURL.push('&format=json');
     balanceURL = balanceURL.join('');
-
+    
     $http({method: 'GET', url: balanceURL}).
       success(function(data, status, headers, config) {
         for (var i in data.addresses) {
           var addr = data.addresses[i];
-          account.addressMap[addr.address].balance = addr.final_balance;
-          account.addressMap[addr.address].tx_count = addr.n_tx;
+          this.addressMap[addr.address].balance = addr.final_balance;
+          this.addressMap[addr.address].tx_count = addr.n_tx;
         }
         for (var i in data.txs) {
           var tx = data.txs[i];
-          account.transactions.push({
+          this.transactions.push({
             'date': tx.time,
             'address': tx.inputs[0].prev_out.addr,
             'hash': tx.hash,
             'amount': Math.floor(Math.random() * 1000000000)
           });
         }
-        account.calculateBalance();
-       }).
+        this.calculateBalance();
+        callback.call(this, true);
+      }.bind(this)).
       error(function(data, status, headers, config) {
         console.log("error", status, data);
-        account.calculateBalance();
-      });
-  });
+        callback.call(this, false);
+      }.bind(this));
+  };
 
   this.calculateBalance = function() {
     this.balance = 0;
-    this.addresses = [];
     for (var i in this.addressMap) {
       var address = this.addressMap[i];
       this.balance += address.balance;
-      this.addresses.push(address);
     }
   };
 
@@ -95,25 +149,44 @@ function Account($scope, $http, index) {
   };
 
   this.name = function() {
-    if (this.index > 0) {
-      return "Account " + this.index;
-    } else {
-      return "Default Account";
-    }
+    return this.path;
   };
 
-  this.setFingerprint = function(fingerprint) {
-    this.fingerprint = fingerprint;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://robohash.org/' + fingerprint +
-             '.png?set=set3&bgset=any&size=64x64', true);
-    xhr.responseType = 'blob';
-    xhr.onload = function(e) {
-      $("#account-fingerprint-img").attr(
-        "src",
-        window.webkitURL.createObjectURL(this.response));
-    };
-    xhr.send();
+  this.getAddresses = function() {
+    return this.addresses;
   };
-  this.setFingerprint($scope.credentials.accounts[index].fingerprint);
 }
+
+Account.fromStorableObject = function(o) {
+  var s = new Account();
+
+  if (o.addresses != undefined) {
+    for (var i in o.addresses) {
+      var address = Address.fromStorableObject(o.addresses[i]);
+      s.addresses.push(address);
+      addressMap[address.address] = address;
+    }
+  }
+  if (o.balance != undefined) s.balance = o.balance;
+  if (o.batchCount != undefined) s.batchCount = o.batchCount;
+  if (o.extendedPrivateBase58Encrypted != undefined)
+    s.extendedPrivateBase58Encrypted = o.extendedPrivateBase58Encrypted;
+  if (o.extendedPublicBase58 != undefined)
+    s.extendedPublicBase58 = o.extendedPublicBase58;
+  if (o.fingerprint != undefined) s.fingerprint = o.fingerprint;
+  if (o.hexId != undefined)
+    s.hexId = o.hexId;
+  if (o.nextAddress != undefined)
+    s.nextAddress = o.nextAddress;
+  if (o.parentFingerprint != undefined)
+    s.parentFingerprint = o.parentFingerprint;
+  if (o.path != undefined) s.path = o.path;
+  if (o.transactions != undefined)
+    s.transactions = o.transactions;
+
+  // Items that shouldn't be passed from a truly persisted object, but
+  // that might be serialized in-memory.
+  if (o.extendedPrivateBase58 != undefined)
+    s.extendedPrivateBase58 = o.extendedPrivateBase58;
+  return s;
+};

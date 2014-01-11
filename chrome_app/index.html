@@ -152,7 +152,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getCurrentAccount().addresses">
+                    <tr data-ng-repeat="addr in getCurrentAccount().getAddresses()">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
@@ -328,7 +328,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr data-ng-repeat="account in getAccounts()">
+                        <tr data-ng-repeat="account in getAccounts() track by $index">
                           <td>
                             {{account.parentFingerprint}}
                           </td>
@@ -464,6 +464,7 @@
     <script type="text/javascript" src="settings.js"></script>
     <script type="text/javascript" src="credentials.js"></script>
     <script type="text/javascript" src="wallet.js"></script>
+    <script type="text/javascript" src="address.js"></script>
     <script type="text/javascript" src="account.js"></script>
     <script type="text/javascript" src="master_key.js"></script>
     <script type="text/javascript" src="messaging.js"></script>
