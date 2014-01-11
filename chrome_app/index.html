@@ -136,8 +136,9 @@
                   </div>
                   <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
-                      <button class="btn btn-primary">Send</button>
-                      <button class="btn btn-default">Cancel</button>
+                      <button class="btn btn-warning" ng-if="!isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal"><span class="glyphicon glyphicon-lock ok"></span> Unlock Wallet to Send</button>
+                      <button type="submit" class="btn btn-primary" ng-if="isWalletUnlocked()">Send</button>
+                      <button type="cancel" class="btn btn-default">Cancel</button>
                     </div>
                   </div>
                 </form>
