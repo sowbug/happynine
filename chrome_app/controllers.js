@@ -27,7 +27,6 @@ var walletAppController = function($scope,
                                    settings,
                                    credentials,
                                    wallet) {
-  console.log("here I am", settings, credentials, wallet);
   $scope.settings = settings;
   $scope.credentials = credentials;
   $scope.wallet = wallet;
@@ -266,7 +265,6 @@ var walletAppController = function($scope,
   $scope.generateNextAccount = function() {
     $scope.wallet.deriveNextAccount(function(succeeded) {
       if (succeeded) {
-        console.log("succeeded, account count is " + $scope.getAccountCount());
         $scope.$apply();
       }
     });
@@ -396,12 +394,9 @@ var walletAppController = function($scope,
       return;
     }
     $scope.w.currentAccount = $scope.getAccounts()[index];
-    console.log("current account", $scope.w.currentAccount);
     $scope.w.currentAccount.fetchAddresses(function() {
       $scope.w.currentAccount.fetchBalances($http,
-                                            function(succeeded) {
-                                              console.log("wow");
-                                            });
+                                            function(succeeded) {});
     });
   }
 

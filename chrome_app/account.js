@@ -57,8 +57,6 @@ function Account() {
     o.path = this.path;
     o.transactions = this.transactions;
 
-    console.log("account.toStorableObject", o, this);
-
     return o;
   };
 

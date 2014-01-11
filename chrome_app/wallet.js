@@ -55,7 +55,6 @@ function Wallet(credentials) {
     this.init();
     this.accounts = [];
     for (var i in o.accounts) {
-      console.log("pushing an account");
       this.accounts.push(Account.fromStorableObject(o.accounts[i]));
     }
     this.extendedPrivateBase58Encrypted = o.extendedPrivateBase58Encrypted;
@@ -160,7 +159,6 @@ function Wallet(credentials) {
       return;
     }
     if (extendedPrivateBase58) {
-      console.log("calling encrypt");
       this.credentials.encrypt(extendedPrivateBase58, function(itemEncrypted) {
         this.init();
         this.extendedPrivateBase58 = extendedPrivateBase58;
@@ -186,7 +184,6 @@ function Wallet(credentials) {
     this.extendedPublicBase58 = null;
     this.extendedPrivateBase58Encrypted = null;
     this.extendedPublicBase58 = null;
-    console.log('removeMasterKey');
   };
 
   this.deriveNextAccount = function(callback) {
