@@ -73,6 +73,8 @@ function Account() {
     return this.extendedPublicBase58;
   };
 
+  // TODO(miket): NaCl module crashes if you pass in m/0'/0 here and key is
+  // public.
   this.fetchAddresses = function(callback) {
     var message = {
       'command': 'get-addresses',
@@ -164,7 +166,7 @@ Account.fromStorableObject = function(o) {
     for (var i in o.addresses) {
       var address = Address.fromStorableObject(o.addresses[i]);
       s.addresses.push(address);
-      addressMap[address.address] = address;
+      s.addressMap[address.address] = address;
     }
   }
   if (o.balance != undefined) s.balance = o.balance;
