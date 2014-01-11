@@ -71,8 +71,8 @@ function Account() {
     return this.extendedPublicBase58;
   };
 
-  // TODO(miket): NaCl module crashes if you pass in m/0'/0 here and key is
-  // public.
+  // TODO(miket): NaCl module crashes if you pass in m/0'/0 here and
+  // key is public.
   this.fetchAddresses = function(callback) {
     var message = {
       'command': 'get-addresses',
@@ -90,6 +90,9 @@ function Account() {
           'index': a.index,
           'path': a.path
         });
+
+        // TODO(miket): we'll need to update the key value, as this
+        // might be the only thing that changes.
         if (!this.addressMap[address.address]) {
           this.addresses.push(address);
           this.addressMap[address.address] = address;

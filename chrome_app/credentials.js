@@ -30,24 +30,23 @@ function Credentials() {
                   'internalKeyEncrypted',
                  ];
 
-  // key is the passphrase key -- the thing that you get when you have
-  // the passphrase and salt and run them through PBKDF2.
-  this.key = null;
+  this.init = function() {
+    // key is the passphrase key -- the thing that you get when you
+    // have the passphrase and salt and run them through PBKDF2.
+    this.key = null;
 
-  // internalKey is the key used to encrypt everything. The passphrase
-  // key encrypts it. The reason to have both a key and internalKey is
-  // so that when the user changes his passphrase, we don't have to
-  // re-encrypt everything in the world.
-  this.internalKey = null;
+    // internalKey is the key used to encrypt everything. The
+    // passphrase key encrypts it. The reason to have both a key and
+    // internalKey is so that when the user changes his passphrase, we
+    // don't have to re-encrypt everything in the world.
+    this.internalKey = null;
 
-  // storable
-  this.salt = null;
-  this.check = null;
-  this.internalKeyEncrypted = null;
-  this.accounts = [];
-
-  this.needsAccountsRetrieval = false;
-  this.accountChangeCounter = 0;
+    // storable
+    this.salt = null;
+    this.check = null;
+    this.internalKeyEncrypted = null;
+  };
+  this.init();
 
   this.isPassphraseSet = function() {
     return !!this.internalKeyEncrypted;
@@ -71,7 +70,6 @@ function Credentials() {
                        response.internal_key,
                        relockCallback,
                        callback.bind(this, true));
-        console.log("cool!");
       } else {
         callback.call(this, false);
       }

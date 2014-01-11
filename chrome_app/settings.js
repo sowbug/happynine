@@ -33,7 +33,11 @@ function Settings() {
     "ubtc": "uBTC",
     "sats": "Satoshis"
   };
-  this.units = "mbtc";
+
+  this.init = function() {
+    this.units = "mbtc";
+  };
+  this.init();
 
   this.satoshiToUnit = function(satoshis) {
     switch (this.units) {

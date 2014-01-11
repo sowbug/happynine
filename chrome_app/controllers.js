@@ -48,17 +48,17 @@ var walletAppController = function($scope,
 
   $scope.addPostLoadWatchers = function() {
     // It's important not to add these watchers before initial load.
-    $scope.$watchCollection("settings", function(newVal, oldVal) {
+    $scope.$watch("settings", function(newVal, oldVal) {
       if (newVal != oldVal) {
         $scope.settings.save();
       }
-    });
+    }, true);
 
-    $scope.$watchCollection("credentials", function(newVal, oldVal) {
+    $scope.$watch("credentials", function(newVal, oldVal) {
       if (newVal != oldVal) {
         $scope.credentials.save();
       }
-    });
+    }, true);
 
     $scope.$watch("wallet", function(newVal, oldVal) {
       if (newVal != oldVal) {
@@ -86,20 +86,13 @@ var walletAppController = function($scope,
           }
         });
       }
-    }.bind(this));
+    });
   };
 
   $scope.startLoading = function() {
     $scope.settings.load(function() {
       $scope.credentials.load(function() {
         $scope.wallet.load(function() {
-
-          // TODO(miket): I hate this, but I can't get
-          // $scope.credentials.accounts to be watchable.
-          if ($scope.credentials.accounts.length > 0) {
-            $scope.credentials.accountChangeCounter++;
-          }
-
           $scope.$apply();
           $scope.addPostLoadWatchers();
         });
@@ -112,34 +105,6 @@ var walletAppController = function($scope,
       $scope.selectFirstAccount();
     }
   });
-
-
-  // Something about credentials.extended changed. We should generate
-  // a MasterKey.
-  $scope.$watch('credentials.digestMasterKey()',
-                function(newVal, oldVal) {
-                  if (newVal != oldVal) {
-                    $scope.generateMasterKey();
-                  }
-                });
-
-  $scope.$watch('credentials.needsAccountsRetrieval',
-                function(newVal, oldVal) {
-                  if (newVal != oldVal && newVal) {
-                    $scope.credentials.retrieveAccounts(function() {
-                      $scope.$apply();
-                    });
-                  }
-                });
-
-  $scope.$watch('credentials.accountChangeCounter',
-                function(newVal, oldVal) {
-                  if (newVal != oldVal) {
-                    // TODO(miket): will probably change to
-                    // lastAccount() when we have > 1.
-                    $scope.firstAccount();
-                  }
-                });
 
   $scope.$watch(
     'getWalletKeyFingerprint()',
@@ -183,28 +148,6 @@ var walletAppController = function($scope,
       }
     });
 
-  $scope.generateMasterKey = function() {
-    if (!$scope.credentials.extendedPublicBase58) {
-      console.log("updated master key to null");
-      $scope.masterKey = null;
-      return;
-    }
-    var b58 = $scope.credentials.extendedPublicBase58;
-    if ($scope.credentials.extendedPrivateBase58) {
-      b58 = $scope.credentials.extendedPrivateBase58;
-    }
-    var message = {
-      'command': 'get-node',
-      'seed': b58
-    };
-    postMessageWithCallback(message, function(response) {
-      $scope.masterKey = new MasterKey(response.ext_pub_b58,
-                                       response.ext_prv_b58,
-                                       response.fingerprint);
-      $scope.$apply();
-    });
-  };
-
   $scope.newMasterKey = function() {
     $scope.wallet.createRandomMasterKey(function() {
       $scope.$apply();
@@ -230,32 +173,6 @@ var walletAppController = function($scope,
     //
     // Less of a big deal if the master key is public.
     $scope.wallet.removeMasterKey();
-  };
-
-  $scope._nextAccount = function() {
-    if ($scope.account) {
-      $scope.account =
-        new Account($scope,
-                    $http,
-                    $scope.account.index + 1,
-                    $scope.masterKey);
-    } else {
-      $scope.account = new Account($scope, $http, 0, $scope.masterKey);
-    }
-  };
-
-  $scope._prevAccount = function() {
-    if ($scope.account) {
-      if ($scope.account.index > 0) {
-        $scope.account =
-          new Account($scope,
-                      $http,
-                      $scope.account.index - 1,
-                      $scope.masterKey);
-      }
-    } else {
-      $scope.account = new Account($scope, $http, 0, $scope.masterKey);
-    }
   };
 
   $scope.nextAccountName = function() {
@@ -319,25 +236,15 @@ var walletAppController = function($scope,
     $scope.w.passphraseConfirm = null;
   };
 
-  $scope.initializeEverything = function() {
-
-    // TODO(miket): figure out how to re-get injected parameters
-    if (false) {
-      $scope.masterKey = null;
-      $scope.account = null;
-      $scope.accounts = [
-        { 'parent': '0x11112222',
-          'index': 0,
-          'fingerprint': '0x22223333'},
-      ];
-//      $scope.settings = new Settings();
-//    $scope.credentials = new Credentials($scope.settings);
-    }
+  $scope.reinitializeEverything = function() {
+    $scope.settings.init();
+    $scope.credentials.init();
+    $scope.wallet.init();
   };
 
   $scope.clearEverything = function() {
     // TODO(miket): confirmation
-    $scope.initializeEverything();
+    $scope.reinitializeEverything();
     clearAllStorage();
     chrome.runtime.reload();
   };
@@ -419,6 +326,4 @@ var walletAppController = function($scope,
   listenerDiv.addEventListener('load', function() {
     $scope.startLoading();
   }, true);
-
-  $scope.initializeEverything();
 };
