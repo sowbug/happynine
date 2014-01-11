@@ -80,7 +80,7 @@ var walletAppController = function($scope,
         return;
       }
       if (newVal) {
-        this.wallet.decryptSecrets(function(succeeded) {
+        $scope.wallet.decryptSecrets(function(succeeded) {
           if (succeeded) {
             $scope.$apply();
           }
