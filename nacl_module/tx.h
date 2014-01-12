@@ -28,7 +28,7 @@
 
 class UnspentTxo {
  public:
-  bytes_t GetSigningAddress();
+  bytes_t GetSigningAddress() const;
 
   bytes_t hash;
   uint32_t output_n;
@@ -74,4 +74,5 @@ class Tx {
   uint64_t change_value_;
   std::map<bytes_t, bytes_t> signing_addresses_to_keys_;
   tx_outs_t recipients_;
+  std::vector<bytes_t> script_sigs_;
 };

@@ -2,6 +2,7 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include "secp256k1.h"
 
 const int ROUNDS = 32768;
 const size_t AES_BLOCK_SIZE = 256 / 8;
@@ -107,5 +108,14 @@ bool Crypto::Decrypt(const bytes_t& key,
 
   EVP_CIPHER_CTX_cleanup(&ctx);
 
+  return true;
+}
+
+bool Crypto::Sign(const bytes_t& key,
+                  const bytes_t& digest,
+                  bytes_t& signature) {
+  secp256k1_key ec_key;
+  ec_key.setPrivKey(key);
+  signature = secp256k1_sign(ec_key, digest);
   return true;
 }

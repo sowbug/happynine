@@ -47,4 +47,8 @@ class Crypto {
   static bool Decrypt(const bytes_t& key,
                       const bytes_t& ciphertext,
                       bytes_t& plaintext);
+
+  static bool Sign(const bytes_t& key,
+                   const bytes_t& digest,
+                   bytes_t& signature);
 };

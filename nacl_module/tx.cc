@@ -7,10 +7,12 @@
 #include <vector>
 
 #include "base58.h"
+#include "crypto.h"
 #include "node.h"
 #include "node_factory.h"
+#include "openssl/sha.h"
 
-bytes_t UnspentTxo::GetSigningAddress() {
+bytes_t UnspentTxo::GetSigningAddress() const {
   if (script.size() == 25 &&
       script[0] == 0x76 && script[1] == 0xa9 && script[2] == 0x14 &&
       script[23] == 0x88 && script[24] == 0xac) {
@@ -131,7 +133,72 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
     delete node;
   }
 
+  // Now loop through and sign each txin individually.
+  // https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
+  for (unspent_txos_t::iterator
+         i = required_unspent_txos_.begin();
+       i != required_unspent_txos_.end();
+       ++i) {
+    bytes_t script_sig;
+
+    // TODO(miket): this is actually supposed to be the serialization
+    // of the previous txo's script. We're just assuming it's a
+    // standard P2PH and reconstructing what it would have been.
+    script_sig.push_back(0x76);  // OP_DUP
+    script_sig.push_back(0xa9);  // OP_HASH160
+    script_sig.push_back(0x14);  // 20 bytes, should probably assert == hashlen
+    bytes_t signing_address = i->GetSigningAddress();
+    script_sig.insert(script_sig.end(),
+                      signing_address.begin(),
+                      signing_address.end());
+    script_sig.push_back(0x88);  // OP_EQUALVERIFY
+    script_sig.push_back(0xac);  // OP_CHECKSIG
+
+    i->script_sig = script_sig;
+    bytes_t tx_with_one_script_sig = SerializeTransaction();
+
+    // SIGHASH_ALL
+    tx_with_one_script_sig.push_back(1);
+    tx_with_one_script_sig.push_back(0);
+    tx_with_one_script_sig.push_back(0);
+    tx_with_one_script_sig.push_back(0);
+
+    bytes_t digest;
+    digest.resize(SHA256_DIGEST_LENGTH);
+
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256,
+                  &tx_with_one_script_sig[0],
+                  tx_with_one_script_sig.size());
+    SHA256_Final(&digest[0], &sha256);
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, &digest[0], digest.capacity());
+    SHA256_Final(&digest[0], &sha256);
+
+    bytes_t signature;
+    Crypto::Sign(signing_addresses_to_keys_[signing_address],
+                 digest,
+                 signature);
+    script_sigs_.push_back(signature);
+
+    // And clear the sig again for the next one.
+    i->script_sig.clear();
+  }
+
+  // We now have all the signatures. Stick them in.
+  unspent_txos_t::iterator i = required_unspent_txos_.begin();
+  std::vector<bytes_t>::const_iterator j = script_sigs_.begin();
+  for (;
+       i != required_unspent_txos_.end();
+       ++i, ++j) {
+    i->script_sig = *j;
+  }
+
+  // And finally serialize once more with all the signatures installed.
   signed_tx = SerializeTransaction();
+
+  //std::cerr << to_hex(signed_tx) << std::endl;
 
   return true;
 }
@@ -182,7 +249,7 @@ bytes_t Tx::SerializeTransaction() {
       return bytes_t();
     }
     signed_tx.push_back(i->script_sig.size() & 0xff);
-    signed_tx.insert(signed_tx.begin(),
+    signed_tx.insert(signed_tx.end(),
                      i->script_sig.begin(),
                      i->script_sig.end());
 
