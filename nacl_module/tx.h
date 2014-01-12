@@ -20,31 +20,39 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <string>
+#include <vector>
+
 #include "types.h"
 
-class Crypto {
+class UnspentTxo {
  public:
-  // Fills the given vector with "cryptographically strong
-  // pseudo-random bytes" using OpenSSL's RAND_bytes(). If the
-  // underlying method fails, returns false.
-  static bool GetRandomBytes(bytes_t& bytes);
+  bytes_t GetSigningAddress();
 
-  // Using PKCS5_PBKDF2_HMAC_SHA1, takes a passphrase and salt and
-  // derives a key from them. Returns true if successful.
-  //
-  // The key vector should be set to the desired capacity. For example:
-  //
-  // bytes_t salt(32, 0), key(32, 0);
-  // RNG.GetRandomBytes(salt);
-  // if (key_deriver.Derive("foo", salt, key)) { go... }
-  static bool DeriveKey(const std::string& passphrase,
-                        const bytes_t& salt,
-                        bytes_t& key);
+  bytes_t hash;
+  uint32_t output_n;
+  bytes_t script;
+  uint64_t value;
+};
+typedef std::vector<UnspentTxo> unspent_txos_t;
 
-  static bool Encrypt(const bytes_t& key,
-                      const bytes_t& plaintext,
-                      bytes_t& ciphertext);
-  static bool Decrypt(const bytes_t& key,
-                      const bytes_t& ciphertext,
-                      bytes_t& plaintext);
+struct TxOut {
+  bytes_t hash;
+  uint64_t value;
+
+  TxOut(const bytes_t& hash, uint64_t value);
+};
+typedef std::vector<TxOut> tx_outs_t;
+
+class Node;
+
+class Tx {
+ public:
+  static bool CreateSignedTransaction(const Node& sending_node,
+                                      const unspent_txos_t& unspent_txos,
+                                      const bytes_t& recipient_hash160,
+                                      uint64_t value,
+                                      uint64_t fee,
+                                      uint32_t change_index,
+                                      bytes_t& signed_tx);
 };

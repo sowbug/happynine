@@ -49,6 +49,10 @@ class API {
 
   bool HandleDecryptItem(const Json::Value& args,
                          Json::Value& result);
+
+  bool HandleGetSignedTransaction(const Json::Value& args,
+                                  Json::Value& result);
+
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   bool VerifyCredentials(const bytes_t& key,

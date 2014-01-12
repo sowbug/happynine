@@ -29,7 +29,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = api_unittest crypto_unittest node_unittest
+TESTS = api_unittest crypto_unittest node_unittest tx_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -78,6 +78,7 @@ SOURCES = \
   node.cc \
   node_factory.cc \
   secp256k1.cc \
+  tx.cc \
   types.cc
 
 OBJS = $(SOURCES:.cc=.o)
@@ -109,4 +110,12 @@ node_unittest.o : $(USER_DIR)/node_unittest.cc \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/node_unittest.cc
 
 node_unittest : $(OBJS) node_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
+
+tx_unittest.o : $(USER_DIR)/tx_unittest.cc \
+                $(USER_DIR)/tx.h \
+                $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/tx_unittest.cc
+
+tx_unittest : $(OBJS) tx_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)

@@ -289,3 +289,18 @@ bool API::HandleDecryptItem(const Json::Value& args,
   }
   return true;
 }
+
+bool API::HandleGetSignedTransaction(const Json::Value& args,
+                                     Json::Value& result) {
+  bytes_t internal_key(unhexlify(args["internal_key"].asString()));
+  bytes_t item_encrypted(unhexlify(args["item_encrypted"].asString()));
+  bytes_t item_bytes;
+  if (Crypto::Decrypt(internal_key, item_encrypted, item_bytes)) {
+    result["item"] =
+      std::string(reinterpret_cast<char const*>(&item_bytes[0]),
+                  item_bytes.size());
+  } else {
+    result["error_code"] = -1;
+  }
+  return true;
+}

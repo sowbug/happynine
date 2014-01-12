@@ -154,3 +154,60 @@ TEST(SetPassphraseTest, Basic) {
   EXPECT_TRUE(api.HandleUnlockWallet(request, response));
   EXPECT_EQ(new_internal_key, unhexlify(response["internal_key"].asString()));
 }
+
+TEST(SendFundsTest, Basic) {
+  Json::Value request;
+  Json::Value response;
+  API api;
+
+  // xprv
+  // unspent txos
+  // set of
+  //   recipient
+  //   amount
+  // fee
+  // change address index
+
+  // Using parts of BIP 0032 Test Vector 1.
+  //
+  // - Root master key m is fingerprint 3442193e
+  // - Sending account m/0'/0 is fingerprint d6936720
+  // - unspent txo was sent to m/0'/0/0
+  //   - L3dzheSvHWc2scJdiikdZmYdFzPcvZMAnT5g62ikVWZdBewoWpL1
+  //   - 1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr
+  //   - 77d896b0f85f72ae0f3d0487c432b23c28b71493
+  // - recipient is m/1'/0/0
+  //   - L51Rt2TvamJzvbBJz1UG27RMtfvPLwCKqFsXRYgL4EXRTjvMiYqM
+  //   - 1AnDogBPp4VL48Nrh7h8LquV68ZzXNtwcq
+  //   - 6b468a091d50dfb7557200c46d0c1999d060a637
+  // - change address is m/0'/0/1 (we don't use the internal chain for now)
+  //   - L22jhG8WTNmuRtqFvzvpnhe32F8FefJFfsLJpSr1CYsRrZCyTwKZ
+  //   - 1B1TKfsCkW5LQ6R1kSXUx7hLt49m1kwz75
+  //   - 6dc73af1c96ff68e9dbdecd7453bad59bf0c83a4
+  const bytes_t signed_tx(unhexlify("0001020304050607"));
+
+  Json::Value unspent_txos;
+  unspent_txos[0]["tx_hash"] = "906b267b546885525d7f4a9fa51d8654"
+                               "26c9d093b9b6c749a2d05a5411773403";
+  unspent_txos[0]["tx_output_n"] = 0;
+  unspent_txos[0]["script"] =
+    "76a914" \
+    "77d896b0f85f72ae0f3d0487c432b23c28b71493" \
+    "88ac";
+  unspent_txos[0]["value"] = 100000000;  // 1 BTC
+
+  Json::Value recipients;
+  recipients[0] = Json::Value();
+  recipients[0]["address"] = "1AnDogBPp4VL48Nrh7h8LquV68ZzXNtwcq";
+  recipients[0]["satoshis"] = 7;
+
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
+    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
+  request["unspent_txos"] = unspent_txos;
+  request["recipients"] = recipients;
+  request["fee"] = 1;
+  request["change_index"] = 1;
+
+  EXPECT_TRUE(api.HandleGetSignedTransaction(request, response));
+  EXPECT_EQ(signed_tx, unhexlify(response["signed_tx"].asString()));
+}
