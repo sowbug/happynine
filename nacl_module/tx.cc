@@ -198,6 +198,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
   // And finally serialize once more with all the signatures installed.
   signed_tx = SerializeTransaction();
 
+  // https://blockchain.info/decode-tx
   //std::cerr << to_hex(signed_tx) << std::endl;
 
   return true;
