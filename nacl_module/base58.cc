@@ -73,9 +73,9 @@ bytes_t Base58::fromBase58Check(const std::string s) {
 }
 
 // https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
-std::string Base58::toAddress(const bytes_t& bytes) {
+bytes_t Base58::toHash160(const bytes_t& bytes) {
   if (bytes.size() == 0) {
-    return std::string();
+    return bytes_t();
   }
 
   bytes_t digest;
@@ -94,6 +94,16 @@ std::string Base58::toAddress(const bytes_t& bytes) {
   RIPEMD160_Init(&ripemd);
   RIPEMD160_Update(&ripemd, &digest[0], SHA256_DIGEST_LENGTH);
   RIPEMD160_Final(&ripe_digest[0], &ripemd);
+
+  return ripe_digest;
+}
+
+// https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
+std::string Base58::toAddress(const bytes_t& bytes) {
+  if (bytes.size() == 0) {
+    return std::string();
+  }
+  bytes_t ripe_digest = toHash160(bytes);
 
   // 4. Add version byte in front of RIPEMD-160 hash (0x00 for Main Network)
   bytes_t version(1, 0);
