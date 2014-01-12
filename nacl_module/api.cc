@@ -326,13 +326,13 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
   uint32_t change_index = args["change_index"].asUInt();
 
   bytes_t signed_tx;
-  bool r = Tx::CreateSignedTransaction(*sending_node,
-                                       unspent_txos,
-                                       recipient_address,
-                                       value,
-                                       fee,
-                                       change_index,
-                                       signed_tx);
+  Tx tx(*sending_node,
+        unspent_txos,
+        recipient_address,
+        value,
+        fee,
+        change_index);
+  bool r = tx.CreateSignedTransaction(signed_tx);
   if (!r) {
     result["error_code"] = -1;
   } else {

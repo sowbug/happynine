@@ -58,13 +58,13 @@ TEST(TxTest, BasicTransaction) {
 
   bytes_t signed_tx;
 
-  EXPECT_TRUE(Tx::CreateSignedTransaction(*sending_node,
-                                          unspent_txos,
-                                          recipient_address,
-                                          value,
-                                          fee,
-                                          change_index,
-                                          signed_tx));
+  Tx tx(*sending_node,
+        unspent_txos,
+        recipient_address,
+        value,
+        fee,
+        change_index);
+  EXPECT_TRUE(tx.CreateSignedTransaction(signed_tx));
   EXPECT_EQ(EXPECTED_SIGNED_TX, signed_tx);
 
   delete sending_node;
