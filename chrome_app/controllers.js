@@ -79,6 +79,18 @@ var walletAppController = function($scope,
       if (newVal == oldVal) {
         return;
       }
+      var currentAccount = $scope.getCurrentAccount();
+      if (currentAccount) {
+        currentAccount.handleWalletLockChange(credentials, function() {
+          $scope.$apply()
+        });
+      }
+    });
+
+    $scope.$watch('isWalletUnlocked()', function(newVal, oldVal) {
+      if (newVal == oldVal) {
+        return;
+      }
       if (newVal) {
         $scope.wallet.decryptSecrets(function(succeeded) {
           if (succeeded) {
@@ -287,30 +299,43 @@ var walletAppController = function($scope,
 
   $scope.getCurrentAccount = function() {
     return $scope.w.currentAccount;
-  }
+  };
 
   $scope.getCurrentAccountFingerprint = function() {
     if (!$scope.getCurrentAccount()) {
       return null;
     }
     return $scope.getCurrentAccount().fingerprint;
-  }
+  };
+
+  $scope.refreshAccount = function() {
+    $scope.w.currentAccount.fetchAddresses(function() {
+      $scope.w.currentAccount.fetchBalances($http,
+                                            function(succeeded) {});
+      $scope.w.currentAccount.fetchUnspent($http,
+                                           function(succeeded) {});
+    });
+  };
 
   $scope.setCurrentAccountByIndex = function(index) {
     if ($scope.w.currentAccount == $scope.getAccounts()[index]) {
       return;
     }
     $scope.w.currentAccount = $scope.getAccounts()[index];
-    $scope.w.currentAccount.fetchAddresses(function() {
-      $scope.w.currentAccount.fetchBalances($http,
-                                            function(succeeded) {});
-    });
-  }
+    $scope.refreshAccount();
+  };
 
   $scope.selectFirstAccount = function() {
     if ($scope.getAccountCount() > 0) {
       $scope.setCurrentAccountByIndex(0);
     }
+  };
+
+  $scope.send = function() {
+    $scope.getCurrentAccount().sendFunds($http, 0, 0, function() {
+      console.log("done");
+      $scope.$apply();
+    });
   };
 
   $scope.satoshiToUnit = function(satoshis) {

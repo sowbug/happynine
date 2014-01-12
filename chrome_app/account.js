@@ -24,12 +24,11 @@
 
 function Account() {
   this.init = function() {
-    this.addressMap = {};
-    this.addresses = [];
+    this.addresses = {};
     this.balance = 0;
     this.batchCount = 8;
     this.extendedPrivateBase58 = undefined;
-    this.extendedPrivateBase58Encrypted = undefined;
+    this.extendedPrivateBase58Encrypted = undefined;  // unserialized
     this.extendedPublicBase58 = undefined;
     this.fingerprint = undefined;
     this.hexId = undefined;
@@ -37,14 +36,16 @@ function Account() {
     this.parentFingerprint = undefined;
     this.path = undefined;
     this.transactions = [];
+    this.unspent_txo = [];  // unserialized
   };
   this.init();
 
   this.toStorableObject = function() {
     var o = {};
-    o.addresses = [];
+    o.addresses = {};
     for (var i in this.addresses) {
-      o.addresses.push(this.addresses[i].toStorableObject());
+      var a = this.addresses[i];
+      o.addresses[a.address] = a.toStorableObject();
     }
     o.balance = this.balance;
     o.batchCount = this.batchCount;
@@ -90,37 +91,36 @@ function Account() {
           'index': a.index,
           'path': a.path
         });
+        console.log("address", a.address, a.key);
 
-        // TODO(miket): we'll need to update the key value, as this
-        // might be the only thing that changes.
-        if (!this.addressMap[address.address]) {
-          this.addresses.push(address);
-          this.addressMap[address.address] = address;
-        }
+        this.addresses[address.address] = address;
       }
       callback.call(this);
     }.bind(this));
   };
 
-  this.fetchBalances = function($http, callback) {
-    var balanceURL = ['https://blockchain.info/multiaddr?active='];
-    for (var addr in this.addressMap) {
-      var address = this.addressMap[addr];
-      if (balanceURL.length > 1) {
-        balanceURL.push('|');
-      }
-      balanceURL.push(address.address);
+  this.buildAddressList = function() {
+    var addrList = [];
+    for (var i in this.addresses) {
+      var address = this.addresses[i];
+      addrList.push(address.address);
     }
-    balanceURL.push('&format=json');
-    balanceURL = balanceURL.join('');
+    return addrList;
+  };
+
+  this.fetchBalances = function($http, callback) {
+    var url = 'https://blockchain.info/multiaddr?format=json' +
+      '&active=' +
+      this.buildAddressList().join('|');
     
-    $http({method: 'GET', url: balanceURL}).
+    $http({method: 'GET', url: url}).
       success(function(data, status, headers, config) {
         for (var i in data.addresses) {
           var addr = data.addresses[i];
-          this.addressMap[addr.address].balance = addr.final_balance;
-          this.addressMap[addr.address].tx_count = addr.n_tx;
+          this.addresses[addr.address].balance = addr.final_balance;
+          this.addresses[addr.address].tx_count = addr.n_tx;
         }
+        this.transactions = [];
         for (var i in data.txs) {
           var tx = data.txs[i];
           this.transactions.push({
@@ -139,12 +139,40 @@ function Account() {
       }.bind(this));
   };
 
+  this.fetchUnspent = function($http, callback) {
+    var url = 'https://blockchain.info/unspent?' +
+      '&active=' +
+      this.buildAddressList().join('|');
+
+    $http({method: 'GET', url: url}).
+      success(function(data, status, headers, config) {
+        this.unspent_txo = data.unspent_outputs;
+        this.calculateUnspent();
+        callback.call(this, true);
+      }.bind(this)).
+      error(function(data, status, headers, config) {
+        console.log("error", status, data);
+        callback.call(this, false);
+      }.bind(this));
+  };
+
   this.calculateBalance = function() {
     this.balance = 0;
-    for (var i in this.addressMap) {
-      var address = this.addressMap[i];
+    for (var i in this.addresses) {
+      var address = this.addresses[i];
       this.balance += address.balance;
     }
+  };
+
+  this.calculateUnspent = function() {
+    var value = 0;
+    var tx_count = 0;
+    for (var i in this.unspent_txo) {
+      var txo = this.unspent_txo[i];
+      value += txo.value;
+      tx_count++;
+    }
+    console.log("unspent", value, tx_count);
   };
 
   this.hasTransactions = function() {
@@ -158,6 +186,56 @@ function Account() {
   this.getAddresses = function() {
     return this.addresses;
   };
+
+  this.keyForAddress = function(address, callback) {
+    if (!this.extendedPrivateBase58) {
+      console.log("xprv missing from account");
+      window.setTimeout(function() { callback.call(this, undefined); }, 0);
+      return;
+    }
+    var a = this.addresses[address];
+    if (!a) {
+      console.log("address not found", address);
+      window.setTimeout(function() { callback.call(this, undefined); }, 0);
+      return;
+    }
+    var message = {
+      'command': 'get-node',
+      'seed': this.extendedPrivateBase58,
+      'path': a.path
+    };
+    postMessageWithCallback(message, function(response) {
+      if (response.secret_wif) {
+        callback.call(this, response.secret_wif);
+      } else {
+        callback.call(this, undefined);
+      }
+    }.bind(this));
+  };
+
+  this.handleWalletLockChange = function(credentials, callback) {
+    if (!credentials.isKeyAvailable() ||
+        !this.extendedPrivateBase58Encrypted) {
+      this.extendedPrivateBase58 = undefined;
+      window.setTimeout(function() { callback.call(this); }, 0);
+      return;
+    }
+    credentials.decrypt(
+      this.extendedPrivateBase58Encrypted,
+      function(item) {
+        this.extendedPrivateBase58 = item;
+      }.bind(this));
+  };
+
+  this.sendFunds = function($http, recipient, amount, callback) {
+    var address = this.addresses[Object.keys(this.addresses)[0]].address;
+    this.keyForAddress(address, function(key) {
+      if (key) {
+        console.log("cool, we know", key);
+      }
+      callback.call(this);
+    });
+  };
 }
 
 Account.fromStorableObject = function(o) {
@@ -166,8 +244,7 @@ Account.fromStorableObject = function(o) {
   if (o.addresses != undefined) {
     for (var i in o.addresses) {
       var address = Address.fromStorableObject(o.addresses[i]);
-      s.addresses.push(address);
-      s.addressMap[address.address] = address;
+      s.addresses[address.address] = address;
     }
   }
   if (o.balance != undefined) s.balance = o.balance;
