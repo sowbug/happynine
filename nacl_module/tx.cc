@@ -18,6 +18,15 @@ bytes_t UnspentTxo::GetSigningAddress() {
     // https://en.bitcoin.it/wiki/Transactions
     return bytes_t(script.begin() + 3, script.begin() + 3 + 20);
   }
+
+  if (script.size() == 23 &&
+      script[0] == 0xa9 && script[1] == 0x14 &&
+      script[22] == 0x87) {
+    // Standard Pay-to-ScriptHash.
+    // https://en.bitcoin.it/wiki/Transactions
+    return bytes_t(script.begin() + 2, script.begin() + 2 + 20);
+  }
+
   return bytes_t();
 }
 
@@ -157,7 +166,16 @@ bool Tx::CreateSignedTransaction(const Node& sending_node,
     signed_tx.push_back((i->output_n >> 24) & 0xff);
 
     // TODO ScriptSig
-    signed_tx.push_back(0);
+    // https://en.bitcoin.it/wiki/OP_CHECKSIG
+    if (i->script_sig.size() > 0xfd) {
+      // TODO: implement varint
+      std::cerr << "script_sig too big" << std::endl;
+      return false;
+    }
+    signed_tx.push_back(i->script_sig.size() & 0xff);
+    signed_tx.insert(signed_tx.begin(),
+                     i->script_sig.begin(),
+                     i->script_sig.end());
 
     // sequence_no
     signed_tx.push_back(0xff);
@@ -205,7 +223,7 @@ bool Tx::CreateSignedTransaction(const Node& sending_node,
   signed_tx.push_back(0);
   signed_tx.push_back(0);
 
-  std::cerr << to_hex(signed_tx) << std::endl;
+  //  std::cerr << to_hex(signed_tx) << std::endl;
 
   return true;
 }

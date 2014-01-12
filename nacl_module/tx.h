@@ -32,6 +32,7 @@ class UnspentTxo {
   bytes_t hash;
   uint32_t output_n;
   bytes_t script;
+  bytes_t script_sig;
   uint64_t value;
 };
 typedef std::vector<UnspentTxo> unspent_txos_t;

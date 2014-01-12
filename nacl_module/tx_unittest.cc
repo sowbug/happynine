@@ -26,7 +26,11 @@ TEST(TxTest, BasicTransaction) {
   //   - L22jhG8WTNmuRtqFvzvpnhe32F8FefJFfsLJpSr1CYsRrZCyTwKZ
   //   - 1B1TKfsCkW5LQ6R1kSXUx7hLt49m1kwz75
   //   - 6dc73af1c96ff68e9dbdecd7453bad59bf0c83a4
-  const bytes_t EXPECTED_SIGNED_TX(unhexlify("0001020304050607"));
+  const bytes_t EXPECTED_SIGNED_TX(unhexlify(
+    "010000000118fb619d7eb55d5ef9fca351de16ecbdb2340c9f49add372cb203affde5"
+    "fb9470601000000ffffffff02ff7f0000000000001976a9146b468a091d50dfb75572"
+    "00c46d0c1999d060a63788ac0260f505000000001976a9146dc73af1c96ff68e9dbde"
+    "cd7453bad59bf0c83a488ac00000000"));
 
   const std::string XPRV("xprv9wTYmMFdV23N21MM6dLNavSQV7Sj7meSPXx6AV5eTdqqGL"
                          "jycVjb115Ec5LgRAXscPZgy5G4jQ9csyyZLN3PZLxoM1h3BoPuE"
@@ -62,4 +66,6 @@ TEST(TxTest, BasicTransaction) {
                                           change_index,
                                           signed_tx));
   EXPECT_EQ(EXPECTED_SIGNED_TX, signed_tx);
+
+  delete sending_node;
 }

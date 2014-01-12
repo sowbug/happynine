@@ -160,14 +160,6 @@ TEST(SendFundsTest, Basic) {
   Json::Value response;
   API api;
 
-  // xprv
-  // unspent txos
-  // set of
-  //   recipient
-  //   amount
-  // fee
-  // change address index
-
   // Using parts of BIP 0032 Test Vector 1.
   //
   // - Root master key m is fingerprint 3442193e
@@ -184,12 +176,16 @@ TEST(SendFundsTest, Basic) {
   //   - L22jhG8WTNmuRtqFvzvpnhe32F8FefJFfsLJpSr1CYsRrZCyTwKZ
   //   - 1B1TKfsCkW5LQ6R1kSXUx7hLt49m1kwz75
   //   - 6dc73af1c96ff68e9dbdecd7453bad59bf0c83a4
-  const bytes_t signed_tx(unhexlify("0001020304050607"));
+  const bytes_t signed_tx(unhexlify("01000000010000000000ffffffff02ff3f0000000"
+                                    "000001976a91467d2e3ce74a7e0761cd96fbfa9cc"
+                                    "eedb2cb827c188ac82a0f505000000001976a9146"
+                                    "dc73af1c96ff68e9dbdecd7453bad59bf0c83a488"
+                                    "ac00000000"));
 
   Json::Value unspent_txos;
   unspent_txos[0]["tx_hash"] = "906b267b546885525d7f4a9fa51d8654"
                                "26c9d093b9b6c749a2d05a5411773403";
-  unspent_txos[0]["tx_output_n"] = 0;
+  unspent_txos[0]["tx_output_n"] = 127;
   unspent_txos[0]["script"] =
     "76a914" \
     "77d896b0f85f72ae0f3d0487c432b23c28b71493" \
@@ -199,13 +195,14 @@ TEST(SendFundsTest, Basic) {
   Json::Value recipients;
   recipients[0] = Json::Value();
   recipients[0]["address"] = "1AnDogBPp4VL48Nrh7h8LquV68ZzXNtwcq";
-  recipients[0]["satoshis"] = 7;
+  recipients[0]["value"] = 16383;
 
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
-    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
+  request["ext_prv_b58"] ="xprv9wTYmMFdV23N21MM6dLNavSQV7Sj7meSPXx6AV5eTdqqGL"
+    "jycVjb115Ec5LgRAXscPZgy5G4jQ9csyyZLN3PZLxoM1h3BoPuEJzsgeypdKj";
+
   request["unspent_txos"] = unspent_txos;
   request["recipients"] = recipients;
-  request["fee"] = 1;
+  request["fee"] = 127;
   request["change_index"] = 1;
 
   EXPECT_TRUE(api.HandleGetSignedTransaction(request, response));

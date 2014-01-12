@@ -37,6 +37,7 @@
 #endif
 #include "node.h"
 #include "node_factory.h"
+#include "tx.h"
 #include "types.h"
 
 // echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
@@ -292,15 +293,51 @@ bool API::HandleDecryptItem(const Json::Value& args,
 
 bool API::HandleGetSignedTransaction(const Json::Value& args,
                                      Json::Value& result) {
-  bytes_t internal_key(unhexlify(args["internal_key"].asString()));
-  bytes_t item_encrypted(unhexlify(args["item_encrypted"].asString()));
-  bytes_t item_bytes;
-  if (Crypto::Decrypt(internal_key, item_encrypted, item_bytes)) {
-    result["item"] =
-      std::string(reinterpret_cast<char const*>(&item_bytes[0]),
-                  item_bytes.size());
-  } else {
-    result["error_code"] = -1;
+  const std::string ext_prv_b58 = args.get("ext_prv_b58", "").asString();
+
+  Node *sending_node = NULL;
+  if (ext_prv_b58[0] == 'x') {
+    sending_node =
+      NodeFactory::CreateNodeFromExtended(Base58::
+                                          fromBase58Check(ext_prv_b58));
   }
+  if (sending_node == NULL) {
+    result["error_code"] = -1;
+    return true;
+  }
+
+  unspent_txos_t unspent_txos;
+  for (int i = 0; i < args["unspent_txos"].size(); ++i) {
+    Json::Value jtxo = args["unspent_txos"][i];
+    UnspentTxo utxo;
+    utxo.hash = unhexlify(jtxo["hash"].asString());
+    utxo.output_n = jtxo["output_n"].asUInt();
+    utxo.script = unhexlify(jtxo["script"].asString());
+    utxo.value = jtxo["value"].asUInt64();
+    unspent_txos.push_back(utxo);
+  }
+
+  const std::string address(args["recipients"][0]["address"].asString());
+  const bytes_t address_bytes(Base58::fromBase58Check(address));
+  bytes_t recipient_address(Base58::toHash160(address_bytes));
+
+  uint64_t value = args["recipients"][0]["value"].asUInt64();
+  uint64_t fee = args["fee"].asUInt64();
+  uint32_t change_index = args["change_index"].asUInt();
+
+  bytes_t signed_tx;
+  bool r = Tx::CreateSignedTransaction(*sending_node,
+                                       unspent_txos,
+                                       recipient_address,
+                                       value,
+                                       fee,
+                                       change_index,
+                                       signed_tx);
+  if (!r) {
+    result["error_code"] = -1;
+  } else {
+    result["signed_tx"] = to_hex(signed_tx);
+  }
+  delete sending_node;
   return true;
 }
