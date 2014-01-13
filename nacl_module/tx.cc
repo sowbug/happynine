@@ -127,7 +127,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx, int& error_code) {
   if (change_value_ != 0) {
     // Derive the change address
     std::stringstream node_path;
-    node_path << "m/" << (change_index_);
+    node_path << "m/0/" << (change_index_);
     Node* node =
       NodeFactory::DeriveChildNodeWithPath(sending_node_, node_path.str());
     bytes_t hash160 = Base58::toHash160(node->public_key());

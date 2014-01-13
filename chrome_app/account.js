@@ -232,10 +232,10 @@ function Account() {
       'unspent_txos': this.unspent_txos,
       'recipients': [{
         'address': '1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4',
-        'value': 888
+        'value': 88
       }],
-      'fee': 77,
-      'change_index': 1
+      'fee': 7,
+      'change_index': 0
     };
     postMessageWithCallback(message, function(response) {
       console.log(response);
