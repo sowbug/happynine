@@ -332,13 +332,29 @@ var walletAppController = function($scope,
   };
 
   $scope.send = function() {
-    $scope.getCurrentAccount().sendFunds($http, 0, 0, function() {
-      $scope.$apply();
-    });
+    var sendTo = $scope.w.sendTo;
+    var sendValue = $scope.unitToSatoshi($scope.w.sendValue);
+    var sendFee = $scope.unitToSatoshi($scope.w.sendFee);
+
+    if (sendValue > 0 && sendFee > 0 && sendTo.length > 25) {
+      console.log("send", sendTo, sendValue, $scope.unitLabel(),
+                  "for", sendFee);
+      $scope.getCurrentAccount().sendFunds($http,
+                                           sendTo,
+                                           sendValue,
+                                           sendFee,
+                                           function() {
+                                             $scope.$apply();
+                                           });
+    }
   };
 
   $scope.satoshiToUnit = function(satoshis) {
     return $scope.settings.satoshiToUnit(satoshis);
+  };
+
+  $scope.unitToSatoshi = function(units) {
+    return $scope.settings.unitToSatoshi(units);
   };
 
   $scope.unitLabel = function() {

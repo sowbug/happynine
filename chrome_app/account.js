@@ -225,16 +225,16 @@ function Account() {
       }.bind(this));
   };
 
-  this.sendFunds = function($http, recipient, amount, callback) {
+  this.sendFunds = function($http, recipient, value, fee, callback) {
     var message = {
       'command': 'get-signed-transaction',
       'ext_prv_b58': this.extendedPrivateBase58,
       'unspent_txos': this.unspent_txos,
       'recipients': [{
-        'address': '1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4',
-        'value': 88
+        'address': recipient,
+        'value': value
       }],
-      'fee': 7,
+      'fee': fee,
       'change_index': 0
     };
     postMessageWithCallback(message, function(response) {
