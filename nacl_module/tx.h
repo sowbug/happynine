@@ -73,6 +73,7 @@ class Tx {
   unspent_txos_t required_unspent_txos_;
   uint64_t change_value_;
   std::map<bytes_t, bytes_t> signing_addresses_to_keys_;
+  std::map<bytes_t, bytes_t> signing_addresses_to_public_keys_;
   tx_outs_t recipients_;
   std::vector<bytes_t> script_sigs_;
 };

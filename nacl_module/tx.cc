@@ -105,6 +105,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx, int& error_code) {
     if (required_signing_addresses.find(hash160) !=
         required_signing_addresses.end()) {
       signing_addresses_to_keys_[hash160] = node->secret_key();
+      signing_addresses_to_public_keys_[hash160] = node->public_key();
     }
     delete node;
     if (signing_addresses_to_keys_.size() ==
@@ -137,8 +138,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx, int& error_code) {
 
   // Now loop through and sign each txin individually.
   // https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
-  for (unspent_txos_t::iterator
-         i = required_unspent_txos_.begin();
+  for (unspent_txos_t::iterator i = required_unspent_txos_.begin();
        i != required_unspent_txos_.end();
        ++i) {
     bytes_t script_sig;
@@ -182,7 +182,18 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx, int& error_code) {
     Crypto::Sign(signing_addresses_to_keys_[signing_address],
                  digest,
                  signature);
-    script_sigs_.push_back(signature);
+    bytes_t script_sig_and_key;
+    script_sig_and_key.push_back((signature.size() + 1) & 0xff);
+    script_sig_and_key.insert(script_sig_and_key.end(),
+                              signature.begin(), signature.end());
+    script_sig_and_key.push_back(1);  // hash type ??
+    bytes_t public_key(signing_addresses_to_public_keys_
+                       [i->GetSigningAddress()]);
+    script_sig_and_key.push_back(public_key.size() & 0xff);
+    script_sig_and_key.insert(script_sig_and_key.end(),
+                      public_key.begin(),
+                      public_key.end());
+    script_sigs_.push_back(script_sig_and_key);
 
     // And clear the sig again for the next one.
     i->script_sig.clear();
@@ -232,8 +243,9 @@ bytes_t Tx::SerializeTransaction() {
        i != required_unspent_txos_.end();
        ++i) {
     // For some stupid reason the hash is serialized backwards.
-    for (bytes_t::const_reverse_iterator j = i->hash.rbegin();
-         j != i->hash.rend();
+    // Fortunately the inputs we're getting are, too.
+    for (bytes_t::const_iterator j = i->hash.begin();
+         j != i->hash.end();
          ++j) {
       signed_tx.push_back(*j);
     }
