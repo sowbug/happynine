@@ -13,7 +13,7 @@ TEST(TxTest, BasicTransaction) {
   // Using parts of BIP 0032 Test Vector 1.
   //
   // - Root master key m is fingerprint 3442193e
-  // - Sending account m/0'/0 is fingerprint d6936720
+  // - Sending account m/0' is fingerprint 5c1bd648
   // - unspent txo was sent to m/0'/0/0
   //   - L3dzheSvHWc2scJdiikdZmYdFzPcvZMAnT5g62ikVWZdBewoWpL1
   //   - 1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr
@@ -26,9 +26,9 @@ TEST(TxTest, BasicTransaction) {
   //   - L22jhG8WTNmuRtqFvzvpnhe32F8FefJFfsLJpSr1CYsRrZCyTwKZ
   //   - 1B1TKfsCkW5LQ6R1kSXUx7hLt49m1kwz75
   //   - 6dc73af1c96ff68e9dbdecd7453bad59bf0c83a4
-  const std::string XPRV("xprv9wTYmMFdV23N21MM6dLNavSQV7Sj7meSPXx6AV5eTdqqGL"
-                         "jycVjb115Ec5LgRAXscPZgy5G4jQ9csyyZLN3PZLxoM1h3BoPuE"
-                         "JzsgeypdKj");
+  const std::string XPRV("xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ng"
+                         "LNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrn"
+                         "YeSvkzY7d2bhkJ7");
   Node* sending_node =
     NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(XPRV));
 
@@ -52,13 +52,15 @@ TEST(TxTest, BasicTransaction) {
 
   bytes_t signed_tx;
 
+  int error_code = 0;
   Tx tx(*sending_node,
         unspent_txos,
         recipient_address,
         value,
         fee,
         change_index);
-  EXPECT_TRUE(tx.CreateSignedTransaction(signed_tx));
+  EXPECT_TRUE(tx.CreateSignedTransaction(signed_tx, error_code));
+  EXPECT_EQ(0, error_code);
 
   // Not sure how to verify this. It's different every time by design.
   //std::cerr << to_hex(signed_tx) << std::endl;

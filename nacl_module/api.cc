@@ -302,12 +302,12 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
                                           fromBase58Check(ext_prv_b58));
   }
   if (sending_node == NULL) {
-    result["error_code"] = -1;
+    result["error_code"] = -2;
     return true;
   }
 
   unspent_txos_t unspent_txos;
-  for (int i = 0; i < args["unspent_txos"].size(); ++i) {
+  for (unsigned int i = 0; i < args["unspent_txos"].size(); ++i) {
     Json::Value jtxo = args["unspent_txos"][i];
     UnspentTxo utxo;
     utxo.hash = unhexlify(jtxo["tx_hash"].asString());
@@ -333,9 +333,10 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
         value,
         fee,
         change_index);
-  bool r = tx.CreateSignedTransaction(signed_tx);
+  int error_code = 0;
+  bool r = tx.CreateSignedTransaction(signed_tx, error_code);
   if (!r) {
-    result["error_code"] = -1;
+    result["error_code"] = error_code;
   } else {
     result["signed_tx"] = to_hex(signed_tx);
   }

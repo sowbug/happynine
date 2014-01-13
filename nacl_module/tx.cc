@@ -53,7 +53,7 @@ Tx::Tx(const Node& sending_node,
 Tx::~Tx() {
 }
 
-bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
+bool Tx::CreateSignedTransaction(bytes_t& signed_tx, int& error_code) {
   required_unspent_txos_.clear();
   change_value_ = 0;
 
@@ -76,6 +76,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
   if (required_value != 0) {
     // Not enough funds to cover transaction.
     std::cerr << "Not enough funds" << std::endl;
+    error_code = -10;
     return false;
   }
 
@@ -97,7 +98,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
   signing_addresses_to_keys_.clear();
   for (uint32_t i = 0; i < count; ++i) {
     std::stringstream node_path;
-    node_path << "m/" << (start + i);
+    node_path << "m/0/" << (start + i);
     Node* node =
       NodeFactory::DeriveChildNodeWithPath(sending_node_, node_path.str());
     bytes_t hash160 = Base58::toHash160(node->public_key());
@@ -115,6 +116,7 @@ bool Tx::CreateSignedTransaction(bytes_t& signed_tx) {
       required_signing_addresses.size()) {
     // We don't have all the keys we need to spend these funds.
     std::cerr << "missing some keys" << std::endl;
+    error_code = -11;
     return false;
   }
 

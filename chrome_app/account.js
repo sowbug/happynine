@@ -36,7 +36,7 @@ function Account() {
     this.parentFingerprint = undefined;
     this.path = undefined;
     this.transactions = [];
-    this.unspent_txo = [];  // unserialized
+    this.unspent_txos = [];  // unserialized
   };
   this.init();
 
@@ -91,8 +91,6 @@ function Account() {
           'index': a.index,
           'path': a.path
         });
-        console.log("address", a.address, a.key);
-
         this.addresses[address.address] = address;
       }
       callback.call(this);
@@ -146,7 +144,7 @@ function Account() {
 
     $http({method: 'GET', url: url}).
       success(function(data, status, headers, config) {
-        this.unspent_txo = data.unspent_outputs;
+        this.unspent_txos = data.unspent_outputs;
         this.calculateUnspent();
         callback.call(this, true);
       }.bind(this)).
@@ -167,8 +165,8 @@ function Account() {
   this.calculateUnspent = function() {
     var value = 0;
     var tx_count = 0;
-    for (var i in this.unspent_txo) {
-      var txo = this.unspent_txo[i];
+    for (var i in this.unspent_txos) {
+      var txo = this.unspent_txos[i];
       value += txo.value;
       tx_count++;
     }
@@ -228,11 +226,19 @@ function Account() {
   };
 
   this.sendFunds = function($http, recipient, amount, callback) {
-    var address = this.addresses[Object.keys(this.addresses)[0]].address;
-    this.keyForAddress(address, function(key) {
-      if (key) {
-        console.log("cool, we know", key);
-      }
+    var message = {
+      'command': 'get-signed-transaction',
+      'ext_prv_b58': this.extendedPrivateBase58,
+      'unspent_txos': this.unspent_txos,
+      'recipients': [{
+        'address': '1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4',
+        'value': 888
+      }],
+      'fee': 77,
+      'change_index': 1
+    };
+    postMessageWithCallback(message, function(response) {
+      console.log(response);
       callback.call(this);
     });
   };

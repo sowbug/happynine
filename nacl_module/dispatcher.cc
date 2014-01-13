@@ -76,6 +76,9 @@ public:
     if (command == "decrypt-item") {
       handled = api.HandleDecryptItem(root, result);
     }
+    if (command == "get-signed-transaction") {
+      handled = api.HandleGetSignedTransaction(root, result);
+    }
     if (!handled) {
       result["error_code"] = -999;
     }

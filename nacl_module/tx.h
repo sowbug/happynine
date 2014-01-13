@@ -58,7 +58,7 @@ class Tx {
      uint32_t change_index);
   virtual ~Tx();
 
-  bool CreateSignedTransaction(bytes_t& signed_tx);
+  bool CreateSignedTransaction(bytes_t& signed_tx, int& error_code);
 
  protected:
   bytes_t SerializeTransaction();

@@ -333,7 +333,6 @@ var walletAppController = function($scope,
 
   $scope.send = function() {
     $scope.getCurrentAccount().sendFunds($http, 0, 0, function() {
-      console.log("done");
       $scope.$apply();
     });
   };

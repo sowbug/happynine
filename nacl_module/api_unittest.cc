@@ -163,7 +163,7 @@ TEST(SendFundsTest, Basic) {
   // Using parts of BIP 0032 Test Vector 1.
   //
   // - Root master key m is fingerprint 3442193e
-  // - Sending account m/0'/0 is fingerprint d6936720
+  // - Sending account m/0' is fingerprint 5c1bd648
   // - unspent txo was sent to m/0'/0/0
   //   - L3dzheSvHWc2scJdiikdZmYdFzPcvZMAnT5g62ikVWZdBewoWpL1
   //   - 1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr
@@ -191,13 +191,16 @@ TEST(SendFundsTest, Basic) {
   recipients[0]["address"] = "1AnDogBPp4VL48Nrh7h8LquV68ZzXNtwcq";
   recipients[0]["value"] = 16383;
 
-  request["ext_prv_b58"] ="xprv9wTYmMFdV23N21MM6dLNavSQV7Sj7meSPXx6AV5eTdqqGL"
-    "jycVjb115Ec5LgRAXscPZgy5G4jQ9csyyZLN3PZLxoM1h3BoPuEJzsgeypdKj";
+  request["ext_prv_b58"] = "xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ng"
+    "LNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7";
 
   request["unspent_txos"] = unspent_txos;
   request["recipients"] = recipients;
   request["fee"] = 127;
   request["change_index"] = 1;
+
+  //Json::StyledWriter writer;
+  //std::cerr << writer.write(request) << std::endl;
 
   EXPECT_TRUE(api.HandleGetSignedTransaction(request, response));
 
