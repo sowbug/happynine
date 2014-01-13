@@ -214,8 +214,10 @@ function Account() {
     postMessageWithCallback(message, function(response) {
       console.log(response);
       if (response.signed_tx) {
+        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         $http.post("https://blockchain.info/pushtx",
-                   "tx=" + response.signed_tx).
+                   "tx=" + response.signed_tx,
+                   { 'headers': headers }).
           success(function(data, status, headers, config) {
             console.log("pushtx", data, status);
           }).
