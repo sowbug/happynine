@@ -310,16 +310,17 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
   for (int i = 0; i < args["unspent_txos"].size(); ++i) {
     Json::Value jtxo = args["unspent_txos"][i];
     UnspentTxo utxo;
-    utxo.hash = unhexlify(jtxo["hash"].asString());
-    utxo.output_n = jtxo["output_n"].asUInt();
+    utxo.hash = unhexlify(jtxo["tx_hash"].asString());
+    utxo.output_n = jtxo["tx_output_n"].asUInt();
     utxo.script = unhexlify(jtxo["script"].asString());
     utxo.value = jtxo["value"].asUInt64();
     unspent_txos.push_back(utxo);
   }
 
   const std::string address(args["recipients"][0]["address"].asString());
-  const bytes_t address_bytes(Base58::fromBase58Check(address));
-  bytes_t recipient_address(Base58::toHash160(address_bytes));
+  const bytes_t address_bytes_with_version(Base58::fromBase58Check(address));
+  const bytes_t recipient_address(address_bytes_with_version.begin() + 1,
+                              address_bytes_with_version.end());
 
   uint64_t value = args["recipients"][0]["value"].asUInt64();
   uint64_t fee = args["fee"].asUInt64();

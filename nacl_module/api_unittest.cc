@@ -176,15 +176,9 @@ TEST(SendFundsTest, Basic) {
   //   - L22jhG8WTNmuRtqFvzvpnhe32F8FefJFfsLJpSr1CYsRrZCyTwKZ
   //   - 1B1TKfsCkW5LQ6R1kSXUx7hLt49m1kwz75
   //   - 6dc73af1c96ff68e9dbdecd7453bad59bf0c83a4
-  const bytes_t signed_tx(unhexlify("01000000010000000000ffffffff02ff3f0000000"
-                                    "000001976a91467d2e3ce74a7e0761cd96fbfa9cc"
-                                    "eedb2cb827c188ac82a0f505000000001976a9146"
-                                    "dc73af1c96ff68e9dbdecd7453bad59bf0c83a488"
-                                    "ac00000000"));
-
   Json::Value unspent_txos;
-  unspent_txos[0]["tx_hash"] = "906b267b546885525d7f4a9fa51d8654"
-                               "26c9d093b9b6c749a2d05a5411773403";
+  unspent_txos[0]["tx_hash"] = "47b95fdeff3a20cb72d3ad499f0c34b2"
+    "bdec16de51a3fcf95e5db57e9d61fb18";
   unspent_txos[0]["tx_output_n"] = 127;
   unspent_txos[0]["script"] =
     "76a914" \
@@ -206,6 +200,14 @@ TEST(SendFundsTest, Basic) {
   request["change_index"] = 1;
 
   EXPECT_TRUE(api.HandleGetSignedTransaction(request, response));
-  // TODO(miket) assertion is failing
-  //  EXPECT_EQ(signed_tx, unhexlify(response["signed_tx"].asString()));
+
+  bytes_t signed_tx(unhexlify(response["signed_tx"].asString()));
+
+  // Validation is hard.
+
+  // First byte of 32-bit version
+  EXPECT_EQ(1, signed_tx[0]);
+
+  // Last byte of 32-bit locktime
+  EXPECT_EQ(0, signed_tx[0 + signed_tx.size() - 1]);
 }

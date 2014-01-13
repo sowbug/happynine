@@ -59,7 +59,9 @@ TEST(TxTest, BasicTransaction) {
         fee,
         change_index);
   EXPECT_TRUE(tx.CreateSignedTransaction(signed_tx));
+
   // Not sure how to verify this. It's different every time by design.
+  //std::cerr << to_hex(signed_tx) << std::endl;
 
   delete sending_node;
 }
