@@ -15,29 +15,30 @@ What Does Work
 
 * Generating a new BIP 0032 HD wallet
 * Importing an external BIP 0032 xprv or xpub key
+* Sending funds (not well-tested, hot off the press)
 * Passphrase protection of wallet with 60-second unlock
 * Viewing wallet balances using the [Blockchain API](https://blockchain.info/api)
-* BIP 0032 account `m/0'/0`, which will generate keys `m/0'/0/k` for any 32-bit k (actually 31-bit, but nobody will get that far)
+* Multiple BIP 0032 accounts following the recommended wallet structure `m/i'/0`, where i is account number
 * [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 
 What Doesn't Work Yet
 ===
 
-* Sending funds
 * Generating unsigned transactions for offline signing
 * Instant balance refresh when new transactions are detected
 * Any concept of fiat currencies (e.g., Bitstamp's USD/BTC exchange rate)
 * Direct communication with the Bitcoin network; currently the app relies on Blockchain's API for all its live functionality
-* Multiple BIP 0032 accounts: `m/i'/0`, where i is account number; this is close to working
-* *Meaningful* BIP 0032 usage, which is the ability to install multiple master keys, some of which might turn out to be children of others
+* Advanced BIP 0032 usage, which is the ability to install multiple master keys, some of which might turn out to be children of others
 * Being able to view the xpub/xprv of an account, which is essential for controlling individual account access
+* Generating a watch-only xpub for a child account; currently the accounts generated from the master key are all xprv
 * Properly treating the account chain as a chain (basically, reading up on Electrum's gap limit concept and confirming it's the right way to go)
+* Better Chrome App integration (transaction monitoring in event page; notifications)
 
 Known Issues
 ===
 
 * Lots of UI nits
-* Refresh button doesn't do anything
+* Testing of core is good but not great
 * There are no safety features, such as requiring a confirmation before deleting keys
 
 User Requirements
