@@ -185,32 +185,6 @@ function Account() {
     return this.addresses;
   };
 
-  this.keyForAddress = function(address, callback) {
-    if (!this.extendedPrivateBase58) {
-      console.log("xprv missing from account");
-      window.setTimeout(function() { callback.call(this, undefined); }, 0);
-      return;
-    }
-    var a = this.addresses[address];
-    if (!a) {
-      console.log("address not found", address);
-      window.setTimeout(function() { callback.call(this, undefined); }, 0);
-      return;
-    }
-    var message = {
-      'command': 'get-node',
-      'seed': this.extendedPrivateBase58,
-      'path': a.path
-    };
-    postMessageWithCallback(message, function(response) {
-      if (response.secret_wif) {
-        callback.call(this, response.secret_wif);
-      } else {
-        callback.call(this, undefined);
-      }
-    }.bind(this));
-  };
-
   this.handleWalletLockChange = function(credentials, callback) {
     if (!credentials.isKeyAvailable() ||
         !this.extendedPrivateBase58Encrypted) {
@@ -239,6 +213,16 @@ function Account() {
     };
     postMessageWithCallback(message, function(response) {
       console.log(response);
+      if (response.signed_tx) {
+        $http.post("https://blockchain.info/pushtx",
+                   "tx=" + response.signed_tx).
+          success(function(data, status, headers, config) {
+            console.log("pushtx", data, status);
+          }).
+          error(function(data, status, headers, config) {
+            console.log("pushtx-error", data, status);
+          });
+      }
       callback.call(this);
     });
   };
