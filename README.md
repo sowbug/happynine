@@ -3,7 +3,7 @@ Happynine
 
 A Chrome App that implements a Bitcoin [BIP 0032 hierarchical deterministic wallet](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki).
 
-Copyright &copy; 2004 Mike Tsao. All rights reserved. See LICENSE.md.
+Copyright &copy; 2014 Mike Tsao. All rights reserved. See LICENSE.md.
 
 Great Big Warning
 ===
