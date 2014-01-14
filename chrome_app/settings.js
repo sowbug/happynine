@@ -52,6 +52,19 @@ function Settings() {
     }
   };
 
+  this.unitToSatoshi = function(units) {
+    switch (this.units) {
+    case "btc":
+      return units * 100000000;
+    case "mbtc":
+       return units * 100000;
+    case "ubtc":
+       return units * 100;
+    default:
+      return units;
+    }
+  };
+
   this.unitLabel = function() {
     return this.availableUnits[this.units];
   };

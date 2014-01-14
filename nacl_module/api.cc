@@ -37,6 +37,7 @@
 #endif
 #include "node.h"
 #include "node_factory.h"
+#include "tx.h"
 #include "types.h"
 
 // echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
@@ -287,5 +288,58 @@ bool API::HandleDecryptItem(const Json::Value& args,
   } else {
     result["error_code"] = -1;
   }
+  return true;
+}
+
+bool API::HandleGetSignedTransaction(const Json::Value& args,
+                                     Json::Value& result) {
+  const std::string ext_prv_b58 = args.get("ext_prv_b58", "").asString();
+
+  Node *sending_node = NULL;
+  if (ext_prv_b58[0] == 'x') {
+    sending_node =
+      NodeFactory::CreateNodeFromExtended(Base58::
+                                          fromBase58Check(ext_prv_b58));
+  }
+  if (sending_node == NULL) {
+    result["error_code"] = -2;
+    return true;
+  }
+
+  unspent_txos_t unspent_txos;
+  for (unsigned int i = 0; i < args["unspent_txos"].size(); ++i) {
+    Json::Value jtxo = args["unspent_txos"][i];
+    UnspentTxo utxo;
+    utxo.hash = unhexlify(jtxo["tx_hash"].asString());
+    utxo.output_n = jtxo["tx_output_n"].asUInt();
+    utxo.script = unhexlify(jtxo["script"].asString());
+    utxo.value = jtxo["value"].asUInt64();
+    unspent_txos.push_back(utxo);
+  }
+
+  const std::string address(args["recipients"][0]["address"].asString());
+  const bytes_t address_bytes_with_version(Base58::fromBase58Check(address));
+  const bytes_t recipient_address(address_bytes_with_version.begin() + 1,
+                              address_bytes_with_version.end());
+
+  uint64_t value = args["recipients"][0]["value"].asUInt64();
+  uint64_t fee = args["fee"].asUInt64();
+  uint32_t change_index = args["change_index"].asUInt();
+
+  bytes_t signed_tx;
+  Tx tx(*sending_node,
+        unspent_txos,
+        recipient_address,
+        value,
+        fee,
+        change_index);
+  int error_code = 0;
+  bool r = tx.CreateSignedTransaction(signed_tx, error_code);
+  if (!r) {
+    result["error_code"] = error_code;
+  } else {
+    result["signed_tx"] = to_hex(signed_tx);
+  }
+  delete sending_node;
   return true;
 }

@@ -25,7 +25,7 @@
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav navbar-right" ng-if="getCurrentAccount()">
           <li>
-            <a href="#"><span class="glyphicon glyphicon-refresh"></span></a>
+            <a href="#" ng-click="refreshAccount()"><span class="glyphicon glyphicon-refresh"></span></a>
           </li>
           <li>
             <p class="navbar-text">
@@ -75,7 +75,7 @@
 
             <div class="alert alert-danger alert-dismissable">
               <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-              <strong>Warning!</strong> This app is EXPERIMENTAL. Use only bitcoin you wish to LOSE FOREVER.
+              <strong>Warning!</strong> This app is <strong>EXPERIMENTAL</strong>. Use only bitcoin you wish to <strong>LOSE FOREVER</strong>.
             </div>
 
             <div class="panel panel-success" ng-if="!isWalletKeySet()">
@@ -101,7 +101,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in getCurrentAccount().transactions">
+                    <tr data-ng-repeat="tx in getCurrentAccount().transactions track by $index">
                       <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{satoshiToUnit(tx.amount)}}</td>
                     </tr>
                   </tbody>
@@ -119,25 +119,25 @@
                   <div class="form-group">
                     <label for="send-to" class="col-md-2 control-label">Send To</label>
                     <div class="col-md-10">
-                      <input type="text" class="form-control" id="send-to" placeholder="Bitcoin Address">
+                      <input type="text" class="form-control" id="send-to" placeholder="Bitcoin Address" ng-model="w.sendTo">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-amount" class="col-md-2 control-label">Amount</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-amount" placeholder="{{unitLabel()}} To Send">
+                      <input type="number" step="any" min="0" class="form-control" id="send-amount" placeholder="{{unitLabel()}} To Send" ng-model="w.sendValue">
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="send-fee" class="col-md-2 control-label">Fee</label>
                     <div class="col-md-4">
-                      <input type="number" class="form-control" id="send-fee" placeholder="Transaction Fee in {{unitLabel()}}">
+                      <input type="number" step="any" min="0" class="form-control" id="send-fee" placeholder="Transaction Fee in {{unitLabel()}}" ng-model="w.sendFee">
                     </div>
                   </div>
                   <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
                       <button class="btn btn-warning" ng-if="!isWalletUnlocked()" data-toggle="modal" data-target="#unlock-wallet-modal"><span class="glyphicon glyphicon-lock ok"></span> Unlock Wallet to Send</button>
-                      <button type="submit" class="btn btn-primary" ng-if="isWalletUnlocked()">Send</button>
+                      <button type="submit" class="btn btn-primary" ng-if="isWalletUnlocked()" ng-click="send()">Send</button>
                       <button type="cancel" class="btn btn-default">Cancel</button>
                     </div>
                   </div>
@@ -158,7 +158,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getCurrentAccount().getAddresses()">
+                    <tr data-ng-repeat="addr in getCurrentAccount().getAddresses() track by $index">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>

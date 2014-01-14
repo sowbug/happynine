@@ -48,6 +48,10 @@ TEST(NodeTest, BIP0032TestVectors) {
       EXPECT_EQ(fp_expected.substr(2), fp.str());
       EXPECT_EQ(chain["address"].asString(),
                 Base58::toAddress(child_node->public_key()));
+      if (!chain["hash160"].empty()) {
+        EXPECT_EQ(unhexlify(chain["hash160"].asString()),
+                  Base58::toHash160(child_node->public_key()));
+      }
       EXPECT_EQ(unhexlify(chain["secret_hex"].asString()),
                 child_node->secret_key());
       EXPECT_EQ(chain["secret_wif"].asString(),

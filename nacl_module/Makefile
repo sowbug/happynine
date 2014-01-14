@@ -15,6 +15,7 @@ SOURCES = \
   node.cc \
   node_factory.cc \
   secp256k1.cc \
+  tx.cc \
   types.cc \
   dispatcher.cc
 
