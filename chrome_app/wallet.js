@@ -121,10 +121,7 @@ function Wallet(credentials) {
   };
 
   this.createRandomMasterKey = function(callback) {
-    var message = {
-      'command': 'create-node'
-    };
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('create-node', {}, function(response) {
       this._setMasterKey(response.ext_pub_b58,
                          response.ext_prv_b58,
                          response.fingerprint,
@@ -133,11 +130,10 @@ function Wallet(credentials) {
   };
 
   this.importMasterKey = function(seed, callback) {
-    var message = {
-      'command': 'get-node',
+    var params = {
       'seed': seed
     };
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('get-node', params, function(response) {
       if (response.ext_pub_b58) {
         this._setMasterKey(response.ext_pub_b58,
                            response.ext_prv_b58,
@@ -194,12 +190,11 @@ function Wallet(credentials) {
       return;
     }
 
-    var message = {
-      'command': 'get-node',
+    var params = {
       'seed': this.extendedPrivateBase58,
       'path': "m/" + this.nextAccount++ + "'"
     };
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('get-node', params, function(response) {
       this.credentials.encrypt(
         response.ext_prv_b58,
         function(encryptedItem) {
@@ -207,7 +202,7 @@ function Wallet(credentials) {
             'hexId': response.hex_id,
             'fingerprint': response.fingerprint,
             'parentFingerprint': this.fingerprint,
-            'path': message.path,
+            'path': params.path,
             'extendedPublicBase58': response.ext_pub_b58,
             'extendedPrivateBase58Encrypted': encryptedItem
           }));

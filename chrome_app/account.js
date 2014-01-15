@@ -75,14 +75,13 @@ function Account() {
   // TODO(miket): NaCl module crashes if you pass in m/0'/0 here and
   // key is public.
   this.fetchAddresses = function(callback) {
-    var message = {
-      'command': 'get-addresses',
+    var params = {
       'seed': this.extendedPrivateOrPublic(),
       'path': "m/0",  // external addresses
       'start': this.nextAddress,
       'count': this.batchCount
     };
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('get-addresses', params, function(response) {
       for (var i in response.addresses) {
         var a = response.addresses[i];
         var address = Address.fromStorableObject({
@@ -200,8 +199,7 @@ function Account() {
   };
 
   this.sendFunds = function($http, recipient, value, fee, callback) {
-    var message = {
-      'command': 'get-signed-transaction',
+    var params = {
       'ext_prv_b58': this.extendedPrivateBase58,
       'unspent_txos': this.unspent_txos,
       'recipients': [{
@@ -211,8 +209,11 @@ function Account() {
       'fee': fee,
       'change_index': 0
     };
-    postMessageWithCallback(message, function(response) {
-      console.log(response);
+    postRPCWithCallback(
+      'get-signed-transaction',
+      params,
+      function(response) {
+        console.log(response);
       if (response.signed_tx) {
         var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
         $http.post("https://blockchain.info/pushtx",

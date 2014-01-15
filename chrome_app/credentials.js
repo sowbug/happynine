@@ -57,14 +57,14 @@ function Credentials() {
   }
 
   this.generateAndCacheKeys = function(passphrase, relockCallback, callback) {
-    var message = {};
-    message.command = 'unlock-wallet';
-    message.salt = this.salt;
-    message.check = this.check;
-    message.internal_key_encrypted = this.internalKeyEncrypted;
-    message.passphrase = passphrase;
+    var params = {
+      'salt': this.salt,
+      'check': this.check,
+      'internal_key_encrypted': this.internalKeyEncrypted,
+      'passphrase': passphrase
+    };
 
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('unlock-wallet', params, function(response) {
       if (response.key) {
         this.cacheKeys(response.key,
                        response.internal_key,
@@ -122,12 +122,12 @@ function Credentials() {
       callback.call(this);
       return;
     }
-    var message = {};
-    message.command = 'encrypt-item';
-    message.item = item;
-    message.internal_key = this.internalKey;
+    var params = {
+      'item': item,
+      'internal_key': this.internalKey,
+    };
 
-    postMessageWithCallback(message, function(response) {
+      postRPCWithCallback('encrypt-item', params, function(response) {
       if (response.item_encrypted) {
         callback.call(this, response.item_encrypted);
       } else {
@@ -142,12 +142,12 @@ function Credentials() {
       callback.call(this);
       return;
     }
-    var message = {};
-    message.command = 'decrypt-item';
-    message.item_encrypted = item;
-    message.internal_key = this.internalKey;
+    var params = {
+      'item_encrypted': item,
+      'internal_key': this.internalKey
+    };
 
-    postMessageWithCallback(message, function(response) {
+    postRPCWithCallback('decrypt-item', params, function(response) {
       if (response.item) {
         callback.call(this, response.item);
       } else {
@@ -179,17 +179,17 @@ function Credentials() {
       }
     }
 
-    var message = {};
-    message.command = 'set-passphrase';
-    message.new_passphrase = newPassphrase;
+    var params = {
+      'new_passphrase': newPassphrase
+    };
     if (this.isPassphraseSet()) {
       if (this.key) {
-        message.key = this.key;
-        message.check = this.check;
-        message.internal_key_encrypted = this.internalKeyEncrypted;
+        params.key = this.key;
+        params.check = this.check;
+        params.internal_key_encrypted = this.internalKeyEncrypted;
       }
     }
-    postMessageWithCallback(message, function(response) {
+      postRPCWithCallback('set-passphrase', params, function(response) {
       this.cacheKeys(response.key,
                      response.internal_key,
                      cacheExpirationCallback,

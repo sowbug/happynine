@@ -50,42 +50,45 @@ public:
       //                 << reader.getFormattedErrorMessages();
       return;
     }
-    const std::string command = root.get("command",
-                                         "[missing command]").asString();
+    const std::string method = root.get("method",
+                                        "[missing method]").asString();
+    const Json::Value params = root.get("params", "{}");
     Json::Value result;
     bool handled = false;
     API api;
-    if (command == "create-node") {
-      handled = api.HandleCreateNode(root, result);
+    if (method == "create-node") {
+      handled = api.HandleCreateNode(params, result);
     }
-    if (command == "get-node") {
-      handled = api.HandleGetNode(root, result);
+    if (method == "get-node") {
+      handled = api.HandleGetNode(params, result);
     }
-    if (command == "get-addresses") {
-      handled = api.HandleGetAddresses(root, result);
+    if (method == "get-addresses") {
+      handled = api.HandleGetAddresses(params, result);
     }
-    if (command == "set-passphrase") {
-      handled = api.HandleSetPassphrase(root, result);
+    if (method == "set-passphrase") {
+      handled = api.HandleSetPassphrase(params, result);
     }
-    if (command == "unlock-wallet") {
-      handled = api.HandleUnlockWallet(root, result);
+    if (method == "unlock-wallet") {
+      handled = api.HandleUnlockWallet(params, result);
     }
-    if (command == "encrypt-item") {
-      handled = api.HandleEncryptItem(root, result);
+    if (method == "encrypt-item") {
+      handled = api.HandleEncryptItem(params, result);
     }
-    if (command == "decrypt-item") {
-      handled = api.HandleDecryptItem(root, result);
+    if (method == "decrypt-item") {
+      handled = api.HandleDecryptItem(params, result);
     }
-    if (command == "get-signed-transaction") {
-      handled = api.HandleGetSignedTransaction(root, result);
+    if (method == "get-signed-transaction") {
+      handled = api.HandleGetSignedTransaction(params, result);
     }
     if (!handled) {
       result["error_code"] = -999;
     }
-    result["id"] = root["id"];
-    result["command"] = command;
+    Json::Value response;
+    response["id"] = root["id"];
+    response["jsonrpc"] = "2.0";
+    response["result"] = result;
     Json::StyledWriter writer;
-    pp::Var reply_message(writer.write(result));
+    pp::Var reply_message(writer.write(response));
     PostMessage(reply_message);
   }
 };
