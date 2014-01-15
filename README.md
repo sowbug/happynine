@@ -1,7 +1,7 @@
 Happynine
 ===
 
-A Chrome App that implements a Bitcoin [BIP 0032 hierarchical deterministic wallet](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki).
+A Bitcoin [BIP 0032 hierarchical deterministic wallet](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), implemented as a [Chrome App](http://developer.chrome.com/apps/about_apps.html).
 
 Copyright &copy; 2014 Mike Tsao. All rights reserved. See LICENSE.md.
 
@@ -17,34 +17,20 @@ What Does Work
 * Importing an external BIP 0032 xprv or xpub key
 * Sending funds (not well-tested, hot off the press)
 * Passphrase protection of wallet with 60-second unlock
-* Viewing wallet balances using the [Blockchain API](https://blockchain.info/api)
+* Viewing wallet balances using the [Blockchain API](https://blockchain.info/api), but you must refresh manually if you expect
 * Multiple BIP 0032 accounts following the recommended wallet structure `m/i'/0`, where i is account number
 * [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
 
 What Doesn't Work Yet
 ===
 
-* Generating unsigned transactions for offline signing
-* Instant balance refresh when new transactions are detected
-* Any concept of fiat currencies (e.g., Bitstamp's USD/BTC exchange rate)
-* Direct communication with the Bitcoin network; currently the app relies on Blockchain's API for all its live functionality
-* Advanced BIP 0032 usage, which is the ability to install multiple master keys, some of which might turn out to be children of others
-* Being able to view the xpub/xprv of an account, which is essential for controlling individual account access
-* Generating a watch-only xpub for a child account; currently the accounts generated from the master key are all xprv
-* Properly treating the account chain as a chain (basically, reading up on Electrum's gap limit concept and confirming it's the right way to go)
-* Better Chrome App integration (transaction monitoring in event page; notifications)
-
-Known Issues
-===
-
-* Lots of UI nits
-* Testing of core is good but not great
-* There are no safety features, such as requiring a confirmation before deleting keys
+See the [issue list](https://github.com/sowbug/happynine/issues) for the current status
 
 User Requirements
 ===
 
-* A basic understanding of [Bitcoin](http://bitcoin.org/)
+* Because this is still under development, an acceptance that it will probably lose all your bitcoin. Come back in a week or two if you're not happy with that risk.
+* A basic understanding of [Bitcoin](http://bitcoin.org/).
 * [Chrome](https://www.google.com/chrome/). You don't actually have to use this as your browser, but it does need to be installed on your computer.
 * (Optional) a [Chromebook](http://www.google.com/intl/en/chrome/devices/), which is an excellent device if you're interested in avoiding Windows malware. [Buy one today!](http://www.amazon.com/gp/product/B00FNPD1VW?tag=sowbug-20)
 
@@ -55,9 +41,9 @@ A *root master key* is the starting point. It's the complete identity of a BIP 0
 
 The root master key's xprv is used to generate master keys for *accounts*. A BIP 0032 account is what people usually think of as a Bitcoin wallet. It's a long (2.1 billion) chain of Bitcoin *addresses*. If you have an account's xprv, you can generate the account's chain of Bitcoin addresses and keys. If you have the account's xpub, you can generate only its addresses.
 
-The simplest BIP 0032 use case is one account, one user. Generate the root master key and use it to derive account zero. Use that single chain of addresses as the user's wallet. As of today, this is the use case that Happynine supports.
+The simplest BIP 0032 use case is one account, one user. Generate the root master key and use it to derive account zero. Use that single chain of addresses as the user's wallet.
 
-A more interesting use case that Happynine will soon support: one family of parents Alice and Bob with kids Carol, Dan, and Eve. The parents generate the root master key and back up the xprv (for example by printing it out, putting a paper copy in a safe deposit box at a bank, and giving another paper copy to the trusted family attorney). Using the root master key, the parents generate many accounts: a **spending** account for each of the five people in the family, a joint spending account for the parents, and a **savings** account for each kid. That's a total of nine accounts.
+A more interesting use case that Happynine partially supports: one family of parents Alice and Bob with kids Carol, Dan, and Eve. The parents generate the root master key and back up the xprv (for example by printing it out, putting a paper copy in a safe deposit box at a bank, and giving another paper copy to the trusted family attorney). Using the root master key, the parents generate many accounts: a **spending** account for each of the five people in the family, a joint spending account for the parents, and a **savings** account for each kid. That's a total of nine accounts.
 
 Mom and Dad distribute the account master keys as follows:
 
@@ -86,11 +72,12 @@ There are many other ways to slice and dice a BIP 0032 tree. Another option in t
 FAQ
 ===
 
+* **This is so cool! Can I send you a small thank-you payment?** It's not necessary at all, but of course I'd appreciate it tremendously. Send tips to [1BUGzQ7CiHF2FUxHVH2LbUx1oNNN9VnuC1](https://blockchain.info/address/1BUGzQ7CiHF2FUxHVH2LbUx1oNNN9VnuC1). `TODO(miket): replace with a BIP 0032 address!`
 * **What is this BIP 0032 thing you keep mentioning?** It's a Bitcoin Improvement Proposal, which is a little like an RFC in the Internet world. [Read the spec](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki). The basic idea is that your entire wallet can be backed up and restored with a single sequence of letters and numbers starting with `xprv` that looks like this: `xprv9s21ZrQH143K3QTDL4LXw2FKmP...GJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi` (the middle is elided, but it's the root of BIP 0032 Test Vector 1). The concept is similar to [Electrum](https://electrum.org/) in this respect, but BIP 0032 has a few more features than Electrum's deterministic wallet. By the way, anyone else can **steal all your bitcoin** if they get that xprv sequence, so keep it private!
-* **Can I watch a BIP 0032 wallet without enabling the app to spend any of the funds in it?** Yes, this is one of the coolest features of most deterministic wallets. If you install the xpub version of one of your accounts, then the app can view all the Bitcoin addresses but cannot generate the corresponding private keys. In English, this means you can watch the balances and transactions on an account but can't spend any of the funds in any of the addresses.
-* **If I start using Happynine, am I committed to using it for my Bitcoin forever?** No, not at all. That's what's nice about BIP 0032: it's a standard. As long as you know your wallet's xprv, you can use any BIP 0032 app to manage your bitcoin. Even if there were no BIP 0032 apps but you were good at math and had a good calculator, you could derive all your Bitcoin private keys from the xprv.
-* **That last answer disturbed me. Calculator? Math?** OK, how about this: if you want to switch to another wallet app, send your funds in your Happynine wallet to that one.
-* **What about my vanity addresses? How do I generate a BIP 0032 vanity address?** You lose that with BIP 0032. In theory you could walk a chain until you find an address that matches the pattern you want, but then you'd have to remember the index of that address if you ever wanted to recover your wallet. It's not impossible, just not a good fit for how this kind of wallet works. In exchange for the comfort of knowing your wallet is extremely easy to back up and recover, you lose the ability to pick your own addresses.
+* **Can I watch a BIP 0032 wallet without enabling the app to spend any of the funds in it?** Yes, this is one of the coolest features of most deterministic wallets. If you install the xpub version of one of your accounts, then the app can view all the Bitcoin addresses but cannot generate the corresponding private keys. In English, this means you can watch the balances and transactions on an account, but the app can't spend any of the funds in any of the addresses. This is very useful if you want to watch your balances on a computer you don't completely control, such as a work computer, and want to feel secure that if someone else finds your app, there's no way they can steal your bitcoin.
+* **If I start using Happynine, am I committed to using it for my bitcoin forever?** No, not at all. That's what's nice about BIP 0032: it's a standard. As long as you know your wallet's xprv, you can use any BIP 0032 app or site to manage your bitcoin. Even if there were no BIP 0032 apps but you were good at math and had a good calculator, you could derive all your Bitcoin private keys from the xprv.
+* **That last answer disturbed me. Calculator? Math?** OK, how about this: if you want to switch to another wallet app, just send your funds in your Happynine wallet to that one.
+* **What about my vanity addresses? How do I generate a BIP 0032 vanity address?** You lose that with BIP 0032. In theory you could walk a chain until you find an address that matches the pattern you want, but then you'd have to remember the index of that address if you ever wanted to recover your wallet. Or you could write a version of vanitygen that generated root master keys until one address on one account chain contained the cutesy phrase you wanted, but it would be very hard to get one key that generated two interesting addresses. It's not impossible, just not a good fit for how this kind of wallet works. In exchange for the comfort of knowing your wallet is extremely easy to back up and recover, you lose the ability to pick vanity addresses.
 * **I have a tips address that I have published far and wide. Can I import it into this wallet?** See previous question. You'll have to manage that address separately. It would be possible to take an approach like Electrum's, which is deterministic but adds the ability to add other addresses, but then the elegance of the simple backup is lost. At this point it's not on the project radar.
 * **Why a Chrome App?** Because [Chrome Apps](http://developer.chrome.com/apps/about_apps.html) are awesome! They're easy to write and very secure. Security is an important reason why Chrome Apps are a good platform for anything related to Bitcoin, as you'd be sad if [malware stole your money](https://bitcointalk.org/index.php?topic=83794.0).
 * **What does "Happynine" mean?** I was looking for a catchier name than "Bitcoin Wallet App." Hours later, I looked up the significance of the number 32 from BIP 0032. It turns out 32 is the [ninth happy number](http://en.wikipedia.org/wiki/Happy_number). So "happy nine."
@@ -103,8 +90,3 @@ Acknowledgments
 * [JP Richardson](https://github.com/jprichardson)'s invaluable [blog post](http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript) that went into interactive detail about compressed keys/addresses.
 * Various folks who have posted on [bitcointalk](https://bitcointalk.org/) about BIP 0032.
 * Portions adapted from [the reference Bitcoin client](https://github.com/bitcoin/bitcoin).
-
-Begging
--
-
-Send tips to [1BUGzQ7CiHF2FUxHVH2LbUx1oNNN9VnuC1](https://blockchain.info/address/1BUGzQ7CiHF2FUxHVH2LbUx1oNNN9VnuC1). `TODO(miket): replace with a BIP 0032 address!`
