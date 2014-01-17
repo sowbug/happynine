@@ -26,10 +26,12 @@ var walletAppController = function($scope,
                                    $http,
                                    settings,
                                    credentials,
-                                   wallet) {
+                                   wallet,
+                                   electrum) {
   $scope.settings = settings;
   $scope.credentials = credentials;
   $scope.wallet = wallet;
+  $scope.electrum = electrum;
 
   // For some crazy reason, angularjs won't reflect view changes in
   // the model's scope-level objects, so I have to create another

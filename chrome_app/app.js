@@ -36,9 +36,14 @@ walletApp.factory('wallet', ['credentials', function(credentials) {
   return new Wallet(credentials);
 }]);
 
+walletApp.factory('electrum', ['$http', function($http) {
+  return new Electrum($http);
+}]);
+
 walletApp.controller('MainCtrl', ['$scope',
                                   '$http',
                                   'settings',
                                   'credentials',
                                   'wallet',
+                                  'electrum',
                                   walletAppController]);
