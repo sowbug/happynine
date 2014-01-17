@@ -109,7 +109,7 @@ function Account() {
     var url = 'https://blockchain.info/multiaddr?format=json' +
       '&active=' +
       this.buildAddressList().join('|');
-    
+
     $http({method: 'GET', url: url}).
       success(function(data, status, headers, config) {
         for (var i in data.addresses) {
