@@ -194,10 +194,14 @@
               <!-- Settings - Basic -->
               <div class="tab-pane active fade" id="settings-basic">
                 <!-- Passphrase -->
-                <div class="panel panel-default" ng-if="!isPassphraseSet() || isWalletUnlocked()">
+                <div class="panel panel-default">
                   <div class="panel-heading">Passphrase</div>
                   <div class="panel-body">
-                    <form class="form-horizontal" role="form">
+                    <div class="row" ng-if="isPassphraseSet() && !isWalletUnlocked()">
+                      <button class="btn btn-warning col-md-offset-2" data-toggle="modal" data-target="#unlock-wallet-modal"><span class="glyphicon glyphicon-lock ok"></span> Unlock Wallet to Change Passphrase</button>
+                    </div>
+
+                    <form class="form-horizontal" role="form" ng-if="!isPassphraseSet() || isWalletUnlocked()">
                       <div class="form-group">
                         <label for="passphrase-new" class="col-md-2 control-label">New</label>
                         <div class="col-md-6">
@@ -321,8 +325,8 @@
                     <div ng-if="!getAccountCount()">
                       <p id="no-accounts">None. To create an account:</p>
                       <ul>
-                        <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
                         <li ng-if="!isWalletUnlocked()">Unlock your wallet by clicking the lock icon <span class="glyphicon glyphicon-lock ok"></span> below.</li>
+                        <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
                         <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Click the <span class="label label-success">Generate Account</span> button above.</li>
                       </ul>
                     </div>
