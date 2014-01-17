@@ -5,4 +5,5 @@ out/
 *.o
 *.a
 *_unittest
+*_unittests
 .gdb_history
