@@ -1,8 +1,7 @@
 #include "base58.h"
 
 #include "bigint.h"
-#include "openssl/ripemd.h"
-#include "openssl/sha.h"
+#include "crypto.h"
 #include "types.h"
 
 #define BASE58_ALPHABET "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -25,16 +24,7 @@ std::string Base58::toBase58Check(const bytes_t& bytes) {
     return std::string();
   }
 
-  bytes_t digest;
-  digest.resize(SHA256_DIGEST_LENGTH);
-
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &bytes[0], bytes.size());
-  SHA256_Final(&digest[0], &sha256);
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &digest[0], digest.capacity());
-  SHA256_Final(&digest[0], &sha256);
+  bytes_t digest(Crypto::DoubleSHA256(bytes));
 
   bytes_t payload(bytes);
   payload.insert(payload.end(), &digest[0], &digest[4]);
@@ -54,16 +44,7 @@ bytes_t Base58::fromBase58Check(const std::string s) {
   bytes_t leading0s(countLeading0s(s, '1'), 0);
   bytes.insert(bytes.begin(), leading0s.begin(), leading0s.end());
 
-  bytes_t digest;
-  digest.resize(SHA256_DIGEST_LENGTH);
-
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &bytes[0], bytes.size());
-  SHA256_Final(&digest[0], &sha256);
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &digest[0], digest.capacity());
-  SHA256_Final(&digest[0], &sha256);
+  bytes_t digest(Crypto::DoubleSHA256(bytes));
 
   digest.assign(digest.begin(), digest.begin() + 4);
   if (digest != checksum) return bytes_t();
@@ -78,24 +59,9 @@ bytes_t Base58::toHash160(const bytes_t& bytes) {
     return bytes_t();
   }
 
-  bytes_t digest;
-  digest.resize(SHA256_DIGEST_LENGTH);
-
   // 2. Perform SHA-256 hashing on the public key
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &bytes[0], bytes.size());
-  SHA256_Final(&digest[0], &sha256);
-
   // 3. Perform RIPEMD-160 hashing on the result of SHA-256
-  bytes_t ripe_digest;
-  ripe_digest.resize(RIPEMD160_DIGEST_LENGTH);
-  RIPEMD160_CTX ripemd;
-  RIPEMD160_Init(&ripemd);
-  RIPEMD160_Update(&ripemd, &digest[0], SHA256_DIGEST_LENGTH);
-  RIPEMD160_Final(&ripe_digest[0], &ripemd);
-
-  return ripe_digest;
+  return Crypto::SHA256ThenRIPE(bytes);
 }
 
 // https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses

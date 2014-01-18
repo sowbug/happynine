@@ -205,6 +205,7 @@ TEST(SendFundsTest, Basic) {
   EXPECT_TRUE(api.HandleGetSignedTransaction(request, response));
 
   bytes_t signed_tx(unhexlify(response["signed_tx"].asString()));
+  ASSERT_TRUE(signed_tx.size() > 64);
 
   // Validation is hard.
 

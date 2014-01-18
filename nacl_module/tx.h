@@ -26,54 +26,152 @@
 
 #include "types.h"
 
-class UnspentTxo {
+class Node;
+class Transaction;
+
+// https://en.bitcoin.it/wiki/Transactions
+class TxIn {
  public:
+  TxIn(std::istream& is);
+  TxIn(const std::string& coinbase_message);
+  TxIn(const Transaction& tx, uint32_t tx_n);
+
+  const bytes_t& prev_txo_hash() const { return prev_txo_hash_; }
+  uint32_t prev_txo_index() const { return prev_txo_index_; }
+
+  bytes_t Serialize() const;
+
+ private:
+  bytes_t prev_txo_hash_;
+  uint32_t prev_txo_index_;
+  bytes_t script_;
+  uint32_t sequence_no_;
+};
+typedef std::vector<TxIn> tx_ins_t;
+
+class TxOut {
+ public:
+  TxOut(uint64_t value, const bytes_t& recipient_hash160);
+  TxOut(std::istream& is);
+  TxOut(uint64_t value, const bytes_t& script,
+        uint32_t tx_output_n, const bytes_t& tx_hash);
+
   bytes_t GetSigningAddress() const;
 
-  bytes_t hash;
-  uint32_t output_n;
-  bytes_t script;
-  bytes_t script_sig;
-  uint64_t value;
-};
-typedef std::vector<UnspentTxo> unspent_txos_t;
+  uint64_t value() const { return value_; }
+  bytes_t script() const { return script_; }
 
-struct TxOut {
-  bytes_t hash;
-  uint64_t value;
+  uint32_t tx_output_n() const { return tx_output_n_; }
+  void set_tx_output_n(uint32_t n) { tx_output_n_ = n; }
 
-  TxOut(const bytes_t& hash, uint64_t value);
+  bytes_t Serialize() const;
+
+  void MarkSpent() { is_spent_ = true; }
+  bool is_spent() const { return is_spent_; }
+
+  const bytes_t& tx_hash() const { return tx_hash_; }
+
+ private:
+  uint64_t value_;
+  bytes_t script_;
+  uint32_t tx_output_n_;
+  bool is_spent_;
+
+  // set only for unspent_txos
+  bytes_t tx_hash_;
 };
 typedef std::vector<TxOut> tx_outs_t;
 
-class Node;
-
-class Tx {
+class Transaction {
  public:
-  Tx(const Node& sending_node,
-     const unspent_txos_t unspent_txos,
-     const bytes_t recipient_hash160,
-     uint64_t value,
-     uint64_t fee,
-     uint32_t change_index);
-  virtual ~Tx();
+  Transaction();
+  Transaction(std::istream& is);
+  Transaction(const tx_ins_t& tx_ins,
+              const tx_outs_t& tx_outs,
+              const TxOut& change_address,
+              uint64_t fee);
 
-  bool CreateSignedTransaction(bytes_t& signed_tx, int& error_code);
+  bytes_t Serialize() const;
+  bytes_t Sign(const Node& node) const;
 
- protected:
-  bytes_t SerializeTransaction();
+  uint32_t version() const { return version_; }
+  const tx_ins_t& inputs() const { return inputs_; }
+  const tx_outs_t& outputs() const { return outputs_; }
+  uint32_t lock_time() const { return lock_time_; }
+  const bytes_t& hash() const { return hash_; }
 
-  const Node& sending_node_;
-  const unspent_txos_t unspent_txos_;
-  const bytes_t recipient_hash160_;
-  uint64_t value_;
-  uint64_t fee_;
-  uint32_t change_index_;
+  void MarkOutputSpent(uint32_t index) { outputs_[index].MarkSpent(); }
 
-  unspent_txos_t required_unspent_txos_;
-  uint64_t change_value_;
-  std::map<bytes_t, bytes_t> signing_addresses_to_keys_;
-  std::map<bytes_t, bytes_t> signing_addresses_to_public_keys_;
-  tx_outs_t recipients_;
-  std::vector<bytes_t> script_sigs_;
+  void Add(const TxIn& tx_in);
+  void Add(const TxOut& tx_out);
+
+ private:
+  void UpdateHash();
+
+  uint32_t version_;
+  tx_ins_t inputs_;
+  tx_outs_t outputs_;
+  uint32_t lock_time_;
+  bytes_t hash_;
 };
+typedef std::vector<Transaction> transactions_t;
+
+class TransactionManager {
+ public:
+  void Add(const Transaction& transaction);
+  bool Exists(const bytes_t& hash);
+  Transaction& Get(const bytes_t& hash);
+  tx_outs_t GetUnspentTxos();
+  uint64_t GetUnspentValue();
+
+ private:
+  typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
+  tx_hashes_to_txs_t tx_hashes_to_txs_;
+};
+
+/////////////////////////////////////
+
+/* class UnspentTxo { */
+/*  public: */
+/*   bytes_t GetSigningAddress() const; */
+
+/*   bytes_t hash; */
+/*   uint32_t output_n; */
+/*   bytes_t script; */
+/*   bytes_t script_sig; */
+/*   uint64_t value; */
+/* }; */
+/* typedef std::vector<UnspentTxo> unspent_txos_t; */
+
+/* class Node; */
+
+/* class Tx { */
+/*  public: */
+/*   Tx(const Node& sending_node, */
+/*      const unspent_txos_t unspent_txos, */
+/*      const bytes_t recipient_hash160, */
+/*      uint64_t value, */
+/*      uint64_t fee, */
+/*      uint32_t change_index); */
+/*   Tx( */
+/*   virtual ~Tx(); */
+
+/*   bool CreateSignedTransaction(bytes_t& signed_tx, int& error_code); */
+
+/*  protected: */
+/*   bytes_t Serialize(); */
+
+/*   const Node& sending_node_; */
+/*   const unspent_txos_t unspent_txos_; */
+/*   const bytes_t recipient_hash160_; */
+/*   uint64_t value_; */
+/*   uint64_t fee_; */
+/*   uint32_t change_index_; */
+
+/*   unspent_txos_t required_unspent_txos_; */
+/*   uint64_t change_value_; */
+/*   std::map<bytes_t, bytes_t> signing_addresses_to_keys_; */
+/*   std::map<bytes_t, bytes_t> signing_addresses_to_public_keys_; */
+/*   tx_outs_t recipients_; */
+/*   std::vector<bytes_t> script_sigs_; */
+/* }; */

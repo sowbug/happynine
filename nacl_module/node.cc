@@ -4,9 +4,7 @@
 #include <string>
 
 #include "base58.h"
-#include "openssl/hmac.h"
-#include "openssl/ripemd.h"
-#include "openssl/sha.h"
+#include "crypto.h"
 #include "secp256k1.h"
 
 Node::Node(const bytes_t& key,
@@ -63,19 +61,7 @@ void Node::set_chain_code(const bytes_t& new_code) {
 }
 
 void Node::update_fingerprint() {
-  bytes_t hash;
-  hash.resize(SHA256_DIGEST_LENGTH);
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, &public_key_[0], public_key_.size());
-  SHA256_Final(&hash[0], &sha256);
-
-  hex_id_.resize(RIPEMD160_DIGEST_LENGTH);
-  RIPEMD160_CTX ripemd;
-  RIPEMD160_Init(&ripemd);
-  RIPEMD160_Update(&ripemd, &hash[0], hash.capacity());
-  RIPEMD160_Final(&hex_id_[0], &ripemd);
-
+  hex_id_ = Crypto::SHA256ThenRIPE(public_key_);
   fingerprint_ = (uint32_t)hex_id_[0] << 24 |
     (uint32_t)hex_id_[1] << 16 |
     (uint32_t)hex_id_[2] << 8 |

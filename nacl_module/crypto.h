@@ -51,4 +51,7 @@ class Crypto {
   static bool Sign(const bytes_t& key,
                    const bytes_t& digest,
                    bytes_t& signature);
+
+  static bytes_t DoubleSHA256(const bytes_t& input);
+  static bytes_t SHA256ThenRIPE(const bytes_t& input);
 };

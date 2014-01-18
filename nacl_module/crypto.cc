@@ -2,6 +2,8 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/ripemd.h>
+#include <openssl/sha.h>
 #include "secp256k1.h"
 
 const int ROUNDS = 32768;
@@ -118,4 +120,38 @@ bool Crypto::Sign(const bytes_t& key,
   ec_key.setPrivKey(key);
   signature = secp256k1_sign(ec_key, digest);
   return true;
+}
+
+bytes_t Crypto::DoubleSHA256(const bytes_t& input) {
+  bytes_t digest;
+  digest.resize(SHA256_DIGEST_LENGTH);
+
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &input[0], input.size());
+  SHA256_Final(&digest[0], &sha256);
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &digest[0], digest.capacity());
+  SHA256_Final(&digest[0], &sha256);
+
+  return digest;
+}
+
+bytes_t Crypto::SHA256ThenRIPE(const bytes_t& input) {
+  bytes_t digest;
+  digest.resize(SHA256_DIGEST_LENGTH);
+
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &input[0], input.size());
+  SHA256_Final(&digest[0], &sha256);
+
+  bytes_t ripe_digest;
+  ripe_digest.resize(RIPEMD160_DIGEST_LENGTH);
+  RIPEMD160_CTX ripemd;
+  RIPEMD160_Init(&ripemd);
+  RIPEMD160_Update(&ripemd, &digest[0], SHA256_DIGEST_LENGTH);
+  RIPEMD160_Final(&ripe_digest[0], &ripemd);
+
+  return ripe_digest;
 }
