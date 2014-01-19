@@ -86,11 +86,35 @@ void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   }
 }
 
+Node* API::CreateNodeFromArgs(const Json::Value& args) {
+  // TODO(miket): https://github.com/sowbug/happynine/issues/29
+  const std::string seed_hex = args.get("seed_hex", "").asString();
+  if (seed_hex.size() != 0) {
+    const bytes_t seed_bytes(unhexlify(seed_hex));
+    return NodeFactory::CreateNodeFromSeed(seed_bytes);
+  }
+  bytes_t ext_bytes;
+  const std::string ext_hex = args.get("ext_hex", "").asString();
+  if (ext_hex.size() != 0) {
+    ext_bytes = unhexlify(ext_hex);
+  } else {
+    const std::string ext_b58 = args.get("ext_b58", "").asString();
+    if (ext_b58.size() != 0) {
+      ext_bytes = Base58::fromBase58Check(ext_b58);
+    }
+  }
+  if (ext_bytes.size() != 0) {
+    return NodeFactory::CreateNodeFromExtended(ext_bytes);
+  }
+  return NULL;
+}
+
 bool API::HandleCreateNode(const Json::Value& args,
                            Json::Value& result) {
+  // TODO(miket): https://github.com/sowbug/happynine/issues/30
   bytes_t seed_bytes(32, 0);
   const bytes_t
-    supplied_seed_bytes(unhexlify(args.get("seed", "00").asString()));
+    supplied_seed_bytes(unhexlify(args.get("seed_hex", "00").asString()));
 
   if (!Crypto::GetRandomBytes(seed_bytes)) {
     SetError(result, -1, "The PRNG has not been seeded with enough "
@@ -108,17 +132,12 @@ bool API::HandleCreateNode(const Json::Value& args,
 }
 
 bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
-  const std::string seed = args.get("seed", "").asString();
-  const bytes_t seed_bytes(unhexlify(seed));
-
-  Node *parent_node = NULL;
-  if (seed_bytes.size() == 78) {
-    parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
-  } else if (seed[0] == 'x') {
-    parent_node =
-      NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed));
-  } else {
-    parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  Node* parent_node = CreateNodeFromArgs(args);
+  if (!parent_node) {
+    SetError(result,
+             -1,
+             "Missing valid 'seed', 'ext_hex', 'ext_b58' params.");
+    return true;
   }
 
   const std::string node_path = args.get("path", "m").asString();
@@ -134,17 +153,12 @@ bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
 
 bool API::HandleGetAddresses(const Json::Value& args,
                              Json::Value& result) {
-  const std::string seed = args.get("seed", "").asString();
-  const bytes_t seed_bytes(unhexlify(seed));
-
-  Node *parent_node = NULL;
-  if (seed_bytes.size() == 78) {
-    parent_node = NodeFactory::CreateNodeFromExtended(seed_bytes);
-  } else if (seed[0] == 'x') {
-    parent_node =
-      NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(seed));
-  } else {
-    parent_node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  Node* parent_node = CreateNodeFromArgs(args);
+  if (!parent_node) {
+    SetError(result,
+             -1,
+             "Missing valid 'seed', 'ext_hex', 'ext_b58' params.");
+    return true;
   }
 
   uint32_t start = args.get("start", 0).asUInt();

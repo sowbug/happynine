@@ -74,5 +74,6 @@ class API {
                          int& error_code,
                          std::string& error_message);
   void SetError(Json::Value& obj, int code, const std::string& message);
+  Node* CreateNodeFromArgs(const Json::Value& args);
 
 };

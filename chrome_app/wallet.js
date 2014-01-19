@@ -129,9 +129,9 @@ function Wallet(credentials) {
     }.bind(this));
   };
 
-  this.importMasterKey = function(seed, callback) {
+  this.importMasterKey = function(ext_b58, callback) {
     var params = {
-      'seed': seed
+      'ext_b58': ext_b58
     };
     postRPCWithCallback('get-node', params, function(response) {
       if (response.ext_pub_b58) {
@@ -191,7 +191,7 @@ function Wallet(credentials) {
     }
 
     var params = {
-      'seed': this.extendedPrivateBase58,
+      'ext_b58': this.extendedPrivateBase58,
       'path': "m/" + this.nextAccount++ + "'"
     };
     postRPCWithCallback('get-node', params, function(response) {

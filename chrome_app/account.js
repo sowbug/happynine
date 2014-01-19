@@ -76,7 +76,7 @@ function Account() {
   // key is public.
   this.fetchAddresses = function(callback) {
     var params = {
-      'seed': this.extendedPrivateOrPublic(),
+      'ext_b58': this.extendedPrivateOrPublic(),
       'path': "m/0",  // external addresses
       'start': this.nextAddress,
       'count': this.batchCount
