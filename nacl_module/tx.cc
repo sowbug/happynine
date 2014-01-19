@@ -125,8 +125,8 @@ TxIn::TxIn(const bytes_t& hash,
   prev_txo_hash_(hash),
   prev_txo_index_(index),
   script_sig_(script_sig),
-  hash160_(hash160),
-  sequence_no_(-1) {
+  sequence_no_(-1),
+  hash160_(hash160) {
 }
 
 bytes_t TxIn::Serialize() const {
@@ -298,6 +298,7 @@ bool Transaction::CopyUnspentTxosToTxins(const tx_outs_t& required_txos,
     inputs_.push_back(TxIn(i->tx_hash(), i->tx_output_n(), i->script(),
                            i->GetSigningAddress()));
   }
+  error_code = 0;
   return true;
 }
 
@@ -337,6 +338,7 @@ GenerateScriptSigs(std::map<bytes_t, bytes_t>& signing_keys,
                       signing_public_keys[signing_address]);
     script_sigs.push_back(script_sig_and_key);
   }
+  error_code = 0;
   return true;
 }
 
@@ -437,12 +439,8 @@ TxOut::TxOut(uint64_t value, const bytes_t& script,
   value_(value),
   script_(script),
   tx_output_n_(tx_output_n),
+  tx_hash_(tx_hash),
   is_spent_(false) {
-  for (bytes_t::const_reverse_iterator j = tx_hash.rbegin();
-       j != tx_hash.rend();
-       ++j) {
-    tx_hash_.push_back(*j);
-  }
 }
 
 bytes_t TxOut::GetSigningAddress() const {

@@ -56,8 +56,8 @@ class TxIn {
  private:
   bytes_t prev_txo_hash_;
   uint32_t prev_txo_index_;
-  uint32_t sequence_no_;
   bytes_t script_sig_;
+  uint32_t sequence_no_;
 
   bytes_t script_;  // Holds unsigned scripts
   bytes_t hash160_;  // The address that needs to sign this input
