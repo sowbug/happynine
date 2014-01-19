@@ -44,6 +44,32 @@
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
+void API::GetError(const Json::Value& obj, int& code, std::string& message) {
+  if (!obj.isMember("error")) {
+    code = 0;
+    message = "No error";
+  }
+  // -99999 = poorly constructed error
+  code = obj["error"].get("code", -99999).asInt();
+  message = obj["error"].get("message", "Missing error message").asString();
+}
+
+int API::GetErrorCode(const Json::Value& obj) {
+  int code;
+  std::string message;
+  GetError(obj, code, message);
+  return code;
+}
+
+void API::SetError(Json::Value& obj, int code, const std::string& message) {
+  obj["error"]["code"] = code;
+  if (message.size() > 0) {
+    obj["error"]["message"] = message;
+  } else {
+    obj["error"]["message"] = "Unspecified error";
+  }
+}
+
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   dict["hex_id"] = to_hex(node->hex_id());
   dict["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
@@ -67,10 +93,8 @@ bool API::HandleCreateNode(const Json::Value& args,
     supplied_seed_bytes(unhexlify(args.get("seed", "00").asString()));
 
   if (!Crypto::GetRandomBytes(seed_bytes)) {
-    result["error_code"] = -1;
-    result["error_message"] =
-      std::string("The PRNG has not been seeded with enough "
-                  "randomness to ensure an unpredictable byte sequence.");
+    SetError(result, -1, "The PRNG has not been seeded with enough "
+             "randomness to ensure an unpredictable byte sequence.");
     return true;
   }
   seed_bytes.insert(seed_bytes.end(),
@@ -184,7 +208,7 @@ bool API::HandleSetPassphrase(const Json::Value& args,
   if (key.size() > 0 &&
       check.size() > 0 &&
       internal_key_encrypted.size() > 0) {
-    int error_code;
+    int error_code = 0;
     std::string error_message;
     if (!VerifyCredentials(key,
                            check,
@@ -192,8 +216,7 @@ bool API::HandleSetPassphrase(const Json::Value& args,
                            internal_key,
                            error_code,
                            error_message)) {
-      result["error_code"] = error_code;
-      result["error_message"] = error_message;
+      SetError(result, error_code, error_message);
       return true;
     }
   } else {
@@ -207,18 +230,15 @@ bool API::HandleSetPassphrase(const Json::Value& args,
   Crypto::GetRandomBytes(salt);
 
   if (!Crypto::DeriveKey(new_passphrase, salt, key)) {
-    result["error_code"] = -1;
-    result["error_message"] = "Key derivation failed";
+    SetError(result, -1, "Key derivation failed");
     return true;
   }
   if (!Crypto::Encrypt(key, unhexlify(PASSPHRASE_CHECK_HEX), check)) {
-    result["error_code"] = -5;
-    result["error_message"] = "Check generation failed";
+    SetError(result, -5, "Check generation failed");
     return true;
   }
   if (!Crypto::Encrypt(key, internal_key, internal_key_encrypted)) {
-    result["error_code"] = -5;
-    result["error_message"] = "Check generation failed";
+    SetError(result, -5, "Check generation failed");
     return true;
   }
   result["salt"] = to_hex(salt);
@@ -240,8 +260,7 @@ bool API::HandleUnlockWallet(const Json::Value& args,
 
   bytes_t key(32, 0);
   if (!Crypto::DeriveKey(passphrase, salt, key)) {
-    result["error_code"] = -1;
-    result["error_message"] = "Key derivation failed";
+    SetError(result, -1, "Key derivation failed");
     return true;
   }
   bytes_t internal_key;
@@ -253,8 +272,7 @@ bool API::HandleUnlockWallet(const Json::Value& args,
                          internal_key,
                          error_code,
                          error_message)) {
-    result["error_code"] = error_code;
-    result["error_message"] = error_message;
+    SetError(result, error_code, error_message);
     return true;
   }
   result["key"] = to_hex(key);
@@ -271,7 +289,7 @@ bool API::HandleEncryptItem(const Json::Value& args,
   if (Crypto::Encrypt(internal_key, item_bytes, item_encrypted)) {
     result["item_encrypted"] = to_hex(item_encrypted);
   } else {
-    result["error_code"] = -1;
+    SetError(result, -1, "Encryption failed");
   }
   return true;
 }
@@ -286,7 +304,7 @@ bool API::HandleDecryptItem(const Json::Value& args,
       std::string(reinterpret_cast<char const*>(&item_bytes[0]),
                   item_bytes.size());
   } else {
-    result["error_code"] = -1;
+    SetError(result, -1, "Decryption failed");
   }
   return true;
 }
@@ -302,7 +320,7 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
                                           fromBase58Check(ext_prv_b58));
   }
   if (sending_node == NULL) {
-    result["error_code"] = -2;
+    SetError(result, -2, "No node derived from extended key");
     return true;
   }
 
@@ -347,7 +365,7 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
                                        fee,
                                        error_code);
   if (error_code != 0) {
-    result["error_code"] = error_code;
+    SetError(result, error_code, "Signing failed");
   } else {
     result["signed_tx"] = to_hex(signed_tx);
   }
@@ -358,10 +376,75 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
 bool API::HandleGetUnspentTxos(const Json::Value& args,
                                Json::Value& result) {
   int error_code = 0;
+  TransactionManager& tm = TransactionManager::GetSingleton();
+
+  tx_outs_t unspent_txos = tm.GetUnspentTxos();
   if (error_code != 0) {
-    result["error_code"] = error_code;
+    SetError(result, error_code, "Getting unspent txos failed");
   } else {
-    result["unspent_txos"] = Json::Value();
+    for (tx_outs_t::const_iterator i = unspent_txos.begin();
+         i != unspent_txos.end();
+         ++i) {
+      Json::Value utxo;
+      utxo["tx_hash"] = to_hex(i->tx_hash());
+      result["unspent_txos"].append(utxo);
+    }
+  }
+  return true;
+}
+
+
+bool API::HandleReportAddressHistory(const Json::Value& args,
+                                     Json::Value& result) {
+  int error_code = 0;
+  std::string error_message;
+  TransactionManager& tm = TransactionManager::GetSingleton();
+
+  if (args.isMember("history")) {
+    for (Json::Value::const_iterator i = args["history"].begin();
+         i != args["history"].end();
+         ++i) {
+      const std::string hash((*i)["tx_hash"].asString());
+      if (!tm.Exists(unhexlify(hash))) {
+        result["unknown_txs"].append(hash);
+      }
+    }
+  } else {
+    error_code = -1;
+    error_message = "Missing 'history' param";
+  }
+  if (error_code != 0) {
+    SetError(result, error_code, error_message);
+  }
+  return true;
+}
+
+bool API::HandleReportTransactions(const Json::Value& args,
+                                   Json::Value& result) {
+  int error_code = 0;
+  std::string error_message;
+
+  TransactionManager& tm = TransactionManager::GetSingleton();
+
+  if (args.isMember("txs")) {
+    for (Json::Value::const_iterator i = args["txs"].begin();
+         i != args["txs"].end();
+         ++i) {
+      const bytes_t tx_bytes(unhexlify((*i).asString()));
+      std::istringstream is;
+      const char* p = reinterpret_cast<const char*>(&tx_bytes[0]);
+      is.rdbuf()->pubsetbuf(const_cast<char*>(p),
+                            tx_bytes.size());
+      Transaction tx(is);
+      tm.Add(tx);
+    }
+  } else {
+    error_code = -1;
+    error_message = "Missing 'txs' param";
+  }
+
+  if (error_code != 0) {
+    SetError(result, error_code, error_message);
   }
   return true;
 }

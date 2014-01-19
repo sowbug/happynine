@@ -66,7 +66,7 @@ TEST(SetPassphraseTest, Basic) {
   response = Json::Value();
   request_wrong_passphrase["passphrase"] = "wrong";
   EXPECT_TRUE(api.HandleUnlockWallet(request_wrong_passphrase, response));
-  EXPECT_EQ(-2, response["error_code"].asInt());
+  EXPECT_EQ(-2, api.GetErrorCode(response));
 
   // Unlock wallet with wrong salt
   Json::Value request_wrong_salt(request);
@@ -74,7 +74,7 @@ TEST(SetPassphraseTest, Basic) {
   request_wrong_salt["salt"] = BAD_HEX;
   response = Json::Value();
   EXPECT_TRUE(api.HandleUnlockWallet(request_wrong_salt, response));
-  EXPECT_EQ(-2, response["error_code"].asInt());
+  EXPECT_EQ(-2, api.GetErrorCode(response));
 
   // Unlock wallet with wrong check
   Json::Value request_wrong_check(request);
@@ -82,7 +82,7 @@ TEST(SetPassphraseTest, Basic) {
   request_wrong_check["check"] = BAD_HEX;
   response = Json::Value();
   EXPECT_TRUE(api.HandleUnlockWallet(request_wrong_check, response));
-  EXPECT_EQ(-2, response["error_code"].asInt());
+  EXPECT_EQ(-2, api.GetErrorCode(response));
 
   // Encrypt something
   request = Json::Value();
@@ -99,7 +99,7 @@ TEST(SetPassphraseTest, Basic) {
   request["item_encrypted"] = to_hex(item_encrypted);
   request["internal_key"] = BAD_HEX;
   EXPECT_TRUE(api.HandleDecryptItem(request, response));
-  EXPECT_EQ(-1, response["error_code"].asInt());
+  EXPECT_EQ(-1, api.GetErrorCode(response));
 
   // Decrypt with right key
   request = Json::Value();
@@ -117,7 +117,7 @@ TEST(SetPassphraseTest, Basic) {
   request["internal_key_encrypted"] = to_hex(internal_key_encrypted);
   request["new_passphrase"] = "New Passphrase";
   EXPECT_TRUE(api.HandleSetPassphrase(request, response));
-  EXPECT_EQ(-2, response["error_code"].asInt());
+  EXPECT_EQ(-2, api.GetErrorCode(response));
 
   // Change passphrase with good credentials
   request = Json::Value();
@@ -217,10 +217,50 @@ TEST(SendFundsTest, Basic) {
 }
 
 TEST(TransactionManagerTest, HappyPath) {
+  API api;
   Json::Value request;
   Json::Value response;
-  API api;
 
+  // When we start out, there should be nothing.
   EXPECT_TRUE(api.HandleGetUnspentTxos(request, response));
   EXPECT_EQ(0, response["unspent_txos"].size());
+
+  // We just received address history from the server. This sample is
+  // an arbitrarily picked one that got included in a block moments
+  // ago.
+  request = Json::Value();
+  response = Json::Value();
+  request["address"] = "1DHhYn2hTgjuNkvGK1dMweiHX3R7eRsQKi";
+  {
+    // Two outputs, two unspent
+    Json::Value history;
+    history["tx_hash"] = "c357d77807368346fccc6e078bd28626a91d06f4a1ba8b891a455d23b53c9fef";
+    history["height"] = 281363;
+    request["history"].append(history);
+  }
+  {
+    // Three outputs, two unspent
+    Json::Value history;
+    history["tx_hash"] = "f36357faeea4fc1f0e365d1af1be5071523ce63e987c34d35e51e2271d7e7276";
+    history["height"] = 281359;
+    request["history"].append(history);
+  }
+  // TM should respond that it knows nothing about these transactions.
+  EXPECT_TRUE(api.HandleReportAddressHistory(request, response));
+  EXPECT_EQ(2, response["unknown_txs"].size());
+
+  // We ask the server for each of those transactions, and back they
+  // come. Let's report them to TM.
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0] = "010000000176727e1d27e2515ed3347c983ee63c527150bef11a5d360e1ffca4eefa5763f3000000006a47304402207affb9e332bf8e0b606cd644abb5265deb67e9b9db2b24c270f663fb53226592022024e33bb5ea9a0a6e5fdc451740bebe7fdd4bc84d0362819df59e42c69a16219f012102b7fa5fce24461db7f4eca4590d99b89198c7e673b15856d88ce84925f12bf59cffffffff026cad7a29010000001976a91408bfbf564a1179feeeb021a7ea2fd48a3952fc1c88ac747aa813000000001976a9142d5aeacbdf114615533c16b7fe6309918ea49c8b88ac00000000";
+  request["txs"][1] = "01000000012261e8c7b75726b79c204a678320e94373d0122bed8b19ac263a7f949f127c26010000006b48304502200d77784a48a350eac8c41b506eb81746a5e6f3522b100634f707a2fa5cf12cdb022100edb04c5de6017f4b621285ec7258100eb700d9cc6a68d1a74af131c87e530922012102e70b14967a4d0c752dbf59656ae3463e4780e2898031268341b97f54f2bd20c4ffffffff03c82b233d010000001976a91486ca032feb47d375e3c82d611d0d8b76632d6b7588ac1822ef08000000001976a9142ab266d8448c36c42dfaa3b2131b998fcc8578d788ac38326e18000000001976a9142ac74153f491a617a891f3f49db15ce6892e934688ac00000000";
+  // TM should respond with a success message.
+  EXPECT_TRUE(api.HandleReportTransactions(request, response));
+
+  // Now we should have some unspent_txos.
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api.HandleGetUnspentTxos(request, response));
+  EXPECT_EQ(4, response["unspent_txos"].size());
 }

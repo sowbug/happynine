@@ -162,6 +162,8 @@ typedef std::vector<Transaction> transactions_t;
 
 class TransactionManager {
  public:
+  static TransactionManager& GetSingleton();
+
   void Add(const Transaction& transaction);
   bool Exists(const bytes_t& hash);
   Transaction& Get(const bytes_t& hash);

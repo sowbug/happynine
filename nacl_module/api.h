@@ -31,6 +31,9 @@ class Node;
 
 class API {
  public:
+  void GetError(const Json::Value& obj, int& code, std::string& message);
+  int GetErrorCode(const Json::Value& obj);
+
   bool HandleCreateNode(const Json::Value& args, Json::Value& result);
 
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
@@ -56,6 +59,12 @@ class API {
   bool HandleGetUnspentTxos(const Json::Value& args,
                             Json::Value& result);
 
+  bool HandleReportAddressHistory(const Json::Value& args,
+                                  Json::Value& result);
+
+  bool HandleReportTransactions(const Json::Value& args,
+                                Json::Value& result);
+
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   bool VerifyCredentials(const bytes_t& key,
@@ -64,4 +73,6 @@ class API {
                          bytes_t& internal_key,
                          int& error_code,
                          std::string& error_message);
+  void SetError(Json::Value& obj, int code, const std::string& message);
+
 };

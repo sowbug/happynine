@@ -491,6 +491,7 @@ Transaction& TransactionManager::Get(const bytes_t& hash) {
 
 tx_outs_t TransactionManager::GetUnspentTxos() {
   tx_outs_t unspent_txos;
+
   for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
        i != tx_hashes_to_txs_.end();
        ++i) {
@@ -515,4 +516,10 @@ uint64_t TransactionManager::GetUnspentValue() {
     value += i->value();
   }
   return value;
+}
+
+// http://stackoverflow.com/questions/1661529/is-meyers-implementation-of-singleton-pattern-thread-safe
+TransactionManager& TransactionManager::GetSingleton() {
+  static TransactionManager tm;
+  return tm;
 }
