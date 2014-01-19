@@ -27,9 +27,7 @@ CPPFLAGS += -isystem $(GTEST_DIR)/include -DBUILDING_FOR_TEST=1
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread
 
-# All tests produced by this Makefile.  Remember to add new tests you
-# created to the list.
-TESTS = all_unittests
+TESTS = all_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -111,9 +109,10 @@ tx_unittest.o : $(USER_DIR)/tx_unittest.cc \
                 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/tx_unittest.cc
 
-all_unittests : $(OBJS) api_unittest.o \
+all_unittest : $(OBJS) api_unittest.o \
                         crypto_unittest.o \
                         node_unittest.o \
                         tx_unittest.o \
                         gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
+	$(USER_DIR)/$@
