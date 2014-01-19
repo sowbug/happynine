@@ -439,8 +439,8 @@ TxOut::TxOut(uint64_t value, const bytes_t& script,
   value_(value),
   script_(script),
   tx_output_n_(tx_output_n),
-  tx_hash_(tx_hash),
-  is_spent_(false) {
+  is_spent_(false),
+  tx_hash_(tx_hash) {
 }
 
 bytes_t TxOut::GetSigningAddress() const {
