@@ -71,12 +71,16 @@ gtest_main.a : gtest-all.o gtest_main.o
 
 SOURCES = \
   api.cc \
+  api_unittest.cc \
   base58.cc \
   crypto.cc \
+  crypto_unittest.cc \
   node.cc \
+  node_unittest.cc \
   node_factory.cc \
   secp256k1.cc \
   tx.cc \
+  tx_unittest.cc \
   types.cc
 
 OBJS = $(SOURCES:.cc=.o)
@@ -89,30 +93,6 @@ OUT = out/x86
 	$(CC) -MM $(CFLAGS) $(CPPFLAGS) $*.cc > $*.d
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-api_unittest.o : $(USER_DIR)/api_unittest.cc \
-                 $(USER_DIR)/api.h \
-                 $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/api_unittest.cc
-
-crypto_unittest.o : $(USER_DIR)/crypto_unittest.cc \
-                    $(USER_DIR)/crypto.h \
-                    $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/crypto_unittest.cc
-
-node_unittest.o : $(USER_DIR)/node_unittest.cc \
-                  $(USER_DIR)/node.h \
-                  $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/node_unittest.cc
-
-tx_unittest.o : $(USER_DIR)/tx_unittest.cc \
-                $(USER_DIR)/tx.h \
-                $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/tx_unittest.cc
-
-all_unittest : $(OBJS) api_unittest.o \
-                        crypto_unittest.o \
-                        node_unittest.o \
-                        tx_unittest.o \
-                        gtest_main.a
+all_unittest : $(OBJS) gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
 	$(USER_DIR)/$@
