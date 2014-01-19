@@ -373,7 +373,7 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
   return true;
 }
 
-bool API::HandleGetUnspentTxos(const Json::Value& args,
+bool API::HandleGetUnspentTxos(const Json::Value& /*args*/,
                                Json::Value& result) {
   int error_code = 0;
   TransactionManager& tm = TransactionManager::GetSingleton();
