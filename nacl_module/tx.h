@@ -37,30 +37,34 @@ class TxIn {
   TxIn(const Transaction& tx, uint32_t tx_n);
   TxIn(const bytes_t& hash,
        uint32_t index,
-       const bytes_t& script_sig,
+       const bytes_t& script,
        const bytes_t& hash160);
 
   const bytes_t& prev_txo_hash() const { return prev_txo_hash_; }
   uint32_t prev_txo_index() const { return prev_txo_index_; }
 
-  const bytes_t& script_sig() const { return script_sig_; }
   const bytes_t& script() const { return script_; }
-  void set_script_sig(const bytes_t script_sig) { script_sig_ = script_sig; }
-  void ClearScriptSig() { script_sig_.clear(); }
+  void set_script(const bytes_t script) { script_ = script; }
+  void ClearScriptSig() { script_.clear(); }
 
   const bytes_t& hash160() const { return hash160_; }
   void set_hash160(const bytes_t hash160) { hash160_ = hash160; }
+
+  void should_serialize_script(bool should_serialize_script) {
+    should_serialize_script_ = should_serialize_script;
+  }
 
   bytes_t Serialize() const;
 
  private:
   bytes_t prev_txo_hash_;
   uint32_t prev_txo_index_;
-  bytes_t script_sig_;
+  bytes_t script_;
   uint32_t sequence_no_;
 
-  bytes_t script_;  // Holds unsigned scripts
+  // Begin unserialized parts
   bytes_t hash160_;  // The address that needs to sign this input
+  bool should_serialize_script_;
 };
 typedef std::vector<TxIn> tx_ins_t;
 
@@ -143,11 +147,8 @@ class Transaction {
   bool CopyUnspentTxosToTxins(const tx_outs_t& required_txos,
                               int& error_code);
   bool GenerateScriptSigs(std::map<bytes_t, bytes_t>& signing_keys,
-                          std::map<bytes_t, bytes_t>&
-                          signing_public_keys,
-                          std::vector<bytes_t>& script_sigs,
+                          std::map<bytes_t, bytes_t>& signing_public_keys,
                           int& error_code);
-  bool InsertScriptSigs(const std::vector<bytes_t>& script_sigs);
 
   uint32_t version_;
   tx_ins_t inputs_;
@@ -169,50 +170,3 @@ class TransactionManager {
   typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;
 };
-
-/////////////////////////////////////
-
-/* class UnspentTxo { */
-/*  public: */
-/*   bytes_t GetSigningAddress() const; */
-
-/*   bytes_t hash; */
-/*   uint32_t output_n; */
-/*   bytes_t script; */
-/*   bytes_t script_sig; */
-/*   uint64_t value; */
-/* }; */
-/* typedef std::vector<UnspentTxo> unspent_txos_t; */
-
-/* class Node; */
-
-/* class Tx { */
-/*  public: */
-/*   Tx(const Node& sending_node, */
-/*      const unspent_txos_t unspent_txos, */
-/*      const bytes_t recipient_hash160, */
-/*      uint64_t value, */
-/*      uint64_t fee, */
-/*      uint32_t change_index); */
-/*   Tx( */
-/*   virtual ~Tx(); */
-
-/*   bool CreateSignedTransaction(bytes_t& signed_tx, int& error_code); */
-
-/*  protected: */
-/*   bytes_t Serialize(); */
-
-/*   const Node& sending_node_; */
-/*   const unspent_txos_t unspent_txos_; */
-/*   const bytes_t recipient_hash160_; */
-/*   uint64_t value_; */
-/*   uint64_t fee_; */
-/*   uint32_t change_index_; */
-
-/*   unspent_txos_t required_unspent_txos_; */
-/*   uint64_t change_value_; */
-/*   std::map<bytes_t, bytes_t> signing_addresses_to_keys_; */
-/*   std::map<bytes_t, bytes_t> signing_addresses_to_public_keys_; */
-/*   tx_outs_t recipients_; */
-/*   std::vector<bytes_t> script_sigs_; */
-/* }; */

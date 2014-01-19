@@ -65,12 +65,11 @@ TEST(TxTest, BasicTransaction) {
                                        255,
                                        error_code);
   EXPECT_EQ(0, error_code);
-  std::cerr << to_hex(signed_tx) << std::endl;
 
   // // Not sure how to verify this. It's different every time by design.
   // std::cerr << to_hex(signed_tx) << std::endl;
 
-   delete sending_node;
+  delete sending_node;
 }
 
 TEST(TxTest, ParseRawTransaction) {
