@@ -293,53 +293,64 @@ bool API::HandleDecryptItem(const Json::Value& args,
 
 bool API::HandleGetSignedTransaction(const Json::Value& args,
                                      Json::Value& result) {
-  // const std::string ext_prv_b58 = args.get("ext_prv_b58", "").asString();
+  const std::string ext_prv_b58 = args.get("ext_prv_b58", "").asString();
 
-  // Node *sending_node = NULL;
-  // if (ext_prv_b58[0] == 'x') {
-  //   sending_node =
-  //     NodeFactory::CreateNodeFromExtended(Base58::
-  //                                         fromBase58Check(ext_prv_b58));
-  // }
-  // if (sending_node == NULL) {
-  //   result["error_code"] = -2;
-  //   return true;
-  // }
+  Node *sending_node = NULL;
+  if (ext_prv_b58[0] == 'x') {
+    sending_node =
+      NodeFactory::CreateNodeFromExtended(Base58::
+                                          fromBase58Check(ext_prv_b58));
+  }
+  if (sending_node == NULL) {
+    result["error_code"] = -2;
+    return true;
+  }
 
-  // unspent_txos_t unspent_txos;
-  // for (unsigned int i = 0; i < args["unspent_txos"].size(); ++i) {
-  //   Json::Value jtxo = args["unspent_txos"][i];
-  //   UnspentTxo utxo;
-  //   utxo.hash = unhexlify(jtxo["tx_hash"].asString());
-  //   utxo.output_n = jtxo["tx_output_n"].asUInt();
-  //   utxo.script = unhexlify(jtxo["script"].asString());
-  //   utxo.value = jtxo["value"].asUInt64();
-  //   unspent_txos.push_back(utxo);
-  // }
+  tx_outs_t unspent_txos;
+  for (unsigned int i = 0; i < args["unspent_txos"].size(); ++i) {
+    Json::Value jtxo = args["unspent_txos"][i];
+    TxOut utxo(jtxo["value"].asUInt64(),
+               unhexlify(jtxo["script"].asString()),
+               jtxo["tx_output_n"].asUInt(),
+               unhexlify(jtxo["tx_hash"].asString()));
+    unspent_txos.push_back(utxo);
+  }
 
-  // const std::string address(args["recipients"][0]["address"].asString());
-  // const bytes_t address_bytes_with_version(Base58::fromBase58Check(address));
-  // const bytes_t recipient_address(address_bytes_with_version.begin() + 1,
-  //                             address_bytes_with_version.end());
+  tx_outs_t recipient_txos;
+  for (unsigned int i = 0; i < args["recipients"].size(); ++i) {
+    Json::Value recipient = args["recipients"][i];
+    const std::string address(recipient["address"].asString());
+    const bytes_t address_bytes_with_version(Base58::fromBase58Check(address));
+    const bytes_t recipient_address(address_bytes_with_version.begin() + 1,
+                                    address_bytes_with_version.end());
+    uint64_t value = recipient["value"].asUInt64();
+    TxOut recipient_txo(value, recipient_address);
+    recipient_txos.push_back(recipient_txo);
+  }
 
-  // uint64_t value = args["recipients"][0]["value"].asUInt64();
-  // uint64_t fee = args["fee"].asUInt64();
-  // uint32_t change_index = args["change_index"].asUInt();
+  uint64_t fee = args["fee"].asUInt64();
+  uint32_t change_index = args["change_index"].asUInt();
 
-  // bytes_t signed_tx;
-  // Tx tx(*sending_node,
-  //       unspent_txos,
-  //       recipient_address,
-  //       value,
-  //       fee,
-  //       change_index);
-  // int error_code = 0;
-  // bool r = tx.CreateSignedTransaction(signed_tx, error_code);
-  // if (!r) {
-  //   result["error_code"] = error_code;
-  // } else {
-  //   result["signed_tx"] = to_hex(signed_tx);
-  // }
-  // delete sending_node;
+  std::stringstream node_path;
+  node_path << "m/0/" << change_index;
+  Node* change_node =
+    NodeFactory::DeriveChildNodeWithPath(*sending_node, node_path.str());
+  TxOut change_txo(0, Base58::toHash160(change_node->public_key()));
+  delete change_node;
+
+  Transaction transaction;
+  int error_code = 0;
+  bytes_t signed_tx = transaction.Sign(*sending_node,
+                                       unspent_txos,
+                                       recipient_txos,
+                                       change_txo,
+                                       fee,
+                                       error_code);
+  if (error_code != 0) {
+    result["error_code"] = error_code;
+  } else {
+    result["signed_tx"] = to_hex(signed_tx);
+  }
+  delete sending_node;
   return true;
 }

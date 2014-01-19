@@ -35,30 +35,49 @@ class TxIn {
   TxIn(std::istream& is);
   TxIn(const std::string& coinbase_message);
   TxIn(const Transaction& tx, uint32_t tx_n);
+  TxIn(const bytes_t& hash,
+       uint32_t index,
+       const bytes_t& script_sig,
+       const bytes_t& hash160);
 
   const bytes_t& prev_txo_hash() const { return prev_txo_hash_; }
   uint32_t prev_txo_index() const { return prev_txo_index_; }
+
+  const bytes_t& script_sig() const { return script_sig_; }
+  const bytes_t& script() const { return script_; }
+  void set_script_sig(const bytes_t script_sig) { script_sig_ = script_sig; }
+  void ClearScriptSig() { script_sig_.clear(); }
+
+  const bytes_t& hash160() const { return hash160_; }
+  void set_hash160(const bytes_t hash160) { hash160_ = hash160; }
 
   bytes_t Serialize() const;
 
  private:
   bytes_t prev_txo_hash_;
   uint32_t prev_txo_index_;
-  bytes_t script_;
   uint32_t sequence_no_;
+  bytes_t script_sig_;
+
+  bytes_t script_;  // Holds unsigned scripts
+  bytes_t hash160_;  // The address that needs to sign this input
 };
 typedef std::vector<TxIn> tx_ins_t;
 
 class TxOut {
  public:
+  // Creating a recipient.
   TxOut(uint64_t value, const bytes_t& recipient_hash160);
+  // Restoring from octets.
   TxOut(std::istream& is);
+  // Generating an unspent txo list.
   TxOut(uint64_t value, const bytes_t& script,
         uint32_t tx_output_n, const bytes_t& tx_hash);
 
   bytes_t GetSigningAddress() const;
 
   uint64_t value() const { return value_; }
+  void set_value(uint64_t new_value) { value_ = new_value; }
   bytes_t script() const { return script_; }
 
   uint32_t tx_output_n() const { return tx_output_n_; }
@@ -86,13 +105,14 @@ class Transaction {
  public:
   Transaction();
   Transaction(std::istream& is);
-  Transaction(const tx_ins_t& tx_ins,
-              const tx_outs_t& tx_outs,
-              const TxOut& change_address,
-              uint64_t fee);
 
   bytes_t Serialize() const;
-  bytes_t Sign(const Node& node) const;
+  bytes_t Sign(const Node& node,
+               const tx_outs_t& unspent_txos,
+               const tx_outs_t& desired_txos,
+               const TxOut& change_address,
+               uint64_t fee,
+               int& error_code);
 
   uint32_t version() const { return version_; }
   const tx_ins_t& inputs() const { return inputs_; }
@@ -107,6 +127,27 @@ class Transaction {
 
  private:
   void UpdateHash();
+  uint64_t AddRecipientValues(const tx_outs_t& txos);
+  bool IdentifyUnspentTxos(const tx_outs_t& unspent_txos,
+                           uint64_t value,
+                           uint64_t fee,
+                           tx_outs_t& required_txos,
+                           uint64_t& change_value,
+                           int& error_code);
+  bool GenerateKeysForUnspentTxos(const Node& node,
+                                  const tx_outs_t& txos,
+                                  std::map<bytes_t, bytes_t>& signing_keys,
+                                  std::map<bytes_t, bytes_t>&
+                                  signing_public_keys,
+                                  int& error_code);
+  bool CopyUnspentTxosToTxins(const tx_outs_t& required_txos,
+                              int& error_code);
+  bool GenerateScriptSigs(std::map<bytes_t, bytes_t>& signing_keys,
+                          std::map<bytes_t, bytes_t>&
+                          signing_public_keys,
+                          std::vector<bytes_t>& script_sigs,
+                          int& error_code);
+  bool InsertScriptSigs(const std::vector<bytes_t>& script_sigs);
 
   uint32_t version_;
   tx_ins_t inputs_;

@@ -98,30 +98,41 @@ static void PushBytesWithSize(bytes_t& out, const bytes_t& b) {
 TxIn::TxIn(std::istream& is) {
   ReadIntoBytes(is, prev_txo_hash_, 32);
   prev_txo_index_ = ReadUint32(is);
-  uint64_t script_len = ReadVarInt(is);
-  ReadIntoBytes(is, script_, script_len);
+  uint64_t script_sig_len = ReadVarInt(is);
+  ReadIntoBytes(is, script_sig_, script_sig_len);
   sequence_no_ = ReadUint32(is);
 }
 
 TxIn::TxIn(const std::string& coinbase_message) :
   prev_txo_hash_(32, 0),
   prev_txo_index_(-1),
-  script_(coinbase_message.begin(),
-          coinbase_message.end()),
+  script_sig_(coinbase_message.begin(),
+              coinbase_message.end()),
   sequence_no_(-1) {
 }
 
 TxIn::TxIn(const Transaction& tx, uint32_t tx_n) :
   prev_txo_hash_(tx.hash()),
   prev_txo_index_(tx_n),
-  script_(tx.outputs()[tx_n].script()),
+  script_sig_(tx.outputs()[tx_n].script()),
+  sequence_no_(-1) {
+}
+
+TxIn::TxIn(const bytes_t& hash,
+           uint32_t index,
+           const bytes_t& script_sig,
+           const bytes_t& hash160) :
+  prev_txo_hash_(hash),
+  prev_txo_index_(index),
+  script_sig_(script_sig),
+  hash160_(hash160),
   sequence_no_(-1) {
 }
 
 bytes_t TxIn::Serialize() const {
   bytes_t s(prev_txo_hash_.begin(), prev_txo_hash_.end());
   PushUint32(s, prev_txo_index_);
-  PushBytesWithSize(s, script_);
+  PushBytesWithSize(s, script_sig_);
   PushUint32(s, sequence_no_);
   return s;
 }
@@ -196,6 +207,209 @@ bytes_t Transaction::Serialize() const {
   return s;
 }
 
+bool Transaction::IdentifyUnspentTxos(const tx_outs_t& unspent_txos,
+                                      uint64_t value,
+                                      uint64_t fee,
+                                      tx_outs_t& required_txos,
+                                      uint64_t& change_value,
+                                      int& error_code) {
+  uint64_t required_value = value + fee;
+  for (tx_outs_t::const_reverse_iterator i = unspent_txos.rbegin();
+       i != unspent_txos.rend();
+       ++i) {
+    if (required_value == 0) {
+      break;
+    }
+    required_txos.push_back(*i);
+    if (required_value >= i->value()) {
+      required_value -= i->value();
+    } else {
+      change_value = i->value() - required_value;
+      required_value = 0;
+    }
+  }
+  if (required_value != 0) {
+    // Not enough funds to cover transaction.
+    error_code = -10;
+    return false;
+  }
+  return true;
+}
+
+uint64_t Transaction::AddRecipientValues(const tx_outs_t& txos) {
+  uint64_t value = 0;
+  for (tx_outs_t::const_iterator i = txos.begin(); i != txos.end(); ++i) {
+    value += i->value();
+  }
+  return value;
+}
+
+bool Transaction::
+GenerateKeysForUnspentTxos(const Node& signing_node,
+                           const tx_outs_t& txos,
+                           std::map<bytes_t, bytes_t>& signing_keys,
+                           std::map<bytes_t, bytes_t>& signing_public_keys,
+                           int& error_code) {
+  // Create a set of addresses needed to sign the required_txos. Note
+  // that an address here is the hash160, because that's the format
+  // embedded in the script.
+  std::set<bytes_t> signing_addresses;
+  for (tx_outs_t::const_reverse_iterator i = txos.rbegin();
+       i != txos.rend();
+       ++i) {
+    signing_addresses.insert(i->GetSigningAddress());
+  }
+
+  // Do we have all the keys for the required addresses? Generate
+  // them. For now we're going to assume no account has more than 16
+  // addresses, so that's the farthest we'll walk down the chain.
+  uint32_t start = 0;
+  uint32_t count = 16;
+  for (uint32_t i = 0; i < count; ++i) {
+    std::stringstream node_path;
+    node_path << "m/0/" << (start + i);  // external path
+    Node* node =
+      NodeFactory::DeriveChildNodeWithPath(signing_node, node_path.str());
+    bytes_t hash160 = Base58::toHash160(node->public_key());
+    if (signing_addresses.find(hash160) !=
+        signing_addresses.end()) {
+      signing_keys[hash160] = node->secret_key();
+      signing_public_keys[hash160] = node->public_key();
+    }
+    delete node;
+    if (signing_keys.size() == signing_addresses.size()) {
+      break;
+    }
+  }
+  if (signing_keys.size() != signing_addresses.size()) {
+    // We don't have all the keys we need to spend these funds.
+    error_code = -11;
+    return false;
+  }
+  return true;
+}
+
+bool Transaction::CopyUnspentTxosToTxins(const tx_outs_t& required_txos,
+                                         int& error_code) {
+  inputs_.clear();
+  for (tx_outs_t::const_iterator i = required_txos.begin();
+       i != required_txos.end();
+       ++i) {
+    inputs_.push_back(TxIn(i->tx_hash(), i->tx_output_n(), i->script(),
+                           i->GetSigningAddress()));
+  }
+  return true;
+}
+
+bool Transaction::
+GenerateScriptSigs(std::map<bytes_t, bytes_t>& signing_keys,
+                   std::map<bytes_t, bytes_t>& signing_public_keys,
+                   std::vector<bytes_t>& script_sigs,
+                   int& error_code) {
+  // Loop through each txin and sign individually.
+  // https://en.bitcoin.it/w/images/en/7/70/Bitcoin_OpCheckSig_InDetail.png
+  for (tx_ins_t::iterator i = inputs_.begin();
+       i != inputs_.end();
+       ++i) {
+    // Set a single tx for the transaction.
+    i->set_script_sig(i->script());
+    bytes_t tx_with_one_script_sig = Serialize();
+    // And clear the sig again for the next one.
+    i->ClearScriptSig();
+
+    // SIGHASH_ALL
+    PushUint32(tx_with_one_script_sig, 1);
+
+    // Sign.
+    const bytes_t& signing_address = i->hash160();
+    bytes_t signature;
+    Crypto::Sign(signing_keys[signing_address],
+                 Crypto::DoubleSHA256(tx_with_one_script_sig),
+                 signature);
+
+    // And save the signature + public key for inserting later.
+    bytes_t script_sig_and_key;
+    PushVarInt(script_sig_and_key, signature.size() + 1);
+    script_sig_and_key.insert(script_sig_and_key.end(),
+                              signature.begin(), signature.end());
+    script_sig_and_key.push_back(1);  // hash type ??
+    PushBytesWithSize(script_sig_and_key,
+                      signing_public_keys[signing_address]);
+    script_sigs.push_back(script_sig_and_key);
+  }
+  return true;
+}
+
+bool Transaction::InsertScriptSigs(const std::vector<bytes_t>& script_sigs) {
+  tx_ins_t::iterator i = inputs_.begin();
+  std::vector<bytes_t>::const_iterator j = script_sigs.begin();
+  for (; i != inputs_.end(); ++i, ++j) {
+    i->set_script_sig(*j);
+  }
+  return true;
+}
+
+bytes_t Transaction::Sign(const Node& node,
+                          const tx_outs_t& unspent_txos,
+                          const tx_outs_t& desired_txos,
+                          const TxOut& change_address,
+                          uint64_t fee,
+                          int& error_code) {
+
+  // Determine which unspent_txos we need.
+  uint64_t required_value = AddRecipientValues(desired_txos);
+  tx_outs_t required_txos;
+  uint64_t change_value = 0;
+  if (!IdentifyUnspentTxos(unspent_txos,
+                           required_value,
+                           fee,
+                           required_txos,
+                           change_value,
+                           error_code)) {
+    return bytes_t();
+  }
+
+  // Generate outputs, adding change address if needed.
+  outputs_ = desired_txos;
+  if (change_value != 0) {
+    TxOut change_address_with_value(change_address);
+    change_address_with_value.set_value(change_value);
+    outputs_.push_back(change_address_with_value);
+  }
+
+  std::map<bytes_t, bytes_t> signing_keys;
+  std::map<bytes_t, bytes_t> signing_public_keys;
+  if (!GenerateKeysForUnspentTxos(node,
+                                  required_txos,
+                                  signing_keys,
+                                  signing_public_keys,
+                                  error_code)) {
+    return bytes_t();
+  }
+
+  // Convert the unspent txos into unsigned txins.
+  if (!CopyUnspentTxosToTxins(required_txos, error_code)) {
+    return bytes_t();
+  }
+
+  std::vector<bytes_t> script_sigs;
+  if (!GenerateScriptSigs(signing_keys,
+                          signing_public_keys,
+                          script_sigs,
+                          error_code)) {
+    return bytes_t();
+  }
+
+  // We now have all the signatures. Stick them in.
+  if (!InsertScriptSigs(script_sigs)) {
+    return bytes_t();
+  }
+
+  // And finally serialize once more with all the signatures inserted.
+  return Serialize();
+}
+
+
 TxOut::TxOut(std::istream& is) :
   tx_output_n_(-1),
   is_spent_(false) {
@@ -220,11 +434,15 @@ TxOut::TxOut(uint64_t value, const bytes_t& recipient_hash160) :
 
 TxOut::TxOut(uint64_t value, const bytes_t& script,
              uint32_t tx_output_n, const bytes_t& tx_hash):
-  value_(value), 
+  value_(value),
   script_(script),
-  tx_output_n_(-1),
-  tx_hash_(tx_hash),
+  tx_output_n_(tx_output_n),
   is_spent_(false) {
+  for (bytes_t::const_reverse_iterator j = tx_hash.rbegin();
+       j != tx_hash.rend();
+       ++j) {
+    tx_hash_.push_back(*j);
+  }
 }
 
 bytes_t TxOut::GetSigningAddress() const {
@@ -251,7 +469,7 @@ bytes_t TxOut::Serialize() const {
   bytes_t s;
   PushUint64(s, value_);
   PushBytesWithSize(s, script_);
-  return s; 
+  return s;
 }
 
 void TransactionManager::Add(const Transaction& transaction) {
@@ -421,16 +639,16 @@ uint64_t TransactionManager::GetUnspentValue() {
 //     bytes_t tx_with_one_script_sig = Serialize();
 //     // And clear the sig again for the next one.
 //     i->script_sig.clear();
-    
+
 //     // SIGHASH_ALL
 //     PushUint32(tx_with_one_script_sig, 1);
-    
+
 //     // Sign.
 //     bytes_t signature;
 //     Crypto::Sign(signing_addresses_to_keys_[i->GetSigningAddress()],
 //                  Crypto::DoubleSHA256(tx_with_one_script_sig),
 //                  signature);
-    
+
 //     // And save the signature + public key for inserting later.
 //     bytes_t script_sig_and_key;
 //     script_sig_and_key.push_back((signature.size() + 1) & 0xff);
