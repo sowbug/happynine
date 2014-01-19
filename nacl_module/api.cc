@@ -354,3 +354,14 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
   delete sending_node;
   return true;
 }
+
+bool API::HandleGetUnspentTxos(const Json::Value& args,
+                               Json::Value& result) {
+  int error_code = 0;
+  if (error_code != 0) {
+    result["error_code"] = error_code;
+  } else {
+    result["unspent_txos"] = Json::Value();
+  }
+  return true;
+}

@@ -53,6 +53,9 @@ class API {
   bool HandleGetSignedTransaction(const Json::Value& args,
                                   Json::Value& result);
 
+  bool HandleGetUnspentTxos(const Json::Value& args,
+                            Json::Value& result);
+
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   bool VerifyCredentials(const bytes_t& key,

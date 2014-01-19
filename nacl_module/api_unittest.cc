@@ -215,3 +215,12 @@ TEST(SendFundsTest, Basic) {
   // Last byte of 32-bit locktime
   EXPECT_EQ(0, signed_tx[0 + signed_tx.size() - 1]);
 }
+
+TEST(TransactionManagerTest, HappyPath) {
+  Json::Value request;
+  Json::Value response;
+  API api;
+
+  EXPECT_TRUE(api.HandleGetUnspentTxos(request, response));
+  EXPECT_EQ(0, response["unspent_txos"].size());
+}

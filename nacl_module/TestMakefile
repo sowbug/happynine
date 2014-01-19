@@ -41,7 +41,7 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 all : $(TESTS)
 
 clean :
-	rm -f $(TESTS) gtest.a gtest_main.a *.o
+	rm -f $(TESTS) gtest.a gtest_main.a *.o *.d
 
 # Builds gtest.a and gtest_main.a.
 
@@ -85,7 +85,10 @@ OBJS = $(SOURCES:.cc=.o)
 LIBS = -lpthread -lssl -lcrypto -ljsoncpp
 OUT = out/x86
 
+-include $(OBJS:.o=.d)
+
 %.o : %.cc
+	$(CC) -MM $(CFLAGS) $(CPPFLAGS) $*.cc > $*.d
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 api_unittest.o : $(USER_DIR)/api_unittest.cc \

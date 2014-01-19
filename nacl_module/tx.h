@@ -44,11 +44,11 @@ class TxIn {
   uint32_t prev_txo_index() const { return prev_txo_index_; }
 
   const bytes_t& script() const { return script_; }
-  void set_script(const bytes_t script) { script_ = script; }
+  void set_script(const bytes_t& script) { script_ = script; }
   void ClearScriptSig() { script_.clear(); }
 
   const bytes_t& hash160() const { return hash160_; }
-  void set_hash160(const bytes_t hash160) { hash160_ = hash160; }
+  void set_hash160(const bytes_t& hash160) { hash160_ = hash160; }
 
   void should_serialize_script(bool should_serialize_script) {
     should_serialize_script_ = should_serialize_script;
@@ -78,11 +78,13 @@ class TxOut {
   TxOut(uint64_t value, const bytes_t& script,
         uint32_t tx_output_n, const bytes_t& tx_hash);
 
+  // The address whose private key is needed to spend this output.
+  // Empty if we don't know how to parse the output script.
   bytes_t GetSigningAddress() const;
 
   uint64_t value() const { return value_; }
   void set_value(uint64_t new_value) { value_ = new_value; }
-  bytes_t script() const { return script_; }
+  const bytes_t& script() const { return script_; }
 
   uint32_t tx_output_n() const { return tx_output_n_; }
   void set_tx_output_n(uint32_t n) { tx_output_n_ = n; }
