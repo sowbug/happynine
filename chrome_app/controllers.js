@@ -194,7 +194,15 @@ var walletAppController = function($scope,
   };
 
   $scope.generateNextAccount = function() {
-    $scope.wallet.deriveNextAccount(function(succeeded) {
+    $scope.wallet.deriveNextAccount(false, function(succeeded) {
+      if (succeeded) {
+        $scope.$apply();
+      }
+    });
+  };
+
+  $scope.watchNextAccount = function() {
+    $scope.wallet.deriveNextAccount(true, function(succeeded) {
       if (succeeded) {
         $scope.$apply();
       }

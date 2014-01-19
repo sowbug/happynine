@@ -182,7 +182,7 @@ function Wallet(credentials) {
     this.extendedPublicBase58 = null;
   };
 
-  this.deriveNextAccount = function(callback) {
+  this.deriveNextAccount = function(isWatchOnly, callback) {
     if (!this.credentials.isKeyAvailable()) {
       console.log("Can't derive account when wallet is unlocked");
       // TODO(miket): all these synchronous callbacks need to be async
@@ -195,19 +195,31 @@ function Wallet(credentials) {
       'path': "m/" + this.nextAccount++ + "'"
     };
     postRPCWithCallback('get-node', params, function(response) {
-      this.credentials.encrypt(
-        response.ext_prv_b58,
-        function(encryptedItem) {
-          this.accounts.push(Account.fromStorableObject({
-            'hexId': response.hex_id,
-            'fingerprint': response.fingerprint,
-            'parentFingerprint': this.fingerprint,
-            'path': params.path,
-            'extendedPublicBase58': response.ext_pub_b58,
-            'extendedPrivateBase58Encrypted': encryptedItem
-          }));
-          callback(this, true);
-        }.bind(this));
+      if (isWatchOnly) {
+        this.accounts.push(Account.fromStorableObject({
+          'hexId': response.hex_id,
+          'fingerprint': response.fingerprint,
+          'parentFingerprint': this.fingerprint,
+          'path': params.path,
+          'extendedPublicBase58': response.ext_pub_b58,
+          'extendedPrivateBase58Encrypted': undefined
+        }));
+        callback(this, true);
+      } else {
+        this.credentials.encrypt(
+          response.ext_prv_b58,
+          function(encryptedItem) {
+            this.accounts.push(Account.fromStorableObject({
+              'hexId': response.hex_id,
+              'fingerprint': response.fingerprint,
+              'parentFingerprint': this.fingerprint,
+              'path': params.path,
+              'extendedPublicBase58': response.ext_pub_b58,
+              'extendedPrivateBase58Encrypted': encryptedItem
+            }));
+            callback(this, true);
+          }.bind(this));
+      }
     }.bind(this));
   };
 
