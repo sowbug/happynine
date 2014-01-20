@@ -12,3 +12,16 @@
 ===
 {"id": 1, "method": "blockchain.numblocks.subscribe", "params": []}
 {"id": 1, "result": 281436}
+{"params": [281437], "id": null, "method": "blockchain.numblocks.subscribe"}
+===
+{"id": 2, "method": "blockchain.address.subscribe", "params": ["1Bet5o5o23jaRB9kKNxqZ5KeBqoSm5Fh56"]}
+{"id": 2, "result": "6d51040d82d9c560a5312faca4eeeb9d2b078544a283a109ff2b97566be019ff"}
+===
+{"id": 3, "method": "blockchain.address.subscribe", "params": ["1Bet32kBtZzXViMs1PQHninHs4LADhCwtB"]}
+{"id": 3, "result": "06e179b9f017e8bd858a606b2159dda4b4f276d2d96ab897a6e701e296c0fb0d"}
+===
+{"id": 4, "method": "blockchain.address.subscribe", "params": ["1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp"]}
+{"id": 4, "result": "f9f2c170faeb6a7665cc6e42326776aebbaed3966a6f0bcb9db354bd44eb1852"}
+===
+{"id": 5, "method": "blockchain.address.subscribe", "params": ["1bones2foMuSFG5dr4x6N8k5hDyPTs8fu"]}
+{"id": 5, "result": "386ca2516be2ee87e3d6b55976cfa2be619144f35d41474e2a1be413c8e57d4c"}
