@@ -25,3 +25,6 @@
 ===
 {"id": 5, "method": "blockchain.address.subscribe", "params": ["1bones2foMuSFG5dr4x6N8k5hDyPTs8fu"]}
 {"id": 5, "result": "386ca2516be2ee87e3d6b55976cfa2be619144f35d41474e2a1be413c8e57d4c"}
+===
+{"id": 6, "method": "blockchain.address.subscribe", "params": ["1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4"]}
+{"params": ["1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4", "e160279b17ae8afe2d2e26e0fafb64337e08439e033789e2835405c741e50d09"], "id": null, "method": "blockchain.address.subscribe"}
