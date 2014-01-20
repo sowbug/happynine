@@ -73,6 +73,8 @@ SOURCES = \
   api.cc \
   api_unittest.cc \
   base58.cc \
+  credentials.cc \
+  credentials_unittest.cc \
   crypto.cc \
   crypto_unittest.cc \
   node.cc \
