@@ -61,7 +61,7 @@ bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
-bool API::HandleLoadCredentials(const Json::Value& args, Json::Value& result) {
+bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
   const bytes_t salt = unhexlify(args["salt"].asString());
   const bytes_t check = unhexlify(args["check"].asString());
   const bytes_t encrypted_ephemeral_key =
@@ -90,6 +90,117 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
     result["success"] = Credentials::GetSingleton().Unlock(passphrase);
   } else {
     SetError(result, -1, "missing valid passphrase param");
+  }
+  return true;
+}
+
+void API::GenerateNodeResponse(Json::Value& dict, Node* node,
+                               const bytes_t& ext_prv_enc,
+                               bool include_prv) {
+  dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
+  dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
+  if (node->is_private()) {
+    dict["ext_prv_enc"] = to_hex(ext_prv_enc);
+    if (include_prv) {
+      dict["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
+    }
+  }
+}
+
+bool API::HandleGenerateRootNode(const Json::Value& args,
+                                 Json::Value& result) {
+  Credentials c = Credentials::GetSingleton();
+  if (c.isLocked()) {
+    SetError(result, -1, "locked");
+    return true;
+  }
+
+  const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
+                                                    "55").asString()));
+
+  bytes_t seed_bytes(32, 0);
+  if (!Crypto::GetRandomBytes(seed_bytes)) {
+    SetError(result, -1, "The PRNG has not been seeded with enough "
+             "randomness to ensure an unpredictable byte sequence");
+    return true;
+  }
+  seed_bytes.insert(seed_bytes.end(),
+                    extra_seed_bytes.begin(),
+                    extra_seed_bytes.end());
+
+  Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  if (node) {
+    bytes_t ext_prv_enc;
+    if (Crypto::Encrypt(c.ephemeral_key(),
+                        node->toSerialized(),
+                        ext_prv_enc)) {
+      GenerateNodeResponse(result, node, ext_prv_enc, true);
+      result["seed_hex"] = to_hex(seed_bytes);
+    } else {
+      SetError(result, -1, "Root node encryption failed");
+    }
+    delete node;
+  } else {
+    SetError(result, -1, "Root node creation failed");
+  }
+  return true;
+}
+
+bool API::HandleSetRootNode(const Json::Value& args,
+                            Json::Value& result) {
+  Credentials c = Credentials::GetSingleton();
+  if (c.isLocked()) {
+    SetError(result, -1, "locked");
+    return true;
+  }
+
+  if (args.isMember("ext_prv_enc")) {
+    const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
+    bytes_t ext_prv;
+    if (Crypto::Decrypt(c.ephemeral_key(), ext_prv_enc, ext_prv)) {
+      Node *node = NodeFactory::CreateNodeFromExtended(ext_prv);
+      if (node) {
+        GenerateNodeResponse(result, node, ext_prv_enc, false);
+        delete node;
+      } else {
+        SetError(result, -1, "Extended key failed validation");
+      }
+    } else {
+      SetError(result, -1, "Extended key failed decryption");
+    }
+  } else {
+    SetError(result, -1, "Missing required ext_prv_enc param");
+  }
+  return true;
+}
+
+bool API::HandleImportRootNode(const Json::Value& args,
+                               Json::Value& result) {
+  Credentials c = Credentials::GetSingleton();
+  if (c.isLocked()) {
+    SetError(result, -1, "locked");
+    return true;
+  }
+
+  if (args.isMember("ext_prv_b58")) {
+    const std::string xprv(args["ext_prv_b58"].asString());
+    const bytes_t ext_prv = Base58::fromBase58Check(xprv);
+    Node *node = NodeFactory::CreateNodeFromExtended(ext_prv);
+    if (node) {
+      bytes_t ext_prv_enc;
+      if (Crypto::Encrypt(c.ephemeral_key(),
+                          ext_prv,
+                          ext_prv_enc)) {
+        GenerateNodeResponse(result, node, ext_prv_enc, false);
+      } else {
+        SetError(result, -1, "Extended key failed encryption");
+      }
+      delete node;
+    } else {
+      SetError(result, -1, "Extended key failed validation");
+    }
+  } else {
+    SetError(result, -1, "Missing required ext_prv_b58 param");
   }
   return true;
 }
@@ -133,29 +244,6 @@ Node* API::CreateNodeFromArgs(const Json::Value& args) {
     return NodeFactory::CreateNodeFromExtended(ext_bytes);
   }
   return NULL;
-}
-
-bool API::HandleCreateNode(const Json::Value& args,
-                           Json::Value& result) {
-  // TODO(miket): https://github.com/sowbug/happynine/issues/30
-  bytes_t seed_bytes(32, 0);
-  const bytes_t
-    supplied_seed_bytes(unhexlify(args.get("seed_hex", "00").asString()));
-
-  if (!Crypto::GetRandomBytes(seed_bytes)) {
-    SetError(result, -1, "The PRNG has not been seeded with enough "
-             "randomness to ensure an unpredictable byte sequence.");
-    return true;
-  }
-  seed_bytes.insert(seed_bytes.end(),
-                    supplied_seed_bytes.begin(),
-                    supplied_seed_bytes.end());
-
-  Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
-  PopulateDictionaryFromNode(result, node);
-  result["path"] = "m";
-  delete node;
-  return true;
 }
 
 bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
@@ -435,10 +523,11 @@ void API::GetError(const Json::Value& obj, int& code, std::string& message) {
   if (!obj.isMember("error")) {
     code = 0;
     message = "No error";
+  } else {
+    // -99999 = poorly constructed error
+    code = obj["error"].get("code", -99999).asInt();
+    message = obj["error"].get("message", "Missing error message").asString();
   }
-  // -99999 = poorly constructed error
-  code = obj["error"].get("code", -99999).asInt();
-  message = obj["error"].get("message", "Missing error message").asString();
 }
 
 int API::GetErrorCode(const Json::Value& obj) {
@@ -446,6 +535,10 @@ int API::GetErrorCode(const Json::Value& obj) {
   std::string message;
   GetError(obj, code, message);
   return code;
+}
+
+bool API::DidResponseSucceed(const Json::Value& obj) {
+  return GetErrorCode(obj) == 0;
 }
 
 void API::SetError(Json::Value& obj, int code, const std::string& message) {

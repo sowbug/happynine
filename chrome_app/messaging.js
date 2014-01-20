@@ -52,5 +52,6 @@ function handleMessage(message) {
     delete callbacks[id];
   } else {
     console.log("strange: unrecognized id", message_object);
+asdfsdf
   }
 }

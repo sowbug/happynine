@@ -60,8 +60,8 @@ public:
     if (method == "set-passphrase") {
       handled = api.HandleSetPassphrase(params, result);
     }
-    if (method == "load-credentials") {
-      handled = api.HandleLoadCredentials(params, result);
+    if (method == "set-credentials") {
+      handled = api.HandleSetCredentials(params, result);
     }
     if (method == "lock") {
       handled = api.HandleLock(params, result);
@@ -69,10 +69,18 @@ public:
     if (method == "unlock") {
       handled = api.HandleUnlock(params, result);
     }
-
-    if (method == "create-node") {
-      handled = api.HandleCreateNode(params, result);
+    if (method == "generate-root-node") {
+      handled = api.HandleGenerateRootNode(params, result);
     }
+    if (method == "set-root-node") {
+      handled = api.HandleSetRootNode(params, result);
+    }
+    if (method == "import-root-node") {
+      handled = api.HandleImportRootNode(params, result);
+    }
+
+
+
     if (method == "get-node") {
       handled = api.HandleGetNode(params, result);
     }

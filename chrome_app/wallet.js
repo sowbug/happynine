@@ -139,11 +139,28 @@ function Wallet(credentials) {
     }
   };
 
-  this.addRandomMasterKey = function(callback) {
-    postRPCWithCallback('create-node', {}, function(response) {
-      this.addMasterKey(response.ext_prv_b58, callback);
-    }.bind(this));
+  this.setNodeCallback = function(callbackBool, response) {
+    if (response.fp) {
+      var node = Node.fromStorableObject(response);
+      this.rootNodes.push(node);
+      callbackBool.call(callbackBool, true);
+    } else {
+      callbackBool.call(callbackBool, false);
+    }
   };
+
+  this.addRandomMasterKey = function(callbackVoid) {
+    postRPCWithCallback('generate-root-node', {},
+                        this.setNodeCallback.bind(this, callbackVoid));
+  };
+
+  this.importMasterKey = function(ext_prv_b58, callbackBool) {
+    var params = {
+      'ext_prv_b58': ext_prv_b58
+    };
+    postRPCWithCallback('import-root-node', params,
+                        this.setNodeCallback.bind(this, callbackBool));
+  }
 
   this.addNewNode = function(isRoot, callback, node) {
     if (node) {
@@ -157,20 +174,6 @@ function Wallet(credentials) {
       callback.call(this, false);
     }
   };
-
-  this.addMasterKey = function(ext_b58, callback) {
-    var params = {
-      'ext_b58': ext_b58
-    };
-    postRPCWithCallback(
-      'get-node',
-      params,
-      Node.fromGetNodeResponse.bind(
-        this,
-        this.credentials,
-        false,
-        this.addNewNode.bind(this, true, callback)));
-  }
 
   this.removeMasterKey = function() {
     if (!this.credentials.isKeyAvailable()) {

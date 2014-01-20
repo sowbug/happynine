@@ -30,7 +30,7 @@
 #include "jsoncpp/json/writer.h"
 #include "types.h"
 
-TEST(SendFundsTest, Basic) {
+TEST(ApiTest, SendFunds) {
   Json::Value request;
   Json::Value response;
   API api;
@@ -91,7 +91,7 @@ TEST(SendFundsTest, Basic) {
   EXPECT_EQ(0, signed_tx[0 + signed_tx.size() - 1]);
 }
 
-TEST(TransactionManagerTest, HappyPath) {
+TEST(ApiTest, TransactionManager) {
   API api;
   Json::Value request;
   Json::Value response;
@@ -138,4 +138,46 @@ TEST(TransactionManagerTest, HappyPath) {
   response = Json::Value();
   EXPECT_TRUE(api.HandleGetUnspentTxos(request, response));
   EXPECT_EQ(4, response["unspent_txos"].size());
+}
+
+TEST(ApiTest, GenerateRootNode) {
+  Json::Value request;
+  Json::Value response;
+  API api;
+
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Can we generate a root node?
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api.HandleGenerateRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  const std::string xpub(response["ext_pub_b58"].asString());
+  const std::string ext_prv_enc(response["ext_prv_enc"].asString());
+
+  // Can we set back to that node?
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_enc"] = ext_prv_enc;
+  EXPECT_TRUE(api.HandleSetRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Can we import an xprv?
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
+    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Does importing a bad xprv fail?
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
+    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
 }

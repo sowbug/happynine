@@ -27,9 +27,10 @@
 // nodes or addresses.
 function Node() {
   this.init = function() {
-    this.extendedPrivateBase58 = undefined;  // unserialized
-    this.extendedPrivateBase58Encrypted = undefined;
+    this.extendedPrivateEncrypted = undefined;
     this.extendedPublicBase58 = undefined;
+    this.fingerprint = undefined;
+
     this.nextChangeAddressIndex = 8;
     this.nextPublicAddressIndex = 8;
     this.path = undefined;
@@ -38,7 +39,6 @@ function Node() {
     this.changeAddresses = {};
     this.balance = 0;
     this.batchCount = 8;
-    this.fingerprint = undefined;
     this.hexId = undefined;
     this.nextAddress = 0;
     this.parentFingerprint = undefined;
@@ -49,8 +49,9 @@ function Node() {
 
   this.toStorableObject = function() {
     var o = {};
-    o.ext_prv_b58_enc = this.extendedPrivateBase58Encrypted;
+    o.ext_prv_enc = this.extendedPrivateEncrypted;
     o.ext_pub_b58 = this.extendedPublicBase58;
+    o.fp = this.fingerprint;
     o.next_change_addr = this.nextChangeAddressIndex;
     o.next_pub_addr = this.nextPublicAddressIndex;
     o.path = this.path;
@@ -330,8 +331,10 @@ Node.fromGetNodeResponse = function(credentials,
 Node.fromStorableObject = function(o) {
   var s = new Node();
 
-  if (o.ext_prv_b58_enc != undefined)
-    s.extendedPrivateBase58Encrypted = o.ext_prv_b58_enc;
+  if (o.ext_prv_enc != undefined)
+    s.extendedPrivateEncrypted = o.ext_prv_enc;
+  if (o.fp != undefined)
+    s.fingerprint = o.fp;
   if (o.ext_pub_b58 != undefined)
     s.extendedPublicBase58 = o.ext_pub_b58;
   if (o.next_change_addr != undefined)
@@ -340,11 +343,6 @@ Node.fromStorableObject = function(o) {
     s.nextPublicAddressIndex = o.next_pub_addr;
   if (o.path != undefined)
     s.path = o.path;
-
-  // Items that shouldn't be passed from a truly persisted object, but
-  // that might be serialized in-memory.
-  if (o.ext_prv_b58 != undefined)
-    s.extendedPrivateBase58 = o.ext_prv_b58;
 
   return s;
 };

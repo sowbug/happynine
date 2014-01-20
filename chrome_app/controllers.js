@@ -157,7 +157,7 @@ var walletAppController = function($scope,
   };
 
   $scope.importMasterKey = function() {
-    $scope.wallet.addMasterKey(
+    $scope.wallet.importMasterKey(
       $scope.w.importMasterKey,
       function(succeeded) {
         if (succeeded) {
@@ -207,7 +207,7 @@ var walletAppController = function($scope,
     };
 
     var relockCallback = function() {
-      $scope.w.showPrivateKey = false;
+      //$scope.w.showPrivateKey = false;
       $scope.$apply();
     };
 
@@ -218,7 +218,9 @@ var walletAppController = function($scope,
   };
 
   $scope.lockWallet = function() {
-    $scope.wallet.lock();
+    $scope.credentials.lock(function() {
+      $scope.$apply();
+    });
   };
 
   $scope.setPassphrase = function() {
@@ -231,7 +233,9 @@ var walletAppController = function($scope,
       console.log("new didn't match confirm:" + $scope.w.passphraseNew);
       return;
     }
+
     $scope.credentials.setPassphrase($scope.w.passphraseNew,
+                                     function() { $scope.$apply(); },
                                      function(succeeded) {
                                        $scope.$apply();
                                      });

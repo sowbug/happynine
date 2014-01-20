@@ -58,7 +58,9 @@ function Credentials() {
     return this.isLocked;
   };
 
-  this.setPassphrase = function(newPassphrase, callbackBool) {
+  this.setPassphrase = function(newPassphrase,
+                                relockCallbackVoid,
+                                callbackBool) {
     if (this.isPassphraseSet() && this.isWalletLocked()) {
       console.log("passphrase set/wallet is unlocked; can't set passphrase");
       delayedCallback(callbackBool.bind(callbackBool, false));
@@ -75,6 +77,7 @@ function Credentials() {
         this.check = response.check;
         this.ephemeralKeyEncrypted = response.ekey_enc;
         this.salt = response.salt;
+        this.setRelockTimeout(relockCallbackVoid);
         callbackBool.call(callbackBool, true);
       }
     }.bind(this));
@@ -86,12 +89,13 @@ function Credentials() {
       'ekey_enc': this.ephemeralKeyEncrypted,
       'salt': this.salt,
     };
-    postRPCWithCallback('load-credentials', params, callbackVoid);
+    postRPCWithCallback('set-credentials', params, callbackVoid);
   };
 
   this.clearRelockTimeout = function() {
     if (this.relockTimeoutId) {
-      window.relockTimeout(this.relockTimeoutId);
+      window.clearTimeout(this.relockTimeoutId);
+      this.relockTimeoutId = undefined;
     }
   };
 

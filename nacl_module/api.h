@@ -35,15 +35,20 @@ class API {
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
 
-  bool HandleLoadCredentials(const Json::Value& args, Json::Value& result);
+  bool HandleSetCredentials(const Json::Value& args, Json::Value& result);
 
   bool HandleLock(const Json::Value& args, Json::Value& result);
 
   bool HandleUnlock(const Json::Value& args, Json::Value& result);
 
+  // Nodes
+  bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleCreateNode(const Json::Value& args, Json::Value& result);
+  bool HandleSetRootNode(const Json::Value& args, Json::Value& result);
 
+  bool HandleImportRootNode(const Json::Value& args, Json::Value& result);
+
+  // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
 
   bool HandleGetAddresses(const Json::Value& args,
@@ -72,8 +77,13 @@ class API {
 
   int GetErrorCode(const Json::Value& obj);
 
+  bool DidResponseSucceed(const Json::Value& obj);
+
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
+  void GenerateNodeResponse(Json::Value& dict, Node* node,
+                            const bytes_t& ext_prv_enc,
+                            bool include_prv);
   bool VerifyCredentials(const bytes_t& key,
                          const bytes_t& check,
                          const bytes_t& internal_key_encrypted,
