@@ -445,7 +445,7 @@ bool API::HandleGetUnspentTxos(const Json::Value& args,
   for (tx_outs_t::const_iterator i = unspent_txos.begin();
        i != unspent_txos.end();
        ++i) {
-    if (addresses.size() != 0 &&
+    if (addresses.size() == 0 ||
         addresses.count(i->GetSigningAddress()) != 0) {
       Json::Value utxo;
       utxo["script"] = to_hex(i->script());
@@ -453,7 +453,7 @@ bool API::HandleGetUnspentTxos(const Json::Value& args,
       utxo["tx_output_n"] = i->tx_output_n();
       // TODO(miket): today it's just one address/utxo.
       utxo["addr_b58"] = Base58::hash160toAddress(i->GetSigningAddress());
-      utxo["value"] = i->value();
+      utxo["value"] = (Json::UInt64)i->value();
       result["unspent_txos"].append(utxo);
     }
   }
