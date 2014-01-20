@@ -24,8 +24,10 @@
 
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav navbar-right" ng-if="getCurrentAccount()">
-          <li>
-            <a href="#" ng-click="refreshAccount()"><span class="glyphicon glyphicon-refresh"></span></a>
+          <li ng-if="areRequestsPending()">
+            <a href="#" class="disabled">
+              <span class="glyphicon glyphicon-flash"></span>
+            </a>
           </li>
           <li>
             <p class="navbar-text">

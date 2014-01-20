@@ -306,7 +306,11 @@ var walletAppController = function($scope,
     return $scope.getCurrentAccount().fingerprint;
   };
 
-  $scope.refreshAccount = function() {
+  $scope.areRequestsPending = function() {
+    return $scope.electrum.areRequestsPending();
+  };
+
+  $scope.______refreshAccount = function() {
     $scope.w.currentAccount.fetchAddresses(function() {
       $scope.w.currentAccount.fetchBalances($http,
                                             function(succeeded) {});

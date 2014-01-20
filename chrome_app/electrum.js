@@ -31,8 +31,15 @@ function Electrum($http) {
   this.callbackId = 1;
   this.rpcQueue = [];
 
+  // TODO(miket): there's just no way this will work
+  this.pendingRpcCount = 0;
+
   this.resetTimeoutDuration = function() {
     this.timeoutDuration = 500;
+  };
+
+  this.areRequestsPending = function() {
+    return this.pendingRpcCount > 0;
   };
 
   this.advanceTimeoutDuration = function() {
@@ -61,6 +68,7 @@ function Electrum($http) {
               };
     this.rpcQueue.push(rpc);
     this.callbacks[rpc.id] = callback;
+    this.pendingRpcCount++;
     this.resetTimeoutDuration();
     this.scheduleNextConnect();
   };
@@ -77,6 +85,7 @@ function Electrum($http) {
       if (this.callbacks[id]) {
         this.callbacks[id].call(this, o.result);
         delete this.callbacks[id];
+        this.pendingRpcCount--;
       } else {
         console.log("strange: unrecognized id", o);
       }

@@ -173,10 +173,38 @@ function Node() {
     return this.changeAddresses;
   };
 
-  this.addTransactions = function(electrum, address, txs) {
+  this.addTransactionFromElectrum = function(tx_hex) {
+    var params = {
+      'txs': [tx_hex],
+    };
+    postRPCWithCallback(
+      'report-transactions',
+      params,
+      function(response) {
+        var params = {
+          'ext_b58': this.extendedPublicBase58,
+          'pub_n': this.nextPublicAddressIndex,
+          'change_n': this.nextChangeAddressIndex
+        };
+        postRPCWithCallback(
+          'get-unspent-txos',
+          params,
+          function(response) {
+            this.unspent_txos = response["unspent_txos"];
+            this.calculateBalance();
+          }.bind(this));
+      }.bind(this));
+  };
+
+  this.addTransactionHashesFromElectrum = function(electrum, address, txs) {
     var tx_hashes = [];
     for (var tx in txs) {
-      tx_hashes.push({'tx_hash': txs[tx].tx_hash});
+      var t = txs[tx];
+      if (t.height == 0) {
+        console.log("skipping unconfirmed", t.tx_hash);
+      } else {
+        tx_hashes.push({'tx_hash': t.tx_hash});
+      }
     }
     var params = {
       'history': tx_hashes,
@@ -185,44 +213,38 @@ function Node() {
       'report-address-history',
       params,
       function(response) {
-        console.log(response.unknown_txs);
         for (var i in response.unknown_txs) {
-          electrum.enqueueRpc(
-            "blockchain.transaction.get",
-            [response.unknown_txs[i]],
-            function(tx_hex) {
-              console.log(tx_hex);
-              var params = {
-                'txs': [tx_hex],
-              };
-              postRPCWithCallback(
-                'report-transactions',
-                params,
-                function(response) {
-                  console.log("report-transactions", response);
-                  var params = {
-                    'ext_b58': this.extendedPublicBase58,
-                    'pub_n': this.nextPublicAddressIndex,
-                    'change_n': this.nextChangeAddressIndex
-                  };
-                  postRPCWithCallback(
-                    'get-unspent-txos',
-                    params,
-                    function(response) {
-                      this.unspent_txos = response["unspent_txos"];
-                      this.calculateBalance();
-                    }.bind(this));
-                }.bind(this));
-            }.bind(this));
+          electrum.enqueueRpc("blockchain.transaction.get",
+                              [response.unknown_txs[i]],
+                              this.addTransactionFromElectrum.bind(this));
         }
       }.bind(this));
     //this.transactions.concat(txs);
   };
 
   this.calculateBalance = function() {
-    this.balance = 0;
+    for (var a in this.publicAddresses) {
+      this.publicAddresses[a].balance = 0;
+    }
+    for (var a in this.changeAddresses) {
+      this.changeAddresses[a].balance = 0;
+    }
     for (var i in this.unspent_txos) {
-      this.balance += this.unspent_txos[i].value;
+      var utxo = this.unspent_txos[i];
+      var uta = utxo.addr_b58;
+      if (uta in this.publicAddresses) {
+        this.publicAddresses[uta].balance += utxo.value;
+      }
+      if (uta in this.changeAddresses) {
+        this.changeAddresses[uta].balance += utxo.value;
+      }
+    }
+    this.balance = 0;
+    for (var a in this.publicAddresses) {
+      this.balance += this.publicAddresses[a].balance;
+    }
+    for (var a in this.changeAddresses) {
+      this.balance += this.changeAddresses[a].balance;
     }
     console.log("New balance", this.balance);
   };
@@ -240,7 +262,7 @@ function Node() {
         "blockchain.address.get_history",
         [addrs[a]],
         function(txs) {
-          this.addTransactions(electrum, addrs[a], txs);
+          this.addTransactionHashesFromElectrum(electrum, addrs[a], txs);
         }.bind(this)
       );
     }

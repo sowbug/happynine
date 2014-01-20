@@ -64,18 +64,24 @@ bytes_t Base58::toHash160(const bytes_t& bytes) {
   return Crypto::SHA256ThenRIPE(bytes);
 }
 
-// https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
-std::string Base58::toAddress(const bytes_t& bytes) {
-  if (bytes.size() == 0) {
+std::string Base58::hash160toAddress(const bytes_t& bytes) {
+  if (bytes.size() != 20) {
     return std::string();
   }
-  bytes_t ripe_digest = toHash160(bytes);
+  bytes_t ripe_digest = bytes;
 
   // 4. Add version byte in front of RIPEMD-160 hash (0x00 for Main Network)
   bytes_t version(1, 0);
   ripe_digest.insert(ripe_digest.begin(), version.begin(), version.end());
 
   return toBase58Check(ripe_digest);
+}
+
+std::string Base58::toAddress(const bytes_t& bytes) {
+  if (bytes.size() == 0) {
+    return std::string();
+  }
+  return hash160toAddress(toHash160(bytes));
 }
 
 // http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript

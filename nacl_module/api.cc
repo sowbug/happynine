@@ -451,6 +451,8 @@ bool API::HandleGetUnspentTxos(const Json::Value& args,
       utxo["script"] = to_hex(i->script());
       utxo["tx_hash"] = to_hex_reversed(i->tx_hash());
       utxo["tx_output_n"] = i->tx_output_n();
+      // TODO(miket): today it's just one address/utxo.
+      utxo["addr_b58"] = Base58::hash160toAddress(i->GetSigningAddress());
       utxo["value"] = i->value();
       result["unspent_txos"].append(utxo);
     }
