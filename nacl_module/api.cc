@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "base58.h"
+#include "credentials.h"
 #include "crypto.h"
 #ifdef BUILDING_FOR_TEST
 #include "jsoncpp/json/reader.h"
@@ -44,30 +45,53 @@
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
-void API::GetError(const Json::Value& obj, int& code, std::string& message) {
-  if (!obj.isMember("error")) {
-    code = 0;
-    message = "No error";
-  }
-  // -99999 = poorly constructed error
-  code = obj["error"].get("code", -99999).asInt();
-  message = obj["error"].get("message", "Missing error message").asString();
-}
-
-int API::GetErrorCode(const Json::Value& obj) {
-  int code;
-  std::string message;
-  GetError(obj, code, message);
-  return code;
-}
-
-void API::SetError(Json::Value& obj, int code, const std::string& message) {
-  obj["error"]["code"] = code;
-  if (message.size() > 0) {
-    obj["error"]["message"] = message;
+bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
+  const std::string new_passphrase = args["new_passphrase"].asString();
+  bytes_t salt, check, encrypted_ephemeral_key;
+  if (Credentials::GetSingleton().SetPassphrase(new_passphrase,
+                                                salt,
+                                                check,
+                                                encrypted_ephemeral_key)) {
+    result["salt"] = to_hex(salt);
+    result["check"] = to_hex(check);
+    result["ekey_enc"] = to_hex(encrypted_ephemeral_key);
   } else {
-    obj["error"]["message"] = "Unspecified error";
+    SetError(result, -1, "set-passphrase failed");
   }
+  return true;
+}
+
+bool API::HandleLoadCredentials(const Json::Value& args, Json::Value& result) {
+  const bytes_t salt = unhexlify(args["salt"].asString());
+  const bytes_t check = unhexlify(args["check"].asString());
+  const bytes_t encrypted_ephemeral_key =
+    unhexlify(args["ekey_enc"].asString());
+  if (salt.size() >= 32 &&
+      check.size() >= 32 &&
+      encrypted_ephemeral_key.size() >= 32) {
+    Credentials::GetSingleton().Load(salt,
+                                     check,
+                                     encrypted_ephemeral_key);
+    result["success"] = true;
+  } else {
+    SetError(result, -1, "missing valid salt/check/ekey_enc params");
+  }
+  return true;
+}
+
+bool API::HandleLock(const Json::Value& /*args*/, Json::Value& result) {
+  result["success"] = Credentials::GetSingleton().Lock();
+  return true;
+}
+
+bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
+  const std::string passphrase = args["passphrase"].asString();
+  if (passphrase.size() != 0) {
+    result["success"] = Credentials::GetSingleton().Unlock(passphrase);
+  } else {
+    SetError(result, -1, "missing valid passphrase param");
+  }
+  return true;
 }
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
@@ -208,116 +232,6 @@ bool API::HandleGetAddresses(const Json::Value& args,
                result);
   delete parent_node;
 
-  return true;
-}
-
-bool API::VerifyCredentials(const bytes_t& key,
-                            const bytes_t& check,
-                            const bytes_t& internal_key_encrypted,
-                            bytes_t& internal_key,
-                            int& error_code,
-                            std::string& error_message) {
-  bytes_t check_decrypted;
-  if (!Crypto::Decrypt(key, check, check_decrypted)) {
-    error_code = -2;
-    error_message = "Check decryption failed";
-    return false;
-  }
-  if (check_decrypted != unhexlify(PASSPHRASE_CHECK_HEX)) {
-    error_code = -3;
-    error_message = "Check verification failed";
-    return false;
-  }
-  if (!Crypto::Decrypt(key, internal_key_encrypted, internal_key)) {
-    error_code = -4;
-    error_message = "internal_key decryption failed";
-    return false;
-  }
-  return true;
-}
-
-bool API::HandleSetPassphrase(const Json::Value& args,
-                              Json::Value& result) {
-  bytes_t key(unhexlify(args.get("key", "").asString()));
-  bytes_t check(unhexlify(args.get("check", "").asString()));
-  bytes_t
-    internal_key_encrypted(unhexlify(args.get("internal_key_encrypted", "")
-                                     .asString()));
-  const std::string new_passphrase = args["new_passphrase"].asString();
-
-  bytes_t internal_key;
-  if (key.size() > 0 &&
-      check.size() > 0 &&
-      internal_key_encrypted.size() > 0) {
-    int error_code = 0;
-    std::string error_message;
-    if (!VerifyCredentials(key,
-                           check,
-                           internal_key_encrypted,
-                           internal_key,
-                           error_code,
-                           error_message)) {
-      SetError(result, error_code, error_message);
-      return true;
-    }
-  } else {
-    internal_key.resize(32);
-    Crypto::GetRandomBytes(internal_key);
-  }
-  key = bytes_t(32, 0);
-  check = bytes_t();
-
-  bytes_t salt(32);
-  Crypto::GetRandomBytes(salt);
-
-  if (!Crypto::DeriveKey(new_passphrase, salt, key)) {
-    SetError(result, -1, "Key derivation failed");
-    return true;
-  }
-  if (!Crypto::Encrypt(key, unhexlify(PASSPHRASE_CHECK_HEX), check)) {
-    SetError(result, -5, "Check generation failed");
-    return true;
-  }
-  if (!Crypto::Encrypt(key, internal_key, internal_key_encrypted)) {
-    SetError(result, -5, "Check generation failed");
-    return true;
-  }
-  result["salt"] = to_hex(salt);
-  result["key"] = to_hex(key);
-  result["check"] = to_hex(check);
-  result["internal_key"] = to_hex(internal_key);
-  result["internal_key_encrypted"] = to_hex(internal_key_encrypted);
-  return true;
-}
-
-bool API::HandleUnlockWallet(const Json::Value& args,
-                             Json::Value& result) {
-  const bytes_t salt(unhexlify(args["salt"].asString()));
-  const bytes_t check(unhexlify(args["check"].asString()));
-  const std::string passphrase = args["passphrase"].asString();
-  const bytes_t
-    internal_key_encrypted(unhexlify(args["internal_key_encrypted"]
-                                     .asString()));
-
-  bytes_t key(32, 0);
-  if (!Crypto::DeriveKey(passphrase, salt, key)) {
-    SetError(result, -1, "Key derivation failed");
-    return true;
-  }
-  bytes_t internal_key;
-  int error_code;
-  std::string error_message;
-  if (!VerifyCredentials(key,
-                         check,
-                         internal_key_encrypted,
-                         internal_key,
-                         error_code,
-                         error_message)) {
-    SetError(result, error_code, error_message);
-    return true;
-  }
-  result["key"] = to_hex(key);
-  result["internal_key"] = to_hex(internal_key);
   return true;
 }
 
@@ -516,3 +430,30 @@ bool API::HandleReportTransactions(const Json::Value& args,
   }
   return true;
 }
+
+void API::GetError(const Json::Value& obj, int& code, std::string& message) {
+  if (!obj.isMember("error")) {
+    code = 0;
+    message = "No error";
+  }
+  // -99999 = poorly constructed error
+  code = obj["error"].get("code", -99999).asInt();
+  message = obj["error"].get("message", "Missing error message").asString();
+}
+
+int API::GetErrorCode(const Json::Value& obj) {
+  int code;
+  std::string message;
+  GetError(obj, code, message);
+  return code;
+}
+
+void API::SetError(Json::Value& obj, int code, const std::string& message) {
+  obj["error"]["code"] = code;
+  if (message.size() > 0) {
+    obj["error"]["message"] = message;
+  } else {
+    obj["error"]["message"] = "Unspecified error";
+  }
+}
+

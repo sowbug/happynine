@@ -32,20 +32,21 @@ class Node;
 
 class API {
  public:
-  void GetError(const Json::Value& obj, int& code, std::string& message);
-  int GetErrorCode(const Json::Value& obj);
+  // Credentials
+  bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
+
+  bool HandleLoadCredentials(const Json::Value& args, Json::Value& result);
+
+  bool HandleLock(const Json::Value& args, Json::Value& result);
+
+  bool HandleUnlock(const Json::Value& args, Json::Value& result);
+
 
   bool HandleCreateNode(const Json::Value& args, Json::Value& result);
 
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
 
   bool HandleGetAddresses(const Json::Value& args,
-                          Json::Value& result);
-
-  bool HandleSetPassphrase(const Json::Value& args,
-                           Json::Value& result);
-
-  bool HandleUnlockWallet(const Json::Value& args,
                           Json::Value& result);
 
   bool HandleEncryptItem(const Json::Value& args,
@@ -65,6 +66,11 @@ class API {
 
   bool HandleReportTransactions(const Json::Value& args,
                                 Json::Value& result);
+
+  // Utilities
+  void GetError(const Json::Value& obj, int& code, std::string& message);
+
+  int GetErrorCode(const Json::Value& obj);
 
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);

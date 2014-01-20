@@ -211,7 +211,7 @@ var walletAppController = function($scope,
       $scope.$apply();
     };
 
-    $scope.wallet.unlock(
+    $scope.credentials.unlock(
       $scope.w.passphraseNew,
       relockCallback.bind(this),
       unlockCallback.bind(this));
@@ -232,13 +232,8 @@ var walletAppController = function($scope,
       return;
     }
     $scope.credentials.setPassphrase($scope.w.passphraseNew,
-                                     function() {
-                                       $scope.$apply();
-                                     },
                                      function(succeeded) {
-                                       if (succeeded) {
-                                         $scope.$apply();
-                                       }
+                                       $scope.$apply();
                                      });
 
     // We don't want these items lurking in the DOM.
@@ -264,7 +259,7 @@ var walletAppController = function($scope,
   };
 
   $scope.isWalletUnlocked = function() {
-    return $scope.credentials.isKeyAvailable();
+    return $scope.isPassphraseSet() && !$scope.credentials.isWalletLocked();
   };
 
   $scope.isWalletKeySet = function() {

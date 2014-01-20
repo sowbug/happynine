@@ -82,24 +82,6 @@ function Wallet(credentials) {
     f();
   };
 
-  this.unlock = function(passphrase, relockCallback, callback) {
-    var f = function(succeeded) {
-      if (succeeded) {
-        this.unlockNodes(this.credentials, callback);
-      } else {
-        callback.call(this, false);
-      }
-    };
-    this.credentials.generateAndCacheKeys(
-      passphrase,
-      relockCallback,
-      f.bind(this));
-  };
-
-  this.lock = function() {
-    this.credentials.clearCachedKeys();
-  };
-
   this.isKeySet = function() {
     return this.rootNodes.length > 0;
   };
@@ -223,18 +205,19 @@ function Wallet(credentials) {
     return this.nodes.length;
   };
 
-  this.load = function(callback) {
-    loadStorage2('wallet', function(object) {
+  this.STORAGE_NAME = 'wallet';
+  this.load = function(callbackVoid) {
+    loadStorage2(this.STORAGE_NAME, function(object) {
       if (object) {
-        this.loadStorableObject(object, callback);
+        this.loadStorableObject(object, callbackVoid);
       } else {
         this.init();
-        callback.call(this);
+        callbackVoid.call(callbackVoid);
       }
     }.bind(this));
   };
 
   this.save = function() {
-    saveStorage2('wallet', this.toStorableObject());
+    saveStorage2(this.STORAGE_NAME, this.toStorableObject());
   };
 }

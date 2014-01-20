@@ -56,6 +56,20 @@ public:
     Json::Value result;
     bool handled = false;
     API api;
+
+    if (method == "set-passphrase") {
+      handled = api.HandleSetPassphrase(params, result);
+    }
+    if (method == "load-credentials") {
+      handled = api.HandleLoadCredentials(params, result);
+    }
+    if (method == "lock") {
+      handled = api.HandleLock(params, result);
+    }
+    if (method == "unlock") {
+      handled = api.HandleUnlock(params, result);
+    }
+
     if (method == "create-node") {
       handled = api.HandleCreateNode(params, result);
     }
@@ -64,12 +78,6 @@ public:
     }
     if (method == "get-addresses") {
       handled = api.HandleGetAddresses(params, result);
-    }
-    if (method == "set-passphrase") {
-      handled = api.HandleSetPassphrase(params, result);
-    }
-    if (method == "unlock-wallet") {
-      handled = api.HandleUnlockWallet(params, result);
     }
     if (method == "encrypt-item") {
       handled = api.HandleEncryptItem(params, result);

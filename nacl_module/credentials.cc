@@ -119,4 +119,5 @@ bool Credentials::Unlock(const std::string& passphrase) {
 
 bool Credentials::Lock() {
   ephemeral_key_.clear();
+  return true;
 }

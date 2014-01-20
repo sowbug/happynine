@@ -25,189 +25,126 @@
 // The Credentials model keeps track of secrets that lock/unlock and
 // encrypt/decrypt things.
 function Credentials() {
-  var STORABLE = ['salt',
-                  'check',
-                  'internalKeyEncrypted',
-                 ];
-
   this.init = function() {
-    // key is the passphrase key -- the thing that you get when you
-    // have the passphrase and salt and run them through PBKDF2.
-    this.key = null;
+    this.check = undefined;
+    this.ephemeralKeyEncrypted = undefined;
+    this.salt = undefined;
 
-    // internalKey is the key used to encrypt everything. The
-    // passphrase key encrypts it. The reason to have both a key and
-    // internalKey is so that when the user changes his passphrase, we
-    // don't have to re-encrypt everything in the world.
-    this.internalKey = null;
-
-    // storable
-    this.salt = null;
-    this.check = null;
-    this.internalKeyEncrypted = null;
+    this.isLocked = true;
   };
   this.init();
 
-  this.isPassphraseSet = function() {
-    return !!this.internalKeyEncrypted;
+  this.toStorableObject = function() {
+    var o = {};
+    o.check = this.check;
+    o.ekey_enc = this.ephemeralKeyEncrypted;
+    o.salt = this.salt;
+    return o;
   };
 
-  this.isKeyAvailable = function() {
-    return !!this.key;
+  this.loadStorableObject = function(o, callbackVoid) {
+    this.init();
+    this.check = o.check;
+    this.ephemeralKeyEncrypted = o.ekey_enc;
+    this.salt = o.salt;
+    this.loadCredentials(callbackVoid);
   }
 
-  this.generateAndCacheKeys = function(passphrase, relockCallback, callback) {
+  this.isPassphraseSet = function() {
+    return !!this.check;
+  };
+
+  this.isWalletLocked = function() {
+    return this.isLocked;
+  };
+
+  this.setPassphrase = function(newPassphrase, callbackBool) {
+    if (this.isPassphraseSet() && this.isWalletLocked()) {
+      console.log("passphrase set/wallet is unlocked; can't set passphrase");
+      delayedCallback(callbackBool.bind(callbackBool, false));
+      return;
+    }
+
     var params = {
-      'salt': this.salt,
+      'new_passphrase': newPassphrase,
+    };
+    postRPCWithCallback('set-passphrase', params, function(response) {
+      if (response.error) {
+        callbackBool.call(callbackBool, false);
+      } else {
+        this.check = response.check;
+        this.ephemeralKeyEncrypted = response.ekey_enc;
+        this.salt = response.salt;
+        callbackBool.call(callbackBool, true);
+      }
+    }.bind(this));
+  }
+
+  this.loadCredentials = function(callbackVoid) {
+    var params = {
       'check': this.check,
-      'internal_key_encrypted': this.internalKeyEncrypted,
-      'passphrase': passphrase
+      'ekey_enc': this.ephemeralKeyEncrypted,
+      'salt': this.salt,
     };
-
-    postRPCWithCallback('unlock-wallet', params, function(response) {
-      if (response.key) {
-        this.cacheKeys(response.key,
-                       response.internal_key,
-                       relockCallback,
-                       callback.bind(this, true));
-      } else {
-        callback.call(this, false);
-      }
-    }.bind(this));
+    postRPCWithCallback('load-credentials', params, callbackVoid);
   };
 
-  this.cacheKeys = function(key,
-                            internalKey,
-                            cacheExpirationCallback,
-                            callback) {
-    // TODO(miket): make clear time a pref
-    this.key = key;
-    this.internalKey = internalKey;
-
-    if (this.cacheTimeoutId) {
-      window.clearTimeout(this.cacheTimeoutId);
+  this.clearRelockTimeout = function() {
+    if (this.relockTimeoutId) {
+      window.relockTimeout(this.relockTimeoutId);
     }
-    this.cacheTimeoutId = window.setTimeout(function() {
-      this.clearCachedKeys();
-      if (cacheExpirationCallback)
-        cacheExpirationCallback.call(this);
+  };
+
+  this.setRelockTimeout = function(callbackVoid) {
+    this.clearRelockTimeout();
+    this.isLocked = false;
+    this.relockTimeoutId = window.setTimeout(function() {
+      this.lock(callbackVoid);
     }.bind(this), 1000 * 60 * 1);
-
-    if (this.extendedPrivateBase58Encrypted) {
-      this.decrypt(this.extendedPrivateBase58Encrypted, function(item) {
-        if (item) {
-          this.extendedPrivateBase58 = item;
-        }
-        callback.call(this);
-      }.bind(this));
-    } else {
-      callback.call(this);
-    }
   };
 
-  this.clearCachedKeys = function() {
-    if (this.cacheTimeoutId) {
-      window.clearTimeout(this.cacheTimeoutId);
-    }
-    this.cacheTimeoutId = null;
-    console.log("cached keys cleared");
-    this.key = null;
-    this.internalKey = null;
-    this.extendedPrivateBase58 = null;
+  this.lock = function(callbackVoid) {
+    this.isLocked = true;
+    postRPCWithCallback('lock', {}, callbackVoid);
   };
 
-  this.encrypt = function(item, callback) {
-    if (!this.key) {
-      console.log("no key available");
-      callback.call(this);
-      return;
-    }
-    var params = {
-      'item': item,
-      'internal_key': this.internalKey,
-    };
-
-      postRPCWithCallback('encrypt-item', params, function(response) {
-      if (response.item_encrypted) {
-        callback.call(this, response.item_encrypted);
-      } else {
-        callback.call(this);
-      }
-    }.bind(this));
+  this.unlock = function(passphrase, relockCallbackVoid, callbackBool) {
+    postRPCWithCallback('unlock',
+                        {'passphrase': passphrase},
+                        function(r) {
+                          if (r.success) {
+                            this.setRelockTimeout(relockCallbackVoid);
+                            callbackBool.call(callbackBool, true);
+                          } else {
+                            callbackBool.call(callbackBool, false); 
+                          }
+                        }.bind(this));
   };
 
-  this.decrypt = function(item, callback) {
-    if (!this.key) {
-      console.log("no key available");
-      callback.call(this);
-      return;
-    }
-    var params = {
-      'item_encrypted': item,
-      'internal_key': this.internalKey
-    };
-
-    postRPCWithCallback('decrypt-item', params, function(response) {
-      if (response.item) {
-        callback.call(this, response.item);
-      } else {
-        callback.call(this);
-      }
-    }.bind(this));
-  };
-
-  this.setPassphrase = function(newPassphrase,
-                                cacheExpirationCallback,
-                                callback) {
-    if (this.isPassphraseSet()) {
-      if (!this.isWalletUnlocked()) {
-        console.log("Can't change passphrase because wallet is locked.");
-        callback.call(this, false);
-        return;
-      }
-    } else {
-      if (this.internalKeyEncrypted) {
-        console.log("PROBLEM: internalKeyEncrypted set but no passphrase");
-        callback.call(this, false);
-        return;
-      }
-      if (this.extendedPrivateBase58Encrypted) {
-        console.log(
-          "PROBLEM: extendedPrivateBase58Encrypted set but no passphrase");
-        callback.call(this, false);
-        return;
-      }
-    }
-
-    var params = {
-      'new_passphrase': newPassphrase
-    };
-    if (this.isPassphraseSet()) {
-      if (this.key) {
-        params.key = this.key;
-        params.check = this.check;
-        params.internal_key_encrypted = this.internalKeyEncrypted;
-      }
-    }
-      postRPCWithCallback('set-passphrase', params, function(response) {
-      this.cacheKeys(response.key,
-                     response.internal_key,
-                     cacheExpirationCallback,
-                     function() {
-                       this.salt = response.salt;
-                       this.check = response.check;
-                       this.internalKeyEncrypted =
-                         response.internal_key_encrypted;
-                       callback.call(this, true);
-                     }.bind(this));
-    }.bind(this));
-  };
-
-  this.load = function(callback) {
-    loadStorage('credentials', this, STORABLE, callback);
+  this.load = function(callbackVoid) {
+    loadStorage('credentials',
+                this,
+                STORABLE,
+                this.loadCredentials.bind(this, callbackVoid));
   };
 
   this.save = function() {
     saveStorage('credentials', this, STORABLE);
+  };
+
+  this.STORAGE_NAME = 'credentials';
+  this.load = function(callbackVoid) {
+    loadStorage2(this.STORAGE_NAME, function(object) {
+      if (object) {
+        this.loadStorableObject(object, callbackVoid);
+      } else {
+        this.init();
+        callbackVoid.call(callbackVoid);
+      }
+    }.bind(this));
+  };
+
+  this.save = function() {
+    saveStorage2(this.STORAGE_NAME, this.toStorableObject());
   };
 }
