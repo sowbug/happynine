@@ -25,7 +25,7 @@
 var callbacks = {};
 var callbackId = 1;
 
-var shouldLog = false;
+var shouldLog = true;
 
 var postRPCWithCallback = function(method, params, callback) {
   var rpc = { 'jsonrpc': '2.0',

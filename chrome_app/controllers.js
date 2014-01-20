@@ -114,7 +114,20 @@ var walletAppController = function($scope,
           $("#master-key-fingerprint-img").attr("src", "");
         }
       }
-    });
+    }
+  );
+
+  $scope.$watch(
+    'getCurrentAccount().isDerivationComplete',
+    function(newVal, oldVal) {
+      if (newVal != oldVal) {
+        if (newVal) {
+          var account = $scope.getCurrentAccount();
+          account.retrieveAllTransactions($scope.electrum);
+        }
+      }
+    }
+  );
 
   $scope.$watch(
     'getCurrentAccountFingerprint()',

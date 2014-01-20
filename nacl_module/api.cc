@@ -155,24 +155,16 @@ bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
-bool API::HandleGetAddresses(const Json::Value& args,
-                             Json::Value& result) {
-  Node* parent_node = CreateNodeFromArgs(args);
-  if (!parent_node) {
-    SetError(result,
-             -1,
-             "Missing valid 'seed', 'ext_hex', 'ext_b58' params.");
-    return true;
-  }
-
-  uint32_t start = args.get("start", 0).asUInt();
-  uint32_t count = args.get("count", 20).asUInt();
-  const std::string base_node_path = args.get("path", "m").asString();
+void API::GetAddresses(const Node& parent_node,
+                       uint32_t start,
+                       uint32_t count,
+                       const std::string& base_node_path,
+                       Json::Value& result) {
   for (uint32_t i = 0; i < count; ++i) {
     std::stringstream node_path;
     node_path << base_node_path << "/" << (start + i);
     Node* node =
-      NodeFactory::DeriveChildNodeWithPath(*parent_node, node_path.str());
+      NodeFactory::DeriveChildNodeWithPath(parent_node, node_path.str());
     result["addresses"][i]["index"] = i + start;
     result["addresses"][i]["path"] = node_path.str();
     result["addresses"][i]["address"] =
@@ -183,6 +175,37 @@ bool API::HandleGetAddresses(const Json::Value& args,
     }
     delete node;
   }
+}
+
+void API::GetHash160s(const Node& parent_node,
+                      uint32_t start,
+                      uint32_t count,
+                      const std::string& base_node_path,
+                      std::set<bytes_t>& result) {
+  for (uint32_t i = 0; i < count; ++i) {
+    std::stringstream node_path;
+    node_path << base_node_path << "/" << (start + i);
+    Node* node =
+      NodeFactory::DeriveChildNodeWithPath(parent_node, node_path.str());
+    result.insert(Base58::toHash160(node->public_key()));
+    delete node;
+  }
+}
+
+bool API::HandleGetAddresses(const Json::Value& args,
+                             Json::Value& result) {
+  Node* parent_node = CreateNodeFromArgs(args);
+  if (!parent_node) {
+    SetError(result,
+             -1,
+             "Missing valid 'seed', 'ext_hex', 'ext_b58' params.");
+    return true;
+  }
+  GetAddresses(*parent_node,
+               args.get("start", 0).asUInt(),
+               args.get("count", 20).asUInt(),
+               args.get("path", "m").asString(),
+               result);
   delete parent_node;
 
   return true;
@@ -331,12 +354,9 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
                                      Json::Value& result) {
   const std::string ext_prv_b58 = args.get("ext_prv_b58", "").asString();
 
-  Node *sending_node = NULL;
-  if (ext_prv_b58[0] == 'x') {
-    sending_node =
-      NodeFactory::CreateNodeFromExtended(Base58::
-                                          fromBase58Check(ext_prv_b58));
-  }
+  Node *sending_node =
+    NodeFactory::CreateNodeFromExtended(Base58::
+                                        fromBase58Check(ext_prv_b58));
   if (sending_node == NULL) {
     SetError(result, -2, "No node derived from extended key");
     return true;
@@ -391,7 +411,7 @@ bool API::HandleGetSignedTransaction(const Json::Value& args,
   return true;
 }
 
-bool API::HandleGetUnspentTxos(const Json::Value& /*args*/,
+bool API::HandleGetUnspentTxos(const Json::Value& args,
                                Json::Value& result) {
   int error_code = 0;
   TransactionManager& tm = TransactionManager::GetSingleton();
@@ -399,18 +419,45 @@ bool API::HandleGetUnspentTxos(const Json::Value& /*args*/,
   tx_outs_t unspent_txos = tm.GetUnspentTxos();
   if (error_code != 0) {
     SetError(result, error_code, "Getting unspent txos failed");
-  } else {
-    for (tx_outs_t::const_iterator i = unspent_txos.begin();
-         i != unspent_txos.end();
-         ++i) {
+    return true;
+  }
+
+  const std::string ext_b58 = args.get("ext_b58", "").asString();
+  Node *sending_node =
+    NodeFactory::CreateNodeFromExtended(Base58::fromBase58Check(ext_b58));
+
+  std::set<bytes_t> addresses;
+  if (sending_node != NULL) {
+    GetHash160s(*sending_node,
+                args.get("start", 0).asUInt(),
+                args.get("pub_n", 8).asUInt(),
+                args.get("path", "m/0").asString(),
+                addresses);
+    GetHash160s(*sending_node,
+                args.get("start", 0).asUInt(),
+                args.get("change_n", 8).asUInt(),
+                args.get("path", "m/1").asString(),
+                addresses);
+    delete sending_node;
+  }
+
+  result["unspent_txos"].resize(0);
+  for (tx_outs_t::const_iterator i = unspent_txos.begin();
+       i != unspent_txos.end();
+       ++i) {
+    if (addresses.size() != 0 &&
+        addresses.count(i->GetSigningAddress()) != 0) {
       Json::Value utxo;
-      utxo["tx_hash"] = to_hex(i->tx_hash());
+      utxo["script"] = to_hex(i->script());
+      utxo["tx_hash"] = to_hex_reversed(i->tx_hash());
+      utxo["tx_output_n"] = i->tx_output_n();
+      utxo["value"] = i->value();
       result["unspent_txos"].append(utxo);
     }
   }
+
   return true;
 }
-
 
 bool API::HandleReportAddressHistory(const Json::Value& args,
                                      Json::Value& result) {
@@ -418,6 +465,7 @@ bool API::HandleReportAddressHistory(const Json::Value& args,
   std::string error_message;
   TransactionManager& tm = TransactionManager::GetSingleton();
 
+  result["unknown_txs"].resize(0);
   if (args.isMember("history")) {
     for (Json::Value::const_iterator i = args["history"].begin();
          i != args["history"].end();

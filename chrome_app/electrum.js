@@ -27,7 +27,8 @@ function Electrum($http) {
     'http://b.1209k.com/',
   ];
   this.currentServerUrl = this.SERVERS[0];
-  this.nextRequestId = 1;
+  this.callbacks = {};
+  this.callbackId = 1;
   this.rpcQueue = [];
 
   this.resetTimeoutDuration = function() {
@@ -53,22 +54,44 @@ function Electrum($http) {
     this.advanceTimeoutDuration();
   };
 
-  this.enqueueRpc = function(method, params) {
-    this.rpcQueue.push({ "id": this.nextRequestId++,
-                         "method": method,
-                         "params": params,
-                       });
+  this.enqueueRpc = function(method, params, callback) {
+    var rpc = { "id": this.callbackId++,
+                "method": method,
+                "params": params,
+              };
+    this.rpcQueue.push(rpc);
+    this.callbacks[rpc.id] = callback;
+    this.resetTimeoutDuration();
+    this.scheduleNextConnect();
   };
 
   this.connect = function() {
     var obj = undefined;
     if (this.rpcQueue.length) {
       obj = this.rpcQueue.shift();
+      // TODO(miket): can probably push whole thing
     }
+
+    var handleResponse = function(o) {
+      var id = o.id;
+      if (this.callbacks[id]) {
+        this.callbacks[id].call(this, o.result);
+        delete this.callbacks[id];
+      } else {
+        console.log("strange: unrecognized id", o);
+      }
+    };
 
     var success = function(data, status, headers, config) {
       if (data && !data.error) {
         this.resetTimeoutDuration();
+        if (data instanceof Array) {
+          for (var o in data) {
+            handleResponse.call(this, data[o]);
+          }
+        } else {
+          handleResponse.call(this, data);
+        }
       }
       this.scheduleNextConnect();
     };
@@ -87,10 +110,4 @@ function Electrum($http) {
         error(error.bind(this));
     }
   };
-
-  if (false) {
-    this.connect();
-    this.enqueueRpc("blockchain.address.get_history",
-                    ["1DiiVSnksihdpdP1Pex7jghMAZffZiBY9q"]);
-  }
 }

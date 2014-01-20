@@ -80,13 +80,26 @@ public:
     if (method == "get-signed-transaction") {
       handled = api.HandleGetSignedTransaction(params, result);
     }
+    if (method == "get-unspent-txos") {
+      handled = api.HandleGetUnspentTxos(params, result);
+    }
+    if (method == "report-address-history") {
+      handled = api.HandleReportAddressHistory(params, result);
+    }
+    if (method == "report-transactions") {
+      handled = api.HandleReportTransactions(params, result);
+    }
     if (!handled) {
-      result["error_code"] = -999;
+      result["error"]["code"] = -999;
+      result["error"]["message"] = "Unrecognized method";
     }
     Json::Value response;
     response["id"] = root["id"];
     response["jsonrpc"] = "2.0";
     response["result"] = result;
+    if (result.isMember("error")) {
+      response["error"] = result["error"];
+    }
     Json::StyledWriter writer;
     pp::Var reply_message(writer.write(response));
     PostMessage(reply_message);

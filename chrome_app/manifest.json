@@ -9,9 +9,9 @@
   },
   "permissions": [
     "storage",
+    "unlimitedStorage",
 
     "http://b.1209k.com/",
-    "https://blockchain.info/",
     "http://robohash.org/"
   ]
 }

@@ -164,12 +164,16 @@ function Wallet(credentials) {
   };
 
   this.addNewNode = function(isRoot, callback, node) {
-    if (isRoot) {
-      this.rootNodes.push(node);
+    if (node) {
+      if (isRoot) {
+        this.rootNodes.push(node);
+      } else {
+        this.nodes.push(node);
+      }
+      this.deriveNodes(callback.bind(this, true));
     } else {
-      this.nodes.push(node);
+      callback.call(this, false);
     }
-    this.deriveNodes(callback);
   };
 
   this.addMasterKey = function(ext_b58, callback) {
@@ -182,6 +186,7 @@ function Wallet(credentials) {
       Node.fromGetNodeResponse.bind(
         this,
         this.credentials,
+        false,
         this.addNewNode.bind(this, true, callback)));
   }
 

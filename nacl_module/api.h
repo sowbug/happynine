@@ -20,6 +20,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <set>
 #include <string>
 
 #include "types.h"
@@ -75,5 +76,14 @@ class API {
                          std::string& error_message);
   void SetError(Json::Value& obj, int code, const std::string& message);
   Node* CreateNodeFromArgs(const Json::Value& args);
-
+  void GetAddresses(const Node& node,
+                    uint32_t start,
+                    uint32_t count,
+                    const std::string& base_node_path,
+                    Json::Value& result);
+  void GetHash160s(const Node& parent_node,
+                   uint32_t start,
+                   uint32_t count,
+                   const std::string& base_node_path,
+                   std::set<bytes_t>& result);
 };
