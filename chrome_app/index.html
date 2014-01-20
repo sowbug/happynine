@@ -158,7 +158,30 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getCurrentAccount().getAddresses() track by $index">
+                    <tr data-ng-repeat="addr in getCurrentAccount().getPublicAddresses() track by $index">
+                      <td>
+                        <div class="dropdown">
+                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
+                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                            <li><a href="https://blockchain.info/address/{{addr.address}}" target="_blank" >Visit Blockchain.info for this address</a></li>
+                            <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
+                            <li><a href="#">Generate receiving QR code</a></li>
+                          </ul>
+                        </div>
+                      </td>
+                      <td>{{satoshiToUnit(addr.balance)}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Change Address</th><th>Balance ({{unitLabel()}})</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-ng-repeat="addr in getCurrentAccount().getChangeAddresses() track by $index">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
@@ -474,6 +497,7 @@
     <script type="text/javascript" src="storage.js"></script>
     <script type="text/javascript" src="settings.js"></script>
     <script type="text/javascript" src="credentials.js"></script>
+    <script type="text/javascript" src="node.js"></script>
     <script type="text/javascript" src="wallet.js"></script>
     <script type="text/javascript" src="address.js"></script>
     <script type="text/javascript" src="account.js"></script>

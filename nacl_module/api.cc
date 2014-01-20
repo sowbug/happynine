@@ -73,6 +73,8 @@ void API::SetError(Json::Value& obj, int code, const std::string& message) {
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   dict["hex_id"] = to_hex(node->hex_id());
   dict["fingerprint"] = "0x" + to_fingerprint(node->fingerprint());
+  dict["parent_fingerprint"] =
+    "0x" + to_fingerprint(node->parent_fingerprint());
   dict["address"] = Base58::toAddress(node->public_key());
   dict["public_key"] = to_hex(node->public_key());
   dict["chain_code"] = to_hex(node->chain_code());
@@ -127,6 +129,7 @@ bool API::HandleCreateNode(const Json::Value& args,
 
   Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
   PopulateDictionaryFromNode(result, node);
+  result["path"] = "m";
   delete node;
   return true;
 }
@@ -146,6 +149,7 @@ bool API::HandleGetNode(const Json::Value& args, Json::Value& result) {
   delete parent_node;
 
   PopulateDictionaryFromNode(result, node);
+  result["path"] = node_path;
   delete node;
 
   return true;

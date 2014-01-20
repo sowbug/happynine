@@ -66,7 +66,7 @@ var walletAppController = function($scope,
       if (newVal != oldVal) {
         // A small hack: if the wallet ever changes, it's a good
         // time to hide this checkbox.
-        $scope.showPrivateKey = false;
+        $scope.w.showPrivateKey = false;
         $scope.wallet.save();
       }
     }, true);
@@ -74,31 +74,6 @@ var walletAppController = function($scope,
     $scope.$watchCollection('getAccounts()', function(newItems, oldItems) {
       if (newItems != oldItems) {
         $scope.wallet.save();
-      }
-    });
-
-    $scope.$watch('isWalletUnlocked()', function(newVal, oldVal) {
-      if (newVal == oldVal) {
-        return;
-      }
-      var currentAccount = $scope.getCurrentAccount();
-      if (currentAccount) {
-        currentAccount.handleWalletLockChange(credentials, function() {
-          $scope.$apply()
-        });
-      }
-    });
-
-    $scope.$watch('isWalletUnlocked()', function(newVal, oldVal) {
-      if (newVal == oldVal) {
-        return;
-      }
-      if (newVal) {
-        $scope.wallet.decryptSecrets(function(succeeded) {
-          if (succeeded) {
-            $scope.$apply();
-          }
-        });
       }
     });
   };
@@ -163,13 +138,13 @@ var walletAppController = function($scope,
     });
 
   $scope.newMasterKey = function() {
-    $scope.wallet.createRandomMasterKey(function() {
+    $scope.wallet.addRandomMasterKey(function() {
       $scope.$apply();
     });
   };
 
   $scope.importMasterKey = function() {
-    $scope.wallet.importMasterKey(
+    $scope.wallet.addMasterKey(
       $scope.w.importMasterKey,
       function(succeeded) {
         if (succeeded) {
@@ -219,7 +194,7 @@ var walletAppController = function($scope,
     };
 
     var relockCallback = function() {
-      $scope.showPrivateKey = false;
+      $scope.w.showPrivateKey = false;
       $scope.$apply();
     };
 
@@ -332,7 +307,7 @@ var walletAppController = function($scope,
       return;
     }
     $scope.w.currentAccount = $scope.getAccounts()[index];
-    $scope.refreshAccount();
+   // $scope.refreshAccount();
   };
 
   $scope.selectFirstAccount = function() {

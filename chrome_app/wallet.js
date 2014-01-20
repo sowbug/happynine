@@ -22,52 +22,78 @@
 
 'use strict';
 
-// The Wallet model holds master keys and addresses that make up a
-// BIP-0032 HD wallet.
+// A Wallet is a collection of Nodes with a bunch of helper functions.
 function Wallet(credentials) {
   this.credentials = credentials;
 
   this.init = function() {
-    this.accounts = [];
-    this.extendedPrivateBase58 = null;
-    this.extendedPrivateBase58Encrypted = null;
-    this.extendedPublicBase58 = null;
-    this.fingerprint = null;
-    this.nextAccount = 0;
+    this.rootNodes = [];
+    this.nodes = [];
   };
   this.init();
 
   this.toStorableObject = function() {
     var o = {};
-    o.accounts = [];
-    for (var i in this.accounts) {
-      o.accounts.push(this.accounts[i].toStorableObject());
+    o.rnodes = [];
+    for (var i in this.rootNodes) {
+      o.rnodes.push(this.rootNodes[i].toStorableObject());
     }
-    o.extendedPrivateBase58Encrypted = this.extendedPrivateBase58Encrypted;
-    o.extendedPublicBase58 = this.extendedPublicBase58;
-    o.fingerprint = this.fingerprint;
-    o.nextAccount = this.nextAccount;
-
+    o.nodes = [];
+    for (var i in this.nodes) {
+      o.nodes.push(this.nodes[i].toStorableObject());
+    }
     return o;
   };
 
-  this.loadStorableObject = function(o) {
+  this.loadStorableObject = function(o, callback) {
     this.init();
-    this.accounts = [];
-    for (var i in o.accounts) {
-      this.accounts.push(Account.fromStorableObject(o.accounts[i]));
+    this.rootNodes = [];
+    for (var i in o.rnodes) {
+      this.rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
     }
-    this.extendedPrivateBase58Encrypted = o.extendedPrivateBase58Encrypted;
-    this.extendedPublicBase58 = o.extendedPublicBase58;
-    this.fingerprint = o.fingerprint;
-    this.nextAccount = o.nextAccount;
+    this.nodes = [];
+    for (var i in o.nodes) {
+      this.nodes.push(Node.fromStorableObject(o.nodes[i]));
+    }
+    this.deriveNodes(callback);
   }
 
+  this.deriveNodes = function(callback) {
+    var ns = this.rootNodes.concat(this.nodes);
+    var f = function() {
+      if (ns.length) {
+        ns.pop().deriveSelf(f.bind(this));
+      } else {
+        callback.call(this);
+      }
+    };
+    f();
+  };
+
+  this.unlockNodes = function(credentials, callback) {
+    var ns = this.rootNodes.concat(this.nodes);
+    var f = function() {
+      if (ns.length) {
+        ns.pop().unlock(credentials, f.bind(this));
+      } else {
+        callback.call(this, true);
+      }
+    };
+    f();
+  };
+
   this.unlock = function(passphrase, relockCallback, callback) {
+    var f = function(succeeded) {
+      if (succeeded) {
+        this.unlockNodes(this.credentials, callback);
+      } else {
+        callback.call(this, false);
+      }
+    };
     this.credentials.generateAndCacheKeys(
       passphrase,
       relockCallback,
-      callback);
+      f.bind(this));
   };
 
   this.lock = function() {
@@ -75,7 +101,7 @@ function Wallet(credentials) {
   };
 
   this.isKeySet = function() {
-    return !!this.extendedPublicBase58;
+    return this.rootNodes.length > 0;
   };
 
   this.decryptSecrets = function(callback) {
@@ -97,89 +123,74 @@ function Wallet(credentials) {
     }
   };
 
+  this.getAccounts = function() {
+    return this.nodes;
+  };
+
   this.getNextAccountNumber = function() {
-    return this.nextAccount;
+    return 99;  // TODO
   };
 
   this.getExtendedPrivateBase58 = function() {
     if (!this.credentials.isKeyAvailable()) {
       console.log("warning: getPrivateBase58 with locked wallet");
     }
-    return this.extendedPrivateBase58;
+    if (this.rootNodes.length > 0) {
+      return this.rootNodes[0].extendedPrivateBase58;
+    }
   };
 
   this.isExtendedPrivateSet = function() {
-    return !!this.extendedPrivateBase58Encrypted;
+    return this.rootNodes.length > 0 &&
+      !!this.rootNodes[0].extendedPrivateBase58Encrypted;
   };
 
   this.getExtendedPublicBase58 = function() {
-    return this.extendedPublicBase58;
+    if (this.rootNodes.length > 0) {
+      return this.rootNodes[0].extendedPublicBase58;
+    }
   };
 
   this.getFingerprint = function() {
-    return this.fingerprint;
+    if (this.rootNodes.length > 0) {
+      return this.rootNodes[0].fingerprint;
+    }
   };
 
-  this.createRandomMasterKey = function(callback) {
+  this.addRandomMasterKey = function(callback) {
     postRPCWithCallback('create-node', {}, function(response) {
-      this._setMasterKey(response.ext_pub_b58,
-                         response.ext_prv_b58,
-                         response.fingerprint,
-                         callback.bind(this));
+      this.addMasterKey(response.ext_prv_b58, callback);
     }.bind(this));
   };
 
-  this.importMasterKey = function(ext_b58, callback) {
+  this.addNewNode = function(isRoot, callback, node) {
+    if (isRoot) {
+      this.rootNodes.push(node);
+    } else {
+      this.nodes.push(node);
+    }
+    this.deriveNodes(callback);
+  };
+
+  this.addMasterKey = function(ext_b58, callback) {
     var params = {
       'ext_b58': ext_b58
     };
-    postRPCWithCallback('get-node', params, function(response) {
-      if (response.ext_pub_b58) {
-        this._setMasterKey(response.ext_pub_b58,
-                           response.ext_prv_b58,
-                           response.fingerprint,
-                           callback.bind(this, true));
-      } else {
-        callback.call(this, false);
-      }
-    }.bind(this));
-  };
-
-  this._setMasterKey = function(extendedPublicBase58,
-                                extendedPrivateBase58,
-                                fingerprint,
-                                callback) {
-    if (!this.credentials.isKeyAvailable()) {
-      console.log("can't set master key; wallet is locked");
-      callback.call(this);
-      return;
-    }
-    if (extendedPrivateBase58) {
-      this.credentials.encrypt(extendedPrivateBase58, function(itemEncrypted) {
-        this.init();
-        this.extendedPrivateBase58 = extendedPrivateBase58;
-
-        this.extendedPrivateBase58Encrypted = itemEncrypted;
-        this.extendedPublicBase58 = extendedPublicBase58;
-        this.fingerprint = fingerprint;
-        callback.call(this);
-      }.bind(this));
-    } else {
-      this.init();
-      this.extendedPublicBase58 = extendedPublicBase58;
-      this.fingerprint = fingerprint;
-      callback.call(this);
-    }
-  };
+    postRPCWithCallback(
+      'get-node',
+      params,
+      Node.fromGetNodeResponse.bind(
+        this,
+        this.credentials,
+        this.addNewNode.bind(this, true, callback)));
+  }
 
   this.removeMasterKey = function() {
     if (!this.credentials.isKeyAvailable()) {
       console.log("can't remove master key; wallet is locked");
       return;
     }
-    this.extendedPublicBase58 = null;
-    this.extendedPrivateBase58Encrypted = null;
-    this.extendedPublicBase58 = null;
+    this.rootNodes = [];
   };
 
   this.deriveNextAccount = function(isWatchOnly, callback) {
@@ -189,60 +200,32 @@ function Wallet(credentials) {
       callback(this, false);
       return;
     }
+    if (!this.isExtendedPrivateSet()) {
+      console.log("Can't derive account without root private key");
+      // Callers are depending on this method to be asynchonous.
+      window.setTimeout(callback.bind(this, false), 0);
+      return;
+    }
 
-    var params = {
-      'ext_b58': this.extendedPrivateBase58,
-      'path': "m/" + this.nextAccount++ + "'"
-    };
-    postRPCWithCallback('get-node', params, function(response) {
-      if (isWatchOnly) {
-        this.accounts.push(Account.fromStorableObject({
-          'hexId': response.hex_id,
-          'fingerprint': response.fingerprint,
-          'parentFingerprint': this.fingerprint,
-          'path': params.path,
-          'extendedPublicBase58': response.ext_pub_b58,
-          'extendedPrivateBase58Encrypted': undefined
-        }));
-        callback(this, true);
-      } else {
-        this.credentials.encrypt(
-          response.ext_prv_b58,
-          function(encryptedItem) {
-            this.accounts.push(Account.fromStorableObject({
-              'hexId': response.hex_id,
-              'fingerprint': response.fingerprint,
-              'parentFingerprint': this.fingerprint,
-              'path': params.path,
-              'extendedPublicBase58': response.ext_pub_b58,
-              'extendedPrivateBase58Encrypted': encryptedItem
-            }));
-            callback(this, true);
-          }.bind(this));
-      }
-    }.bind(this));
-  };
-
-  this.getAccounts = function() {
-    return this.accounts;
+    this.rootNodes[0].deriveChildNode(
+      this.credentials,
+      0,  // TODO
+      isWatchOnly,
+      this.addNewNode.bind(this, false, callback.bind(this, true)));
   };
 
   this.getAccountCount = function() {
-    return this.getAccounts().length;
-  };
-
-  this.hasMultipleAccounts = function() {
-    return this.getAccountCount() > 1;
+    return this.nodes.length;
   };
 
   this.load = function(callback) {
     loadStorage2('wallet', function(object) {
       if (object) {
-        this.loadStorableObject(object);
+        this.loadStorableObject(object, callback);
       } else {
         this.init();
+        callback.call(this);
       }
-      callback.call(this);
     }.bind(this));
   };
 
