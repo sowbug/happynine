@@ -124,7 +124,7 @@ function Wallet(credentials) {
 
   this.isExtendedPrivateSet = function() {
     return this.rootNodes.length > 0 &&
-      !!this.rootNodes[0].extendedPrivateBase58Encrypted;
+      !!this.rootNodes[0].extendedPrivateEncrypted;
   };
 
   this.getExtendedPublicBase58 = function() {

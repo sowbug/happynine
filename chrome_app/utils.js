@@ -23,7 +23,7 @@
 'use strict';
 
 function logRpcError(error) {
-  console.log("rpc_error", error.code, error.message);
+  console.log("rpc error:", error.code, error.message);
 }
 
 function delayedCallback(c) {

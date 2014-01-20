@@ -87,7 +87,7 @@
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
-                  <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv/xpub-formatted BIP0032 master key, import it.</li>
+                  <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
                 </ul>
               </div>
             </div>
@@ -480,7 +480,7 @@
               <div class="form-group">
                 <label for="imported-master-key" class="col-md-3 control-label">Master Key</label>
                 <div class="col-md-9">
-                  <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xpub, xprv, or hex BIP0032 master key" ng-model="w.importMasterKey"></textarea>
+                  <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xprv-formatted BIP0032 master key" ng-model="w.importMasterKey"></textarea>
                 </div>
               </div>
             </div>

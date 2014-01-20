@@ -26,9 +26,6 @@
 #include <sstream>
 #include <stdint.h>
 
-#include "base58.h"
-#include "credentials.h"
-#include "crypto.h"
 #ifdef BUILDING_FOR_TEST
 #include "jsoncpp/json/reader.h"
 #include "jsoncpp/json/writer.h"
@@ -36,10 +33,15 @@
 #include "json/reader.h"
 #include "json/writer.h"
 #endif
+
+#include "base58.h"
+#include "credentials.h"
+#include "crypto.h"
 #include "node.h"
 #include "node_factory.h"
 #include "tx.h"
 #include "types.h"
+#include "wallet.h"
 
 // echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
 const std::string PASSPHRASE_CHECK_HEX =
@@ -114,34 +116,21 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
     SetError(result, -1, "locked");
     return true;
   }
+  Wallet w = Wallet::GetSingleton();
+  w.SetCredentials(&c);
 
   const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
                                                     "55").asString()));
 
-  bytes_t seed_bytes(32, 0);
-  if (!Crypto::GetRandomBytes(seed_bytes)) {
-    SetError(result, -1, "The PRNG has not been seeded with enough "
-             "randomness to ensure an unpredictable byte sequence");
-    return true;
-  }
-  seed_bytes.insert(seed_bytes.end(),
-                    extra_seed_bytes.begin(),
-                    extra_seed_bytes.end());
-
-  Node *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
-  if (node) {
-    bytes_t ext_prv_enc;
-    if (Crypto::Encrypt(c.ephemeral_key(),
-                        node->toSerialized(),
-                        ext_prv_enc)) {
-      GenerateNodeResponse(result, node, ext_prv_enc, true);
-      result["seed_hex"] = to_hex(seed_bytes);
-    } else {
-      SetError(result, -1, "Root node encryption failed");
-    }
+  Node *node = NULL;
+  bytes_t ext_prv_enc;
+  bytes_t seed_bytes;
+  if (w.GenerateRootNode(extra_seed_bytes, &node, ext_prv_enc, seed_bytes)) {
+    GenerateNodeResponse(result, node, ext_prv_enc, true);
+    result["seed_hex"] = to_hex(seed_bytes);
     delete node;
   } else {
-    SetError(result, -1, "Root node creation failed");
+    SetError(result, -1, "Root node generation failed");
   }
   return true;
 }
@@ -153,20 +142,17 @@ bool API::HandleSetRootNode(const Json::Value& args,
     SetError(result, -1, "locked");
     return true;
   }
+  Wallet w = Wallet::GetSingleton();
+  w.SetCredentials(&c);
 
   if (args.isMember("ext_prv_enc")) {
     const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
-    bytes_t ext_prv;
-    if (Crypto::Decrypt(c.ephemeral_key(), ext_prv_enc, ext_prv)) {
-      Node *node = NodeFactory::CreateNodeFromExtended(ext_prv);
-      if (node) {
-        GenerateNodeResponse(result, node, ext_prv_enc, false);
-        delete node;
-      } else {
-        SetError(result, -1, "Extended key failed validation");
-      }
+    Node *node = NULL;
+    if (w.SetRootNode(ext_prv_enc, &node)) {
+      GenerateNodeResponse(result, node, ext_prv_enc, false);
+      delete node;
     } else {
-      SetError(result, -1, "Extended key failed decryption");
+      SetError(result, -1, "Extended key failed validation");
     }
   } else {
     SetError(result, -1, "Missing required ext_prv_enc param");
@@ -181,20 +167,15 @@ bool API::HandleImportRootNode(const Json::Value& args,
     SetError(result, -1, "locked");
     return true;
   }
+  Wallet w = Wallet::GetSingleton();
+  w.SetCredentials(&c);
 
   if (args.isMember("ext_prv_b58")) {
-    const std::string xprv(args["ext_prv_b58"].asString());
-    const bytes_t ext_prv = Base58::fromBase58Check(xprv);
-    Node *node = NodeFactory::CreateNodeFromExtended(ext_prv);
-    if (node) {
-      bytes_t ext_prv_enc;
-      if (Crypto::Encrypt(c.ephemeral_key(),
-                          ext_prv,
-                          ext_prv_enc)) {
-        GenerateNodeResponse(result, node, ext_prv_enc, false);
-      } else {
-        SetError(result, -1, "Extended key failed encryption");
-      }
+    const std::string ext_prv_b58(args["ext_prv_b58"].asString());
+    bytes_t ext_prv_enc;
+    Node *node = NULL;
+    if (w.ImportRootNode(ext_prv_b58, &node, ext_prv_enc)) {
+      GenerateNodeResponse(result, node, ext_prv_enc, false);
       delete node;
     } else {
       SetError(result, -1, "Extended key failed validation");

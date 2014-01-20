@@ -20,37 +20,28 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-'use strict';
+#include "types.h"
 
-var callbacks = {};
-var callbackId = 1;
+class Credentials;
+class Node;
 
-var shouldLog = true;
+class Wallet {
+ public:
+  Wallet();
 
-var postRPCWithCallback = function(method, params, callback) {
-  var rpc = { 'jsonrpc': '2.0',
-              'id': callbackId++,
-              'method': method,
-              'params': params,
-            };
-  callbacks[rpc.id] = callback;
-  common.naclModule.postMessage(JSON.stringify(rpc));
-  if (shouldLog)
-    console.log(rpc);
+  static Wallet& GetSingleton();
+
+  void SetCredentials(Credentials* credentials) { credentials_ = credentials; }
+
+  bool GenerateRootNode(const bytes_t& extra_seed_bytes,
+                        Node** node,
+                        bytes_t& ext_prv_enc,
+                        bytes_t& seed_bytes);
+  bool SetRootNode(const bytes_t& ext_prv_enc, Node** node);
+  bool ImportRootNode(const std::string& ext_prv_b58,
+                      Node** node,
+                      bytes_t& ext_prv_enc);
+
+ private:
+  Credentials* credentials_;
 };
-
-function handleMessage(message) {
-  var message_object = JSON.parse(message.data);
-  if (shouldLog)
-    console.log(message_object);
-  var id = message_object.id;
-  if (callbacks[id]) {
-    if (message_object.error) {
-      logRpcError(message_object.error);
-    }
-    callbacks[id].call(this, message_object.result);
-    delete callbacks[id];
-  } else {
-    console.log("strange: unrecognized id", message_object);
-  }
-}

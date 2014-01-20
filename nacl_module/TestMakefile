@@ -83,7 +83,9 @@ SOURCES = \
   secp256k1.cc \
   tx.cc \
   tx_unittest.cc \
-  types.cc
+  types.cc \
+  wallet.cc \
+  wallet_unittest.cc
 
 OBJS = $(SOURCES:.cc=.o)
 LIBS = -lpthread -lssl -lcrypto -ljsoncpp
