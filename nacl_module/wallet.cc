@@ -122,6 +122,8 @@ bool Wallet::DeriveChildNode(const std::string& path,
     return false;
   }
 
+  GetRootNode();  // TODO: hokey
+
   *node = NodeFactory::DeriveChildNodeWithPath(*root_node_, path);
   if (*node) {
     if (isWatchOnly) {

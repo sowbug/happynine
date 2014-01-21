@@ -50,4 +50,9 @@ template<class InputIterator, class OutputIterator> int
 
 bytes_t unhexlify(const std::string& s);
 
+#define DISALLOW_EVIL_CONSTRUCTORS(TypeName)    \
+  TypeName(const TypeName&);                    \
+  void operator=(const TypeName&)
+
+
 #endif  // #if !defined __TYPES_H__

@@ -34,6 +34,9 @@ const bytes_t PASSPHRASE_CHECK =
             "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9"
             );
 
+Credentials::Credentials() {
+}
+
 Credentials& Credentials::GetSingleton() {
   static Credentials singleton;
   return singleton;

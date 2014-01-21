@@ -30,10 +30,11 @@ function Node() {
     this.extendedPrivateEncrypted = undefined;
     this.extendedPublicBase58 = undefined;
     this.fingerprint = undefined;
+    this.parentFingerprint = undefined;
+    this.path = undefined;
 
     this.nextChangeAddressIndex = 8;
     this.nextPublicAddressIndex = 8;
-    this.path = undefined;
 
     this.publicAddresses = {};
     this.changeAddresses = {};
@@ -41,7 +42,6 @@ function Node() {
     this.batchCount = 8;
     this.hexId = undefined;
     this.nextAddress = 0;
-    this.parentFingerprint = undefined;
     this.transactions = [];
     this.unspent_txos = [];  // unserialized
   };
@@ -54,6 +54,7 @@ function Node() {
     o.fp = this.fingerprint;
     o.next_change_addr = this.nextChangeAddressIndex;
     o.next_pub_addr = this.nextPublicAddressIndex;
+    o.pfp = this.parentFingerprint;
     o.path = this.path;
     return o;
   };
@@ -341,6 +342,8 @@ Node.fromStorableObject = function(o) {
     s.nextChangeAddressIndex = o.next_change_addr;
   if (o.next_pub_addr != undefined)
     s.nextPublicAddressIndex = o.next_pub_addr;
+  if (o.pfp != undefined)
+    s.parentFingerprint = o.pfp;
   if (o.path != undefined)
     s.path = o.path;
 

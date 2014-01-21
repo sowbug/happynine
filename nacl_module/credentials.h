@@ -26,6 +26,8 @@
 
 class Credentials {
  public:
+  Credentials();
+
   static Credentials& GetSingleton();
 
   void Load(const bytes_t& salt,
@@ -48,4 +50,6 @@ class Credentials {
   bytes_t check_;
   bytes_t encrypted_ephemeral_key_;
   bytes_t ephemeral_key_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(Credentials);
 };

@@ -47,26 +47,29 @@ function Wallet(credentials) {
 
   this.loadStorableObject = function(o, callbackVoid) {
     this.init();
-    this.rootNodes = [];
+    var rootNodes = [];
     for (var i in o.rnodes) {
-      this.rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
+      rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
     }
     this.nodes = [];
     for (var i in o.nodes) {
       this.nodes.push(Node.fromStorableObject(o.nodes[i]));
     }
 //    this.deriveNodes(callbackVoid);
-    this.installRootNodes(callbackVoid);
+    this.installRootNodes(rootNodes, callbackVoid);
   }
 
-  this.installRootNodes = function(callbackVoid) {
-    var ns = this.rootNodes;
+  this.installRootNodes = function(rootNodes, callbackVoid) {
     var f = function() {
-      if (ns.length) {
-        var rootNode = ns.pop();
+      if (rootNodes.length) {
+        var rootNode = rootNodes.pop();
+        var params = {
+          'ext_pub_b58': rootNode.extendedPublicBase58,
+          'ext_prv_enc': rootNode.extendedPrivateEncrypted,
+        };
         postRPCWithCallback(
           'set-root-node',
-          { 'ext_prv_enc': rootNode.extendedPrivateEncrypted },
+          params,
           this.setNodeCallback.bind(this, true, f.bind(this)));
       } else {
         callbackVoid.call(callbackVoid);

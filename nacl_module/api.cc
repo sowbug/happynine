@@ -100,23 +100,22 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
                                const bytes_t& ext_prv_enc,
                                bool include_prv) {
   dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
+  dict["pfp"] = "0x" + to_fingerprint(node->parent_fingerprint());
   dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
-  if (node->is_private()) {
-    dict["ext_prv_enc"] = to_hex(ext_prv_enc);
-    if (include_prv) {
-      dict["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
-    }
+  dict["ext_prv_enc"] = to_hex(ext_prv_enc);
+  if (node->is_private() && include_prv) {
+    dict["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
   }
 }
 
 bool API::HandleGenerateRootNode(const Json::Value& args,
                                  Json::Value& result) {
-  Credentials c = Credentials::GetSingleton();
+  Credentials& c = Credentials::GetSingleton();
   if (c.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet w = Wallet::GetSingleton();
+  Wallet& w = Wallet::GetSingleton();
   w.SetCredentials(&c);
 
   const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
@@ -135,8 +134,8 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
 
 bool API::HandleSetRootNode(const Json::Value& args,
                             Json::Value& result) {
-  Credentials c = Credentials::GetSingleton();
-  Wallet w = Wallet::GetSingleton();
+  Credentials& c = Credentials::GetSingleton();
+  Wallet& w = Wallet::GetSingleton();
   w.SetCredentials(&c);
 
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
@@ -156,12 +155,12 @@ bool API::HandleSetRootNode(const Json::Value& args,
 
 bool API::HandleImportRootNode(const Json::Value& args,
                                Json::Value& result) {
-  Credentials c = Credentials::GetSingleton();
+  Credentials& c = Credentials::GetSingleton();
   if (c.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet w = Wallet::GetSingleton();
+  Wallet& w = Wallet::GetSingleton();
   w.SetCredentials(&c);
 
   if (args.isMember("ext_prv_b58")) {
@@ -180,12 +179,12 @@ bool API::HandleImportRootNode(const Json::Value& args,
 
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
-  Credentials c = Credentials::GetSingleton();
+  Credentials& c = Credentials::GetSingleton();
   if (c.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet w = Wallet::GetSingleton();
+  Wallet& w = Wallet::GetSingleton();
   w.SetCredentials(&c);
 
   if (!w.hasRootNode()) {
@@ -200,9 +199,13 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   bytes_t ext_prv_enc;
   if (w.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
     GenerateNodeResponse(result, node, ext_prv_enc, false);
+    result["path"] = path;
     delete node;
   } else {
-    SetError(result, -1, "Failed to derive child node");
+    std::stringstream s;
+    s << "Failed to derive child node @ "<< path << " from " <<
+      std::hex << w.GetRootNode()->fingerprint();
+    SetError(result, -1, s.str());
   }
 
   return true;

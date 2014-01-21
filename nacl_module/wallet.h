@@ -61,4 +61,6 @@ class Wallet {
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   Node* root_node_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };
