@@ -28,20 +28,37 @@ class Node;
 class Wallet {
  public:
   Wallet();
+  virtual ~Wallet();
 
   static Wallet& GetSingleton();
 
   void SetCredentials(Credentials* credentials) { credentials_ = credentials; }
 
+  // Root nodes
   bool GenerateRootNode(const bytes_t& extra_seed_bytes,
-                        Node** node,
                         bytes_t& ext_prv_enc,
                         bytes_t& seed_bytes);
-  bool SetRootNode(const bytes_t& ext_prv_enc, Node** node);
-  bool ImportRootNode(const std::string& ext_prv_b58,
-                      Node** node,
-                      bytes_t& ext_prv_enc);
+  bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
+  // Doesn't need wallet unlocked.
+  bool SetRootNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc);
+
+  // Child nodes
+  bool DeriveChildNode(const std::string& path,
+                       bool isWatchOnly,
+                       Node** node,
+                       bytes_t& ext_prv_enc);
+
+  // Utilities
+  bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
+
+  Node* GetRootNode();   // We retain ownership!
+  void ClearRootNode();  // TODO(miket): implement and use
 
  private:
+  void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
+
   Credentials* credentials_;
+  bytes_t root_ext_pub_;
+  bytes_t root_ext_prv_enc_;
+  Node* root_node_;
 };

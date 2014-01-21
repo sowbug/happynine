@@ -78,6 +78,9 @@ public:
     if (method == "import-root-node") {
       handled = api.HandleImportRootNode(params, result);
     }
+    if (method == "derive-child-node") {
+      handled = api.HandleDeriveChildNode(params, result);
+    }
 
 
 

@@ -22,28 +22,7 @@
 
 'use strict';
 
-function loadStorage(saved_name, object, storables, callback) {
-  if (!chrome || !chrome.storage) {
-    console.log("!chrome; skipping load of " + saved_name);
-    callback.call(this);
-    return;
-  }
-  chrome.storage.sync.get(saved_name, function(result) {
-    var items = result[saved_name];
-    if (items) {
-      console.log("loaded " + saved_name + " from storage", items);
-      for (var key_index in storables) {
-        var key = storables[key_index];
-        object[key] = items[key];
-      }
-    } else {
-      console.log("storage:", saved_name, "is empty");
-    }
-    callback.call(this);
-  });
-}
-
-function loadStorage2(saved_name, callback) {
+function loadStorage(saved_name, callback) {
   if (!chrome || !chrome.storage) {
     console.log("!chrome; skipping load of", saved_name);
     callback.call(this, null);
@@ -60,24 +39,7 @@ function loadStorage2(saved_name, callback) {
   });
 }
 
-function saveStorage(saved_name, object, storables) {
-  if (!chrome || !chrome.storage) {
-    console.log("!chrome; skipping save of " + saved_name);
-    return;
-  }
-  var items = {};
-  for (var key_index in storables) {
-    var key = storables[key_index];
-    items[key] = object[key];
-  }
-  var toSave = {};
-  toSave[saved_name] = items;
-  chrome.storage.sync.set(toSave, function() {
-    console.log("saved", saved_name, "to storage", items);
-  });
-}
-
-function saveStorage2(saved_name, object) {
+function saveStorage(saved_name, object) {
   if (!chrome || !chrome.storage) {
     console.log("!chrome; skipping save of", saved_name);
     return;

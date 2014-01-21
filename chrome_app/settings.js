@@ -25,8 +25,6 @@
 // The Settings model keeps track of miscellaneous options/preferences
 // that are expected to be saved across app restarts.
 function Settings() {
-  var STORABLE = ['units'];
-
   this.availableUnits = {
     "btc": "BTC",
     "mbtc": "mBTC",
@@ -38,6 +36,18 @@ function Settings() {
     this.units = "mbtc";
   };
   this.init();
+
+  this.toStorableObject = function() {
+    var o = {};
+    o.units = this.units;
+    return o;
+  };
+
+  this.loadStorableObject = function(o, callbackVoid) {
+    this.init();
+    this.units = o.units;
+    callbackVoid.call(callbackVoid);
+  }
 
   this.satoshiToUnit = function(satoshis) {
     switch (this.units) {
@@ -69,11 +79,19 @@ function Settings() {
     return this.availableUnits[this.units];
   };
 
-  this.load = function(callback) {
-    loadStorage('settings', this, STORABLE, callback);
+  this.STORAGE_NAME = 'settings';
+  this.load = function(callbackVoid) {
+    loadStorage(this.STORAGE_NAME, function(object) {
+      if (object) {
+        this.loadStorableObject(object, callbackVoid);
+      } else {
+        this.init();
+        callbackVoid.call(callbackVoid);
+      }
+    }.bind(this));
   };
 
   this.save = function() {
-    saveStorage('settings', this, STORABLE);
+    saveStorage(this.STORAGE_NAME, this.toStorableObject());
   };
 }

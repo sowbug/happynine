@@ -45,7 +45,7 @@ function Wallet(credentials) {
     return o;
   };
 
-  this.loadStorableObject = function(o, callback) {
+  this.loadStorableObject = function(o, callbackVoid) {
     this.init();
     this.rootNodes = [];
     for (var i in o.rnodes) {
@@ -55,8 +55,25 @@ function Wallet(credentials) {
     for (var i in o.nodes) {
       this.nodes.push(Node.fromStorableObject(o.nodes[i]));
     }
-    this.deriveNodes(callback);
+//    this.deriveNodes(callbackVoid);
+    this.installRootNodes(callbackVoid);
   }
+
+  this.installRootNodes = function(callbackVoid) {
+    var ns = this.rootNodes;
+    var f = function() {
+      if (ns.length) {
+        var rootNode = ns.pop();
+        postRPCWithCallback(
+          'set-root-node',
+          { 'ext_prv_enc': rootNode.extendedPrivateEncrypted },
+          this.setNodeCallback.bind(this, true, f.bind(this)));
+      } else {
+        callbackVoid.call(callbackVoid);
+      }
+    };
+    f.call(this);
+  };
 
   this.deriveNodes = function(callback) {
     var ns = this.rootNodes.concat(this.nodes);
@@ -139,10 +156,14 @@ function Wallet(credentials) {
     }
   };
 
-  this.setNodeCallback = function(callbackBool, response) {
+  this.setNodeCallback = function(isRoot, callbackBool, response) {
     if (response.fp) {
       var node = Node.fromStorableObject(response);
-      this.rootNodes.push(node);
+      if (isRoot) {
+        this.rootNodes.push(node);
+      } else {
+        this.nodes.push(node);
+      }
       callbackBool.call(callbackBool, true);
     } else {
       callbackBool.call(callbackBool, false);
@@ -151,7 +172,7 @@ function Wallet(credentials) {
 
   this.addRandomMasterKey = function(callbackVoid) {
     postRPCWithCallback('generate-root-node', {},
-                        this.setNodeCallback.bind(this, callbackVoid));
+                        this.setNodeCallback.bind(this, true, callbackVoid));
   };
 
   this.importMasterKey = function(ext_prv_b58, callbackBool) {
@@ -159,7 +180,7 @@ function Wallet(credentials) {
       'ext_prv_b58': ext_prv_b58
     };
     postRPCWithCallback('import-root-node', params,
-                        this.setNodeCallback.bind(this, callbackBool));
+                        this.setNodeCallback.bind(this, true, callbackBool));
   }
 
   this.addNewNode = function(isRoot, callback, node) {
@@ -183,25 +204,13 @@ function Wallet(credentials) {
     this.rootNodes = [];
   };
 
-  this.deriveNextAccount = function(isWatchOnly, callback) {
-    if (!this.credentials.isKeyAvailable()) {
-      console.log("Can't derive account when wallet is unlocked");
-      // TODO(miket): all these synchronous callbacks need to be async
-      callback(this, false);
-      return;
-    }
-    if (!this.isExtendedPrivateSet()) {
-      console.log("Can't derive account without root private key");
-      // Callers are depending on this method to be asynchonous.
-      window.setTimeout(callback.bind(this, false), 0);
-      return;
-    }
-
-    this.rootNodes[0].deriveChildNode(
-      this.credentials,
-      0,  // TODO
-      isWatchOnly,
-      this.addNewNode.bind(this, false, callback.bind(this, true)));
+  this.deriveNextAccount = function(isWatchOnly, callbackBool) {
+    var params = {
+      'path': "m/0'",
+      'isWatchOnly': isWatchOnly,
+    };
+    postRPCWithCallback('derive-child-node', params,
+                        this.setNodeCallback.bind(this, false, callbackBool));
   };
 
   this.getAccountCount = function() {
@@ -210,7 +219,7 @@ function Wallet(credentials) {
 
   this.STORAGE_NAME = 'wallet';
   this.load = function(callbackVoid) {
-    loadStorage2(this.STORAGE_NAME, function(object) {
+    loadStorage(this.STORAGE_NAME, function(object) {
       if (object) {
         this.loadStorableObject(object, callbackVoid);
       } else {
@@ -221,6 +230,6 @@ function Wallet(credentials) {
   };
 
   this.save = function() {
-    saveStorage2(this.STORAGE_NAME, this.toStorableObject());
+    saveStorage(this.STORAGE_NAME, this.toStorableObject());
   };
 }

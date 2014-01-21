@@ -29,7 +29,12 @@
 #include "node_factory.h"
 #include "wallet.h"
 
-Wallet::Wallet() : credentials_(NULL) {
+Wallet::Wallet()
+  : credentials_(NULL), root_node_(NULL) {
+}
+
+Wallet::~Wallet() {
+  delete root_node_;
 }
 
 Wallet& Wallet::GetSingleton() {
@@ -37,8 +42,13 @@ Wallet& Wallet::GetSingleton() {
   return singleton;
 }
 
+void Wallet::set_root_ext_keys(const bytes_t& ext_pub,
+                               const bytes_t& ext_prv_enc) {
+  root_ext_pub_ = ext_pub;
+  root_ext_prv_enc_ = ext_prv_enc;
+}
+
 bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
-                              Node** node,
                               bytes_t& ext_prv_enc,
                               bytes_t& seed_bytes) {
   if (credentials_->isLocked()) {
@@ -53,35 +63,32 @@ bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
                     extra_seed_bytes.begin(),
                     extra_seed_bytes.end());
 
-  *node = NodeFactory::CreateNodeFromSeed(seed_bytes);
-  if (*node) {
+  Node* node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  if (node) {
     if (Crypto::Encrypt(credentials_->ephemeral_key(),
-                        (*node)->toSerialized(),
+                        node->toSerialized(),
                         ext_prv_enc)) {
+      set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
       return true;
     }
+    delete node;
   }
   return false;
 }
 
-bool Wallet::SetRootNode(const bytes_t& ext_prv_enc, Node** node) {
-  if (credentials_->isLocked()) {
-    std::cerr << "wallet is locked" << std::endl;
-    return false;
-  }
-
-  bytes_t ext_prv;
-  if (Crypto::Decrypt(credentials_->ephemeral_key(), ext_prv_enc, ext_prv)) {
-    *node = NodeFactory::CreateNodeFromExtended(ext_prv);
-    if (*node) {
-      return true;
-    }
+bool Wallet::SetRootNode(const std::string& ext_pub_b58,
+                         const bytes_t& ext_prv_enc) {
+  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
+  Node* node = NodeFactory::CreateNodeFromExtended(ext_pub);
+  if (node) {
+    set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
+    delete node;
+    return true;
   }
   return false;
 }
 
 bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
-                            Node** node,
                             bytes_t& ext_prv_enc) {
   if (credentials_->isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
@@ -89,11 +96,64 @@ bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
   }
 
   const bytes_t ext_prv = Base58::fromBase58Check(ext_prv_b58);
-  *node = NodeFactory::CreateNodeFromExtended(ext_prv);
-  if (*node) {
-    if (Crypto::Encrypt(credentials_->ephemeral_key(), ext_prv, ext_prv_enc)) {
+  Node* node = NodeFactory::CreateNodeFromExtended(ext_prv);
+  if (node) {
+    if (Crypto::Encrypt(credentials_->ephemeral_key(),
+                        ext_prv,
+                        ext_prv_enc)) {
+      set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
       return true;
+    }
+    delete node;
+  }
+  return false;
+}
+
+bool Wallet::DeriveChildNode(const std::string& path,
+                             bool isWatchOnly,
+                             Node** node,
+                             bytes_t& ext_prv_enc) {
+  if (!isWatchOnly && credentials_->isLocked()) {
+    std::cerr << "wallet is locked" << std::endl;
+    return false;
+  }
+  if (!hasRootNode()) {
+    std::cerr << "no root node" << std::endl;
+    return false;
+  }
+
+  *node = NodeFactory::DeriveChildNodeWithPath(*root_node_, path);
+  if (*node) {
+    if (isWatchOnly) {
+      return true;
+    } else {
+      if (Crypto::Encrypt(credentials_->ephemeral_key(),
+                          (*node)->toSerialized(),
+                          ext_prv_enc)) {
+        return true;
+      }
     }
   }
   return false;
+}
+
+Node* Wallet::GetRootNode() {
+  if (!hasRootNode()) {
+    return NULL;
+  }
+
+  delete root_node_;
+  if (credentials_->isLocked()) {
+    root_node_ = NodeFactory::CreateNodeFromExtended(root_ext_pub_);
+  } else {
+    bytes_t ext_prv;
+    if (Crypto::Decrypt(credentials_->ephemeral_key(),
+                        root_ext_prv_enc_,
+                        ext_prv)) {
+      root_node_ = NodeFactory::CreateNodeFromExtended(ext_prv);
+    } else {
+      root_node_ = NULL;
+    }
+  }
+  return root_node_;
 }

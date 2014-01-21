@@ -54,6 +54,7 @@ function Credentials() {
     return !!this.check;
   };
 
+  // TODO(miket): rename to just isLocked (& avoid collision)
   this.isWalletLocked = function() {
     return this.isLocked;
   };
@@ -125,20 +126,9 @@ function Credentials() {
                         }.bind(this));
   };
 
-  this.load = function(callbackVoid) {
-    loadStorage('credentials',
-                this,
-                STORABLE,
-                this.loadCredentials.bind(this, callbackVoid));
-  };
-
-  this.save = function() {
-    saveStorage('credentials', this, STORABLE);
-  };
-
   this.STORAGE_NAME = 'credentials';
   this.load = function(callbackVoid) {
-    loadStorage2(this.STORAGE_NAME, function(object) {
+    loadStorage(this.STORAGE_NAME, function(object) {
       if (object) {
         this.loadStorableObject(object, callbackVoid);
       } else {
@@ -149,6 +139,6 @@ function Credentials() {
   };
 
   this.save = function() {
-    saveStorage2(this.STORAGE_NAME, this.toStorableObject());
+    saveStorage(this.STORAGE_NAME, this.toStorableObject());
   };
 }

@@ -41,12 +41,15 @@ class API {
 
   bool HandleUnlock(const Json::Value& args, Json::Value& result);
 
-  // Nodes
+  // Root Nodes
   bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
 
   bool HandleSetRootNode(const Json::Value& args, Json::Value& result);
 
   bool HandleImportRootNode(const Json::Value& args, Json::Value& result);
+
+  // Child Nodes
+  bool HandleDeriveChildNode(const Json::Value& args, Json::Value& result);
 
   // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
@@ -81,7 +84,7 @@ class API {
 
  private:
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
-  void GenerateNodeResponse(Json::Value& dict, Node* node,
+  void GenerateNodeResponse(Json::Value& dict, const Node* node,
                             const bytes_t& ext_prv_enc,
                             bool include_prv);
   bool VerifyCredentials(const bytes_t& key,

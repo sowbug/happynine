@@ -96,7 +96,7 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
-void API::GenerateNodeResponse(Json::Value& dict, Node* node,
+void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
                                const bytes_t& ext_prv_enc,
                                bool include_prv) {
   dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
@@ -122,13 +122,11 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
   const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
                                                     "55").asString()));
 
-  Node *node = NULL;
   bytes_t ext_prv_enc;
   bytes_t seed_bytes;
-  if (w.GenerateRootNode(extra_seed_bytes, &node, ext_prv_enc, seed_bytes)) {
-    GenerateNodeResponse(result, node, ext_prv_enc, true);
+  if (w.GenerateRootNode(extra_seed_bytes, ext_prv_enc, seed_bytes)) {
+    GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, true);
     result["seed_hex"] = to_hex(seed_bytes);
-    delete node;
   } else {
     SetError(result, -1, "Root node generation failed");
   }
@@ -138,24 +136,20 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
 bool API::HandleSetRootNode(const Json::Value& args,
                             Json::Value& result) {
   Credentials c = Credentials::GetSingleton();
-  if (c.isLocked()) {
-    SetError(result, -1, "locked");
-    return true;
-  }
   Wallet w = Wallet::GetSingleton();
   w.SetCredentials(&c);
 
-  if (args.isMember("ext_prv_enc")) {
-    const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
-    Node *node = NULL;
-    if (w.SetRootNode(ext_prv_enc, &node)) {
-      GenerateNodeResponse(result, node, ext_prv_enc, false);
-      delete node;
+  const std::string ext_pub_b58(args["ext_pub_b58"].asString());
+  const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
+
+  if (!ext_pub_b58.empty() && !ext_prv_enc.empty()) {
+    if (w.SetRootNode(ext_pub_b58, ext_prv_enc)) {
+      GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, false);
     } else {
       SetError(result, -1, "Extended key failed validation");
     }
   } else {
-    SetError(result, -1, "Missing required ext_prv_enc param");
+    SetError(result, -1, "Missing required ext_pub_b58 & ext_prv_enc params");
   }
   return true;
 }
@@ -173,16 +167,44 @@ bool API::HandleImportRootNode(const Json::Value& args,
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
-    Node *node = NULL;
-    if (w.ImportRootNode(ext_prv_b58, &node, ext_prv_enc)) {
-      GenerateNodeResponse(result, node, ext_prv_enc, false);
-      delete node;
+    if (w.ImportRootNode(ext_prv_b58, ext_prv_enc)) {
+      GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, false);
     } else {
       SetError(result, -1, "Extended key failed validation");
     }
   } else {
     SetError(result, -1, "Missing required ext_prv_b58 param");
   }
+  return true;
+}
+
+bool API::HandleDeriveChildNode(const Json::Value& args,
+                                Json::Value& result) {
+  Credentials c = Credentials::GetSingleton();
+  if (c.isLocked()) {
+    SetError(result, -1, "locked");
+    return true;
+  }
+  Wallet w = Wallet::GetSingleton();
+  w.SetCredentials(&c);
+
+  if (!w.hasRootNode()) {
+    SetError(result, -1, "Wallet is missing root node");
+    return true;
+  }
+
+  const std::string path(args["path"].asString());
+  const bool isWatchOnly(args["isWatchOnly"].asBool());
+
+  Node *node = NULL;
+  bytes_t ext_prv_enc;
+  if (w.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
+    GenerateNodeResponse(result, node, ext_prv_enc, false);
+    delete node;
+  } else {
+    SetError(result, -1, "Failed to derive child node");
+  }
+
   return true;
 }
 

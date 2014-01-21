@@ -155,12 +155,13 @@ TEST(ApiTest, GenerateRootNode) {
   EXPECT_TRUE(api.HandleGenerateRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  const std::string xpub(response["ext_pub_b58"].asString());
+  const std::string ext_pub_b58(response["ext_pub_b58"].asString());
   const std::string ext_prv_enc(response["ext_prv_enc"].asString());
 
   // Can we set back to that node?
   request = Json::Value();
   response = Json::Value();
+  request["ext_pub_b58"] = ext_pub_b58;
   request["ext_prv_enc"] = ext_prv_enc;
   EXPECT_TRUE(api.HandleSetRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));

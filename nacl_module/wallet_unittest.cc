@@ -26,6 +26,7 @@
 
 #include "gtest/gtest.h"
 
+#include "base58.h"
 #include "credentials.h"
 #include "node.h"
 #include "wallet.h"
@@ -50,32 +51,35 @@ TEST(WalletTest, HappyPath) {
 
   // Generate a new node.
   bytes_t extra_seed;
-  Node* node = NULL;
   bytes_t ext_prv_enc;
   bytes_t seed_bytes;
-  EXPECT_TRUE(w.GenerateRootNode(extra_seed, &node, ext_prv_enc, seed_bytes));
-  uint32_t fp = node->fingerprint();
+  EXPECT_TRUE(w.GenerateRootNode(extra_seed, ext_prv_enc, seed_bytes));
+  Node* root_node = w.GetRootNode();
+  uint32_t fp = root_node->fingerprint();
   EXPECT_NE(0, fp);  // This will fail one out of every 2^32 times.
-  delete node;
+  std::string
+    ext_pub_b58(Base58::toBase58Check(root_node->toSerializedPublic()));
 
   // Set to the new node and confirm we got it back.
-  EXPECT_TRUE(w.SetRootNode(ext_prv_enc, &node));
-  EXPECT_EQ(fp, node->fingerprint());
-  delete node;
-
-  // Can we import an xprv?
-  EXPECT_TRUE(w.ImportRootNode("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4"
-                               "stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNN"
-                               "U3TGtRBeJgk33yuGBxrMPHi",
-                               &node,
-                               ext_prv_enc));
-  EXPECT_EQ(0x3442193e, node->fingerprint());
+  EXPECT_TRUE(w.SetRootNode(ext_pub_b58, ext_prv_enc));
+  EXPECT_EQ(fp, w.GetRootNode()->fingerprint());
 
   // Does importing a bad xprv fail?
   EXPECT_FALSE(w.ImportRootNode("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4"
                                 "stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNN"
                                 "U3TGtRBeJgk33yuGBxrMPHi"
                                 "z",
-                                &node,
                                 ext_prv_enc));
+
+  // Can we import an xprv?
+  EXPECT_TRUE(w.ImportRootNode("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4"
+                               "stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNN"
+                               "U3TGtRBeJgk33yuGBxrMPHi",
+                               ext_prv_enc));
+  EXPECT_EQ(0x3442193e, w.GetRootNode()->fingerprint());
+
+  Node* node = NULL;
+  EXPECT_TRUE(w.DeriveChildNode("m/0'", false, &node, ext_prv_enc));
+  EXPECT_EQ(0x5c1bd648, node->fingerprint());
+  delete node;
 }
