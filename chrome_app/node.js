@@ -334,18 +334,18 @@ Node.fromStorableObject = function(o) {
 
   if (o.ext_prv_enc != undefined)
     s.extendedPrivateEncrypted = o.ext_prv_enc;
-  if (o.fp != undefined)
-    s.fingerprint = o.fp;
   if (o.ext_pub_b58 != undefined)
     s.extendedPublicBase58 = o.ext_pub_b58;
+  if (o.fp != undefined)
+    s.fingerprint = o.fp;
   if (o.next_change_addr != undefined)
     s.nextChangeAddressIndex = o.next_change_addr;
   if (o.next_pub_addr != undefined)
     s.nextPublicAddressIndex = o.next_pub_addr;
-  if (o.pfp != undefined)
-    s.parentFingerprint = o.pfp;
   if (o.path != undefined)
     s.path = o.path;
+  if (o.pfp != undefined)
+    s.parentFingerprint = o.pfp;
 
   return s;
 };
