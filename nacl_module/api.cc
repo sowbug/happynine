@@ -132,7 +132,7 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
   return true;
 }
 
-bool API::HandleSetRootNode(const Json::Value& args,
+bool API::HandleAddRootNode(const Json::Value& args,
                             Json::Value& result) {
   Credentials& c = Credentials::GetSingleton();
   Wallet& w = Wallet::GetSingleton();
@@ -200,7 +200,14 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   if (w.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
     GenerateNodeResponse(result, node, ext_prv_enc, false);
     result["path"] = path;
-    delete node;
+    Wallet::address_statuses_t addresses;
+    w.GetAddressStatusesToReport(addresses);
+    for (Wallet::address_statuses_t::const_iterator i = addresses.begin();
+         i != addresses.end();
+         ++i) {
+      result["addresses"].append(*i);
+    }
+    delete node;  // TODO(miket): implement AddChildNode & move addr gen code
   } else {
     std::stringstream s;
     s << "Failed to derive child node @ "<< path << " from " <<
@@ -209,6 +216,11 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   }
 
   return true;
+}
+
+bool API::HandleAddChildNode(const Json::Value& /*args*/,
+                             Json::Value& /*result*/) {
+  return false;
 }
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {

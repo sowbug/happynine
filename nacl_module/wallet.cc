@@ -127,14 +127,58 @@ bool Wallet::DeriveChildNode(const std::string& path,
   *node = NodeFactory::DeriveChildNodeWithPath(*root_node_, path);
   if (*node) {
     if (isWatchOnly) {
+      AddChildNode(Base58::toBase58Check((*node)->toSerializedPublic()),
+                   bytes_t(),
+                   8,
+                   8);
       return true;
     } else {
       if (Crypto::Encrypt(credentials_->ephemeral_key(),
                           (*node)->toSerialized(),
                           ext_prv_enc)) {
+        AddChildNode(Base58::toBase58Check((*node)->toSerializedPublic()),
+                     ext_prv_enc,
+                     8,
+                     8);
         return true;
       }
     }
+  }
+  return false;
+}
+
+bool Wallet::AddChildNode(const std::string& ext_pub_b58,
+                          const bytes_t& /*ext_prv_enc*/,
+                          uint32_t public_address_count,
+                          uint32_t change_address_count) {
+  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
+  Node* child_node = NodeFactory::CreateNodeFromExtended(ext_pub);
+  if (child_node) {
+    for (uint32_t i = 0; i < public_address_count; ++i) {
+      std::string node_path("m/0/");
+      node_path += i;
+      Node* address_node =
+        NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
+      if (address_node) {
+        address_statuses_.push_back(Base58::
+                                    toAddress(address_node->public_key()));
+        delete address_node;
+      }
+    }
+    for (uint32_t i = 0; i < change_address_count; ++i) {
+      std::string node_path("m/1/");
+      node_path += i;
+      Node* address_node =
+        NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
+      if (address_node) {
+        address_statuses_.push_back(Base58::
+                                    toAddress(address_node->public_key()));
+        delete address_node;
+      }
+    }
+    delete child_node;
+    // TODO(miket): save ext_prv_enc somewhere
+    return true;
   }
   return false;
 }
@@ -158,4 +202,10 @@ Node* Wallet::GetRootNode() {
     }
   }
   return root_node_;
+}
+
+bool Wallet::GetAddressStatusesToReport(address_statuses_t& statuses) {
+  statuses = address_statuses_;
+  address_statuses_.clear();
+  return true;
 }

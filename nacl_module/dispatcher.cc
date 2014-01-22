@@ -72,14 +72,17 @@ public:
     if (method == "generate-root-node") {
       handled = api.HandleGenerateRootNode(params, result);
     }
-    if (method == "set-root-node") {
-      handled = api.HandleSetRootNode(params, result);
+    if (method == "add-root-node") {
+      handled = api.HandleAddRootNode(params, result);
     }
     if (method == "import-root-node") {
       handled = api.HandleImportRootNode(params, result);
     }
     if (method == "derive-child-node") {
       handled = api.HandleDeriveChildNode(params, result);
+    }
+    if (method == "add-child-node") {
+      handled = api.HandleAddChildNode(params, result);
     }
 
 

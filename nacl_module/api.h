@@ -44,12 +44,14 @@ class API {
   // Root Nodes
   bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleSetRootNode(const Json::Value& args, Json::Value& result);
+  bool HandleAddRootNode(const Json::Value& args, Json::Value& result);
 
   bool HandleImportRootNode(const Json::Value& args, Json::Value& result);
 
   // Child Nodes
   bool HandleDeriveChildNode(const Json::Value& args, Json::Value& result);
+
+  bool HandleAddChildNode(const Json::Value& args, Json::Value& result);
 
   // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);

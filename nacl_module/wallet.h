@@ -47,6 +47,15 @@ class Wallet {
                        bool isWatchOnly,
                        Node** node,
                        bytes_t& ext_prv_enc);
+  bool AddChildNode(const std::string& ext_pub_b58,
+                    const bytes_t& /*ext_prv_enc*/,
+                    uint32_t public_address_count,
+                    uint32_t change_address_count);
+
+  // Module-to-client
+  typedef std::string address_status_t;
+  typedef std::vector<address_status_t> address_statuses_t;
+  bool GetAddressStatusesToReport(address_statuses_t& statuses);
 
   // Utilities
   bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
@@ -61,6 +70,7 @@ class Wallet {
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   Node* root_node_;
+  address_statuses_t address_statuses_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };

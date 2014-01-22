@@ -140,7 +140,7 @@ TEST(ApiTest, TransactionManager) {
   EXPECT_EQ(4, response["unspent_txos"].size());
 }
 
-TEST(ApiTest, GenerateRootNode) {
+TEST(ApiTest, HappyPath) {
   Json::Value request;
   Json::Value response;
   API api;
@@ -149,24 +149,15 @@ TEST(ApiTest, GenerateRootNode) {
   EXPECT_TRUE(api.HandleSetPassphrase(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  // Can we generate a root node?
+  // Import a bad xprv; should fail
   request = Json::Value();
   response = Json::Value();
-  EXPECT_TRUE(api.HandleGenerateRootNode(request, response));
-  EXPECT_TRUE(api.DidResponseSucceed(response));
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
+    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
 
-  const std::string ext_pub_b58(response["ext_pub_b58"].asString());
-  const std::string ext_prv_enc(response["ext_prv_enc"].asString());
-
-  // Can we set back to that node?
-  request = Json::Value();
-  response = Json::Value();
-  request["ext_pub_b58"] = ext_pub_b58;
-  request["ext_prv_enc"] = ext_prv_enc;
-  EXPECT_TRUE(api.HandleSetRootNode(request, response));
-  EXPECT_TRUE(api.DidResponseSucceed(response));
-
-  // Can we import an xprv?
+  // Import an xprv (BIP0032 TV1)
   request = Json::Value();
   response = Json::Value();
   request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
@@ -174,11 +165,40 @@ TEST(ApiTest, GenerateRootNode) {
   EXPECT_TRUE(api.HandleImportRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  // Does importing a bad xprv fail?
+  const std::string ext_pub_b58(response["ext_pub_b58"].asString());
+  const std::string ext_prv_enc(response["ext_prv_enc"].asString());
+
+  // Generate a root node and make sure the response changed
   request = Json::Value();
   response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
-    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
-  EXPECT_TRUE(api.HandleImportRootNode(request, response));
-  EXPECT_FALSE(api.DidResponseSucceed(response));
+  EXPECT_TRUE(api.HandleGenerateRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_NE(ext_pub_b58, response["ext_pub_b58"].asString());
+
+  // Set back to the imported root node
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = ext_pub_b58;
+  request["ext_prv_enc"] = ext_prv_enc;
+  EXPECT_TRUE(api.HandleAddRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x3442193e", response["fp"].asString());
+
+  // Derive a child
+  request = Json::Value();
+  response = Json::Value();
+  request["path"] = "m/0'";
+  request["is_watch_only"] = false;
+  //  request["public_addr_n"] = 2;
+  //  request["change_addr_n"] = 2;
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x5c1bd648", response["fp"].asString());
+  EXPECT_EQ(8 + 8, response["addresses"].size());
+
+  // TODO(miket): change to address_t, including value & is_public
+  EXPECT_EQ("1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr",  // m/0'/0/0
+            response["addresses"][0].asString());
+  EXPECT_EQ("1J5rebbkQaunJTUoNVREDbeB49DqMNFFXk",  // m/0'/1/0
+            response["addresses"][8 + 0].asString());
 }

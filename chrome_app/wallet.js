@@ -68,7 +68,7 @@ function Wallet(credentials) {
           'ext_prv_enc': rootNode.extendedPrivateEncrypted,
         };
         postRPCWithCallback(
-          'set-root-node',
+          'add-root-node',
           params,
           this.setNodeCallback.bind(this, true, f.bind(this)));
       } else {
