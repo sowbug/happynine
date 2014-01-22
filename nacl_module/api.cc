@@ -35,25 +35,28 @@
 #endif
 
 #include "base58.h"
-#include "credentials.h"
 #include "crypto.h"
 #include "node.h"
 #include "node_factory.h"
 #include "tx.h"
 #include "types.h"
-#include "wallet.h"
 
 // echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
+API::API()
+  : credentials_(),
+    wallet_(credentials_) {
+    }
+
 bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
   const std::string new_passphrase = args["new_passphrase"].asString();
   bytes_t salt, check, encrypted_ephemeral_key;
-  if (Credentials::GetSingleton().SetPassphrase(new_passphrase,
-                                                salt,
-                                                check,
-                                                encrypted_ephemeral_key)) {
+  if (credentials_.SetPassphrase(new_passphrase,
+                                 salt,
+                                 check,
+                                 encrypted_ephemeral_key)) {
     result["salt"] = to_hex(salt);
     result["check"] = to_hex(check);
     result["ekey_enc"] = to_hex(encrypted_ephemeral_key);
@@ -71,9 +74,9 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
   if (salt.size() >= 32 &&
       check.size() >= 32 &&
       encrypted_ephemeral_key.size() >= 32) {
-    Credentials::GetSingleton().Load(salt,
-                                     check,
-                                     encrypted_ephemeral_key);
+    credentials_.Load(salt,
+                      check,
+                      encrypted_ephemeral_key);
     result["success"] = true;
   } else {
     SetError(result, -1, "missing valid salt/check/ekey_enc params");
@@ -82,14 +85,14 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
 }
 
 bool API::HandleLock(const Json::Value& /*args*/, Json::Value& result) {
-  result["success"] = Credentials::GetSingleton().Lock();
+  result["success"] = credentials_.Lock();
   return true;
 }
 
 bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
   const std::string passphrase = args["passphrase"].asString();
   if (passphrase.size() != 0) {
-    result["success"] = Credentials::GetSingleton().Unlock(passphrase);
+    result["success"] = credentials_.Unlock(passphrase);
   } else {
     SetError(result, -1, "missing valid passphrase param");
   }
@@ -110,21 +113,18 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
 
 bool API::HandleGenerateRootNode(const Json::Value& args,
                                  Json::Value& result) {
-  Credentials& c = Credentials::GetSingleton();
-  if (c.isLocked()) {
+  if (credentials_.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet& w = Wallet::GetSingleton();
-  w.SetCredentials(&c);
 
   const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
                                                     "55").asString()));
 
   bytes_t ext_prv_enc;
   bytes_t seed_bytes;
-  if (w.GenerateRootNode(extra_seed_bytes, ext_prv_enc, seed_bytes)) {
-    GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, true);
+  if (wallet_.GenerateRootNode(extra_seed_bytes, ext_prv_enc, seed_bytes)) {
+    GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, true);
     result["seed_hex"] = to_hex(seed_bytes);
   } else {
     SetError(result, -1, "Root node generation failed");
@@ -134,16 +134,12 @@ bool API::HandleGenerateRootNode(const Json::Value& args,
 
 bool API::HandleAddRootNode(const Json::Value& args,
                             Json::Value& result) {
-  Credentials& c = Credentials::GetSingleton();
-  Wallet& w = Wallet::GetSingleton();
-  w.SetCredentials(&c);
-
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
 
   if (!ext_pub_b58.empty() && !ext_prv_enc.empty()) {
-    if (w.SetRootNode(ext_pub_b58, ext_prv_enc)) {
-      GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, false);
+    if (wallet_.SetRootNode(ext_pub_b58, ext_prv_enc)) {
+      GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, false);
     } else {
       SetError(result, -1, "Extended key failed validation");
     }
@@ -155,19 +151,16 @@ bool API::HandleAddRootNode(const Json::Value& args,
 
 bool API::HandleImportRootNode(const Json::Value& args,
                                Json::Value& result) {
-  Credentials& c = Credentials::GetSingleton();
-  if (c.isLocked()) {
+  if (credentials_.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet& w = Wallet::GetSingleton();
-  w.SetCredentials(&c);
 
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
-    if (w.ImportRootNode(ext_prv_b58, ext_prv_enc)) {
-      GenerateNodeResponse(result, w.GetRootNode(), ext_prv_enc, false);
+    if (wallet_.ImportRootNode(ext_prv_b58, ext_prv_enc)) {
+      GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, false);
     } else {
       SetError(result, -1, "Extended key failed validation");
     }
@@ -177,17 +170,24 @@ bool API::HandleImportRootNode(const Json::Value& args,
   return true;
 }
 
+void API::PopulateAddressStatuses(Json::Value& json_value) {
+  Wallet::address_statuses_t addresses;
+  wallet_.GetAddressStatusesToReport(addresses);
+  for (Wallet::address_statuses_t::const_iterator i = addresses.begin();
+       i != addresses.end();
+       ++i) {
+    json_value.append(*i);
+  }
+}
+
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
-  Credentials& c = Credentials::GetSingleton();
-  if (c.isLocked()) {
+  if (credentials_.isLocked()) {
     SetError(result, -1, "locked");
     return true;
   }
-  Wallet& w = Wallet::GetSingleton();
-  w.SetCredentials(&c);
 
-  if (!w.hasRootNode()) {
+  if (!wallet_.hasRootNode()) {
     SetError(result, -1, "Wallet is missing root node");
     return true;
   }
@@ -197,21 +197,15 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
 
   Node *node = NULL;
   bytes_t ext_prv_enc;
-  if (w.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
+  if (wallet_.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
     GenerateNodeResponse(result, node, ext_prv_enc, false);
+    PopulateAddressStatuses(result["addresses"]);
     result["path"] = path;
-    Wallet::address_statuses_t addresses;
-    w.GetAddressStatusesToReport(addresses);
-    for (Wallet::address_statuses_t::const_iterator i = addresses.begin();
-         i != addresses.end();
-         ++i) {
-      result["addresses"].append(*i);
-    }
     delete node;  // TODO(miket): implement AddChildNode & move addr gen code
   } else {
     std::stringstream s;
     s << "Failed to derive child node @ "<< path << " from " <<
-      std::hex << w.GetRootNode()->fingerprint();
+      std::hex << wallet_.GetRootNode()->fingerprint();
     SetError(result, -1, s.str());
   }
 
@@ -567,4 +561,3 @@ void API::SetError(Json::Value& obj, int code, const std::string& message) {
     obj["error"]["message"] = "Unspecified error";
   }
 }
-

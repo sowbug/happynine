@@ -34,10 +34,8 @@
 const std::string PP1 = "secret";
 
 TEST(WalletTest, HappyPath) {
-  Wallet w;
   Credentials c;
-
-  w.SetCredentials(&c);
+  Wallet w(c);
 
   // Get credentials set up and unlocked.
   {

@@ -23,7 +23,9 @@
 #include <set>
 #include <string>
 
+#include "credentials.h"
 #include "types.h"
+#include "wallet.h"
 
 namespace Json {
   struct Value;
@@ -32,6 +34,8 @@ class Node;
 
 class API {
  public:
+  API();
+
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
 
@@ -85,6 +89,7 @@ class API {
   bool DidResponseSucceed(const Json::Value& obj);
 
  private:
+  void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   void GenerateNodeResponse(Json::Value& dict, const Node* node,
                             const bytes_t& ext_prv_enc,
@@ -107,4 +112,7 @@ class API {
                    uint32_t count,
                    const std::string& base_node_path,
                    std::set<bytes_t>& result);
+
+  Credentials credentials_;
+  Wallet wallet_;
 };

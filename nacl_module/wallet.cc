@@ -29,17 +29,12 @@
 #include "node_factory.h"
 #include "wallet.h"
 
-Wallet::Wallet()
-  : credentials_(NULL), root_node_(NULL) {
+Wallet::Wallet(Credentials& credentials)
+  : credentials_(credentials), root_node_(NULL) {
 }
 
 Wallet::~Wallet() {
   delete root_node_;
-}
-
-Wallet& Wallet::GetSingleton() {
-  static Wallet singleton;
-  return singleton;
 }
 
 void Wallet::set_root_ext_keys(const bytes_t& ext_pub,
@@ -51,7 +46,7 @@ void Wallet::set_root_ext_keys(const bytes_t& ext_pub,
 bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
                               bytes_t& ext_prv_enc,
                               bytes_t& seed_bytes) {
-  if (credentials_->isLocked()) {
+  if (credentials_.isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
     return false;
   }
@@ -65,7 +60,7 @@ bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
 
   Node* node = NodeFactory::CreateNodeFromSeed(seed_bytes);
   if (node) {
-    if (Crypto::Encrypt(credentials_->ephemeral_key(),
+    if (Crypto::Encrypt(credentials_.ephemeral_key(),
                         node->toSerialized(),
                         ext_prv_enc)) {
       set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
@@ -90,7 +85,7 @@ bool Wallet::SetRootNode(const std::string& ext_pub_b58,
 
 bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
                             bytes_t& ext_prv_enc) {
-  if (credentials_->isLocked()) {
+  if (credentials_.isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
     return false;
   }
@@ -98,7 +93,7 @@ bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
   const bytes_t ext_prv = Base58::fromBase58Check(ext_prv_b58);
   Node* node = NodeFactory::CreateNodeFromExtended(ext_prv);
   if (node) {
-    if (Crypto::Encrypt(credentials_->ephemeral_key(),
+    if (Crypto::Encrypt(credentials_.ephemeral_key(),
                         ext_prv,
                         ext_prv_enc)) {
       set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
@@ -113,7 +108,7 @@ bool Wallet::DeriveChildNode(const std::string& path,
                              bool isWatchOnly,
                              Node** node,
                              bytes_t& ext_prv_enc) {
-  if (!isWatchOnly && credentials_->isLocked()) {
+  if (!isWatchOnly && credentials_.isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
     return false;
   }
@@ -133,7 +128,7 @@ bool Wallet::DeriveChildNode(const std::string& path,
                    8);
       return true;
     } else {
-      if (Crypto::Encrypt(credentials_->ephemeral_key(),
+      if (Crypto::Encrypt(credentials_.ephemeral_key(),
                           (*node)->toSerialized(),
                           ext_prv_enc)) {
         AddChildNode(Base58::toBase58Check((*node)->toSerializedPublic()),
@@ -189,11 +184,11 @@ Node* Wallet::GetRootNode() {
   }
 
   delete root_node_;
-  if (credentials_->isLocked()) {
+  if (credentials_.isLocked()) {
     root_node_ = NodeFactory::CreateNodeFromExtended(root_ext_pub_);
   } else {
     bytes_t ext_prv;
-    if (Crypto::Decrypt(credentials_->ephemeral_key(),
+    if (Crypto::Decrypt(credentials_.ephemeral_key(),
                         root_ext_prv_enc_,
                         ext_prv)) {
       root_node_ = NodeFactory::CreateNodeFromExtended(ext_prv);

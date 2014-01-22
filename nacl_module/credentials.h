@@ -28,8 +28,6 @@ class Credentials {
  public:
   Credentials();
 
-  static Credentials& GetSingleton();
-
   void Load(const bytes_t& salt,
             const bytes_t& check,
             const bytes_t& encrypted_ephemeral_key);

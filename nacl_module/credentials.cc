@@ -37,11 +37,6 @@ const bytes_t PASSPHRASE_CHECK =
 Credentials::Credentials() {
 }
 
-Credentials& Credentials::GetSingleton() {
-  static Credentials singleton;
-  return singleton;
-}
-
 void Credentials::Load(const bytes_t& salt,
                        const bytes_t& check,
                        const bytes_t& encrypted_ephemeral_key) {

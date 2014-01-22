@@ -27,12 +27,8 @@ class Node;
 
 class Wallet {
  public:
-  Wallet();
+  Wallet(Credentials& credentials);
   virtual ~Wallet();
-
-  static Wallet& GetSingleton();
-
-  void SetCredentials(Credentials* credentials) { credentials_ = credentials; }
 
   // Root nodes
   bool GenerateRootNode(const bytes_t& extra_seed_bytes,
@@ -66,7 +62,7 @@ class Wallet {
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
 
-  Credentials* credentials_;
+  Credentials& credentials_;
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   Node* root_node_;
