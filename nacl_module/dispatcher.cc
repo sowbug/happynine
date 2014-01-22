@@ -20,18 +20,23 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <json/reader.h>
+#include <json/writer.h>
+#include <ppapi/cpp/instance.h>
+#include <ppapi/cpp/module.h>
+#include <ppapi/cpp/var.h>
+
 #include "api.h"
-#include "json/reader.h"
-#include "json/writer.h"
+#include "credentials.h"
 #include "node.h"
-#include "ppapi/cpp/instance.h"
-#include "ppapi/cpp/module.h"
-#include "ppapi/cpp/var.h"
+#include "wallet.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
-  : pp::Instance(instance) {}
+  : pp::Instance(instance), credentials_(), wallet_(credentials_) {
+  }
+
   virtual ~HDWalletDispatcherInstance() {}
 
   /// Handler for messages coming in from the browser via
@@ -55,7 +60,7 @@ public:
     const Json::Value params = root.get("params", "{}");
     Json::Value result;
     bool handled = false;
-    API api;
+    API api(credentials_, wallet_);
 
     if (method == "set-passphrase") {
       handled = api.HandleSetPassphrase(params, result);
@@ -83,6 +88,9 @@ public:
     }
     if (method == "add-child-node") {
       handled = api.HandleAddChildNode(params, result);
+    }
+    if (method == "report-tx-status") {
+      handled = api.HandleReportTxStatus(params, result);
     }
 
 
@@ -126,6 +134,10 @@ public:
     pp::Var reply_message(writer.write(response));
     PostMessage(reply_message);
   }
+
+private:
+  Credentials credentials_;
+  Wallet wallet_;
 };
 
 /// The Module class.  The browser calls the CreateInstance() method

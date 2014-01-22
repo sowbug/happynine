@@ -45,10 +45,9 @@
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
-API::API()
-  : credentials_(),
-    wallet_(credentials_) {
-    }
+API::API(Credentials& credentials, Wallet& wallet)
+  : credentials_(credentials), wallet_(wallet) {
+}
 
 bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
   const std::string new_passphrase = args["new_passphrase"].asString();
@@ -180,6 +179,10 @@ void API::PopulateAddressStatuses(Json::Value& json_value) {
   }
 }
 
+void API::PopulateTxRequests(Json::Value& json_value) {
+  json_value.append("foo");
+}
+
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
   if (credentials_.isLocked()) {
@@ -215,6 +218,13 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
 bool API::HandleAddChildNode(const Json::Value& /*args*/,
                              Json::Value& /*result*/) {
   return false;
+}
+
+bool API::HandleReportTxStatus(const Json::Value& /*args*/,
+                               Json::Value& result) {
+  PopulateAddressStatuses(result["addresses"]);
+  PopulateTxRequests(result["txs"]);
+  return true;
 }
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {

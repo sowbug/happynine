@@ -20,6 +20,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(__WALLET_H__)
+#define __WALLET_H__
+
 #include "types.h"
 
 class Credentials;
@@ -70,3 +73,5 @@ class Wallet {
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };
+
+#endif  // #if !defined(__WALLET_H__)

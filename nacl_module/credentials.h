@@ -20,6 +20,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(__CREDENTIALS_H__)
+#define __CREDENTIALS_H__
+
 #include <string>
 
 #include "types.h"
@@ -51,3 +54,5 @@ class Credentials {
 
   DISALLOW_EVIL_CONSTRUCTORS(Credentials);
 };
+
+#endif  // #if !defined(__CREDENTIALS_H__)

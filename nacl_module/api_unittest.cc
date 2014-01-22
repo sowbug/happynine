@@ -33,7 +33,9 @@
 TEST(ApiTest, SendFunds) {
   Json::Value request;
   Json::Value response;
-  API api;
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
 
   // Using parts of BIP 0032 Test Vector 1.
   //
@@ -92,7 +94,9 @@ TEST(ApiTest, SendFunds) {
 }
 
 TEST(ApiTest, TransactionManager) {
-  API api;
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
   Json::Value request;
   Json::Value response;
 
@@ -141,9 +145,11 @@ TEST(ApiTest, TransactionManager) {
 }
 
 TEST(ApiTest, HappyPath) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
   Json::Value request;
   Json::Value response;
-  API api;
 
   request["new_passphrase"] = "foo";
   EXPECT_TRUE(api.HandleSetPassphrase(request, response));
@@ -201,4 +207,15 @@ TEST(ApiTest, HappyPath) {
             response["addresses"][0].asString());
   EXPECT_EQ("1J5rebbkQaunJTUoNVREDbeB49DqMNFFXk",  // m/0'/1/0
             response["addresses"][8 + 0].asString());
+
+  // Pretend we sent blockchain.address.get_history for each address
+  // and got back some stuff.
+  request = Json::Value();
+  response = Json::Value();
+  request[0]["hash"] =
+    "9dfdda29c86f26722df2ebfdcf6d6d7b5c4d147cd7b59d90e586460153ae0ff5";
+  request[0]["height"] = 157752;
+  EXPECT_TRUE(api.HandleReportTxStatus(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["txs"].size());
 }

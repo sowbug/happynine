@@ -34,7 +34,7 @@ class Node;
 
 class API {
  public:
-  API();
+  API(Credentials& credentials, Wallet& wallet);
 
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
@@ -56,6 +56,9 @@ class API {
   bool HandleDeriveChildNode(const Json::Value& args, Json::Value& result);
 
   bool HandleAddChildNode(const Json::Value& args, Json::Value& result);
+
+  // Transactions
+  bool HandleReportTxStatus(const Json::Value& args, Json::Value& result);
 
   // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
@@ -90,6 +93,7 @@ class API {
 
  private:
   void PopulateAddressStatuses(Json::Value& json_value);
+  void PopulateTxRequests(Json::Value& json_value);
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   void GenerateNodeResponse(Json::Value& dict, const Node* node,
                             const bytes_t& ext_prv_enc,
@@ -113,6 +117,8 @@ class API {
                    const std::string& base_node_path,
                    std::set<bytes_t>& result);
 
-  Credentials credentials_;
-  Wallet wallet_;
+  Credentials& credentials_;
+  Wallet& wallet_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(API);
 };
