@@ -170,17 +170,23 @@ bool API::HandleImportRootNode(const Json::Value& args,
 }
 
 void API::PopulateAddressStatuses(Json::Value& json_value) {
-  Wallet::address_statuses_t addresses;
-  wallet_.GetAddressStatusesToReport(addresses);
-  for (Wallet::address_statuses_t::const_iterator i = addresses.begin();
-       i != addresses.end();
+  Wallet::address_statuses_t items;
+  wallet_.GetAddressStatusesToReport(items);
+  for (Wallet::address_statuses_t::const_iterator i = items.begin();
+       i != items.end();
        ++i) {
-    json_value.append(*i);
+    json_value.append(Base58::hash160toAddress(*i));
   }
 }
 
 void API::PopulateTxRequests(Json::Value& json_value) {
-  json_value.append("foo");
+  Wallet::tx_requests_t items;
+  wallet_.GetTxRequestsToReport(items);
+  for (Wallet::tx_requests_t::const_iterator i = items.begin();
+       i != items.end();
+       ++i) {
+    json_value.append(to_hex(*i));
+  }
 }
 
 bool API::HandleDeriveChildNode(const Json::Value& args,
@@ -202,7 +208,8 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   bytes_t ext_prv_enc;
   if (wallet_.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
     GenerateNodeResponse(result, node, ext_prv_enc, false);
-    PopulateAddressStatuses(result["addresses"]);
+    PopulateAddressStatuses(result["address_statuses"]);
+    PopulateTxRequests(result["tx_requests"]);
     result["path"] = path;
     delete node;  // TODO(miket): implement AddChildNode & move addr gen code
   } else {
@@ -220,10 +227,17 @@ bool API::HandleAddChildNode(const Json::Value& /*args*/,
   return false;
 }
 
-bool API::HandleReportTxStatus(const Json::Value& /*args*/,
+bool API::HandleReportTxStatus(const Json::Value& args,
                                Json::Value& result) {
-  PopulateAddressStatuses(result["addresses"]);
-  PopulateTxRequests(result["txs"]);
+  Json::Value tx_statuses(args["tx_statuses"]);
+  for (Json::Value::iterator i = tx_statuses.begin();
+       i != tx_statuses.end();
+       ++i) {
+    wallet_.HandleTxStatus(unhexlify((*i)["hash"].asString()),
+                           (*i)["height"].asUInt());
+  }
+  PopulateAddressStatuses(result["address_statuses"]);
+  PopulateTxRequests(result["tx_requests"]);
   return true;
 }
 
@@ -299,12 +313,12 @@ void API::GetAddresses(const Node& parent_node,
     node_path << base_node_path << "/" << (start + i);
     Node* node =
       NodeFactory::DeriveChildNodeWithPath(parent_node, node_path.str());
-    result["addresses"][i]["index"] = i + start;
-    result["addresses"][i]["path"] = node_path.str();
-    result["addresses"][i]["address"] =
+    result["address_statuses"][i]["index"] = i + start;
+    result["address_statuses"][i]["path"] = node_path.str();
+    result["address_statuses"][i]["address"] =
       Base58::toAddress(node->public_key());
     if (node->secret_key().size() != 0) {
-      result["addresses"][i]["key"] =
+      result["address_statuses"][i]["key"] =
         Base58::toPrivateKey(node->secret_key());
     }
     delete node;

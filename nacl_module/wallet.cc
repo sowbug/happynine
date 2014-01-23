@@ -156,7 +156,7 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
         NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
       if (address_node) {
         address_statuses_.push_back(Base58::
-                                    toAddress(address_node->public_key()));
+                                    toHash160(address_node->public_key()));
         delete address_node;
       }
     }
@@ -167,7 +167,7 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
         NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
       if (address_node) {
         address_statuses_.push_back(Base58::
-                                    toAddress(address_node->public_key()));
+                                    toHash160(address_node->public_key()));
         delete address_node;
       }
     }
@@ -203,4 +203,14 @@ bool Wallet::GetAddressStatusesToReport(address_statuses_t& statuses) {
   statuses = address_statuses_;
   address_statuses_.clear();
   return true;
+}
+
+bool Wallet::GetTxRequestsToReport(tx_requests_t& requests) {
+  requests = tx_requests_;
+  tx_requests_.clear();
+  return true;
+}
+
+void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t height) {
+  tx_requests_.push_back(hash);
 }
