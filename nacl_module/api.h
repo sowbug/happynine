@@ -28,7 +28,7 @@
 #include "wallet.h"
 
 namespace Json {
-  struct Value;
+  class Value;
 }
 class Node;
 
