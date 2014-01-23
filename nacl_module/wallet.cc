@@ -211,6 +211,23 @@ bool Wallet::GetTxRequestsToReport(tx_requests_t& requests) {
   return true;
 }
 
-void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t height) {
+bool Wallet::GetUnspentTxosToReport(tx_outs_t& unspent_txos) {
+  // TODO(miket): this is an all-or-nothing set, so whoever modifies it
+  // needs to clear() and then generate all at once.
+  unspent_txos = unspent_txos_;
+  unspent_txos_.clear();
+  return true;
+}
+
+void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t /*height*/) {
   tx_requests_.push_back(hash);
+}
+
+void Wallet::HandleTx(const bytes_t& /*tx*/) {
+  unspent_txos_.clear();
+  TxOut tx_out(12345,
+               unhexlify("001020304050"),
+               999,
+               unhexlify("ffeeddccbbaa"));
+  unspent_txos_.push_back(tx_out);
 }

@@ -216,9 +216,17 @@ TEST(ApiTest, HappyPath) {
     "9dfdda29c86f26722df2ebfdcf6d6d7b5c4d147cd7b59d90e586460153ae0ff5";
   request["tx_statuses"][0]["hash"] = HASH_9dfd;
   request["tx_statuses"][0]["height"] = 157752;
-  EXPECT_TRUE(api.HandleReportTxStatus(request, response));
+  EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["tx_requests"].size());
   EXPECT_EQ(HASH_9dfd, response["tx_requests"][0].asString());
 
+  // Pretend we did a blockchain.transaction.get for the requested
+  // transaction.
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] = "0102030405060708";
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["unspent_txos"].size());
 }

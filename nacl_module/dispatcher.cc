@@ -89,8 +89,11 @@ public:
     if (method == "add-child-node") {
       handled = api.HandleAddChildNode(params, result);
     }
-    if (method == "report-tx-status") {
-      handled = api.HandleReportTxStatus(params, result);
+    if (method == "report-tx-statuses") {
+      handled = api.HandleReportTxStatuses(params, result);
+    }
+    if (method == "report-txs") {
+      handled = api.HandleReportTxs(params, result);
     }
 
 

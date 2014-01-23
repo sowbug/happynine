@@ -20,6 +20,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(__TX_H__)
+#define __TX_H__
+
 #include <map>
 #include <string>
 #include <vector>
@@ -174,3 +177,5 @@ class TransactionManager {
   typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;
 };
+
+#endif  // #if !defined(__TX_H__)

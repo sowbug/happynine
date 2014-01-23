@@ -189,6 +189,29 @@ void API::PopulateTxRequests(Json::Value& json_value) {
   }
 }
 
+void API::PopulateUnspentTxos(Json::Value& json_value) {
+  tx_outs_t items;
+  wallet_.GetUnspentTxosToReport(items);
+  for (tx_outs_t::const_iterator i = items.begin();
+       i != items.end();
+       ++i) {
+    Json::Value utxo;
+    utxo["script"] = to_hex(i->script());
+    utxo["tx_hash"] = to_hex_reversed(i->tx_hash());
+    utxo["tx_output_n"] = i->tx_output_n();
+    // TODO(miket): today it's just one address/utxo.
+    utxo["addr_b58"] = Base58::hash160toAddress(i->GetSigningAddress());
+    utxo["value"] = (Json::UInt64)i->value();
+    json_value.append(utxo);
+  }
+}
+
+void API::PopulateResponses(Json::Value& root) {
+  PopulateAddressStatuses(root["address_statuses"]);
+  PopulateTxRequests(root["tx_requests"]);
+  PopulateUnspentTxos(root["unspent_txos"]);
+}
+
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
   if (credentials_.isLocked()) {
@@ -208,8 +231,7 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   bytes_t ext_prv_enc;
   if (wallet_.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
     GenerateNodeResponse(result, node, ext_prv_enc, false);
-    PopulateAddressStatuses(result["address_statuses"]);
-    PopulateTxRequests(result["tx_requests"]);
+    PopulateResponses(result);
     result["path"] = path;
     delete node;  // TODO(miket): implement AddChildNode & move addr gen code
   } else {
@@ -223,12 +245,13 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
 }
 
 bool API::HandleAddChildNode(const Json::Value& /*args*/,
-                             Json::Value& /*result*/) {
+                             Json::Value& result) {
+  PopulateResponses(result);
   return false;
 }
 
-bool API::HandleReportTxStatus(const Json::Value& args,
-                               Json::Value& result) {
+bool API::HandleReportTxStatuses(const Json::Value& args,
+                                 Json::Value& result) {
   Json::Value tx_statuses(args["tx_statuses"]);
   for (Json::Value::iterator i = tx_statuses.begin();
        i != tx_statuses.end();
@@ -236,10 +259,20 @@ bool API::HandleReportTxStatus(const Json::Value& args,
     wallet_.HandleTxStatus(unhexlify((*i)["hash"].asString()),
                            (*i)["height"].asUInt());
   }
-  PopulateAddressStatuses(result["address_statuses"]);
-  PopulateTxRequests(result["tx_requests"]);
+  PopulateResponses(result);
   return true;
 }
+
+bool API::HandleReportTxs(const Json::Value& args, Json::Value& result) {
+  Json::Value txs(args["txs"]);
+  for (Json::Value::iterator i = txs.begin(); i != txs.end(); ++i) {
+    wallet_.HandleTx(unhexlify((*i)["tx"].asString()));
+  }
+  PopulateResponses(result);
+  return true;
+}
+
+/////////////////////////
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {
   dict["hex_id"] = to_hex(node->hex_id());

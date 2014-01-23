@@ -58,7 +58,9 @@ class API {
   bool HandleAddChildNode(const Json::Value& args, Json::Value& result);
 
   // Transactions
-  bool HandleReportTxStatus(const Json::Value& args, Json::Value& result);
+  bool HandleReportTxStatuses(const Json::Value& args, Json::Value& result);
+
+  bool HandleReportTxs(const Json::Value& args, Json::Value& result);
 
   // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
@@ -94,6 +96,9 @@ class API {
  private:
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
+  void PopulateUnspentTxos(Json::Value& json_value);
+  void PopulateResponses(Json::Value& root);
+
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   void GenerateNodeResponse(Json::Value& dict, const Node* node,
                             const bytes_t& ext_prv_enc,
