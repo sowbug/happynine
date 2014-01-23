@@ -175,7 +175,11 @@ void API::PopulateAddressStatuses(Json::Value& json_value) {
   for (Wallet::address_statuses_t::const_iterator i = items.begin();
        i != items.end();
        ++i) {
-    json_value.append(Base58::hash160toAddress(*i));
+    Json::Value as;
+    as["address"] = Base58::hash160toAddress(i->hash160);
+    as["value"] = (Json::Value::UInt64)i->value;
+    as["is_public"] = i->is_public;
+    json_value.append(as);
   }
 }
 
@@ -189,27 +193,9 @@ void API::PopulateTxRequests(Json::Value& json_value) {
   }
 }
 
-void API::PopulateUnspentTxos(Json::Value& json_value) {
-  tx_outs_t items;
-  wallet_.GetUnspentTxosToReport(items);
-  for (tx_outs_t::const_iterator i = items.begin();
-       i != items.end();
-       ++i) {
-    Json::Value utxo;
-    utxo["script"] = to_hex(i->script());
-    utxo["tx_hash"] = to_hex_reversed(i->tx_hash());
-    utxo["tx_output_n"] = i->tx_output_n();
-    // TODO(miket): today it's just one address/utxo.
-    utxo["addr_b58"] = Base58::hash160toAddress(i->GetSigningAddress());
-    utxo["value"] = (Json::UInt64)i->value();
-    json_value.append(utxo);
-  }
-}
-
 void API::PopulateResponses(Json::Value& root) {
   PopulateAddressStatuses(root["address_statuses"]);
   PopulateTxRequests(root["tx_requests"]);
-  PopulateUnspentTxos(root["unspent_txos"]);
 }
 
 bool API::HandleDeriveChildNode(const Json::Value& args,

@@ -155,8 +155,11 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
       Node* address_node =
         NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
       if (address_node) {
-        address_statuses_.push_back(Base58::
-                                    toHash160(address_node->public_key()));
+        address_status_t as;
+        as.hash160 = Base58::toHash160(address_node->public_key());
+        as.value = 0;
+        as.is_public = true;
+        address_statuses_.push_back(as);
         delete address_node;
       }
     }
@@ -166,8 +169,11 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
       Node* address_node =
         NodeFactory::DeriveChildNodeWithPath(*child_node, node_path);
       if (address_node) {
-        address_statuses_.push_back(Base58::
-                                    toHash160(address_node->public_key()));
+        address_status_t as;
+        as.hash160 = Base58::toHash160(address_node->public_key());
+        as.value = 0;
+        as.is_public = false;
+        address_statuses_.push_back(as);
         delete address_node;
       }
     }
@@ -211,23 +217,14 @@ bool Wallet::GetTxRequestsToReport(tx_requests_t& requests) {
   return true;
 }
 
-bool Wallet::GetUnspentTxosToReport(tx_outs_t& unspent_txos) {
-  // TODO(miket): this is an all-or-nothing set, so whoever modifies it
-  // needs to clear() and then generate all at once.
-  unspent_txos = unspent_txos_;
-  unspent_txos_.clear();
-  return true;
-}
-
 void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t /*height*/) {
   tx_requests_.push_back(hash);
 }
 
 void Wallet::HandleTx(const bytes_t& /*tx*/) {
-  unspent_txos_.clear();
-  TxOut tx_out(12345,
-               unhexlify("001020304050"),
-               999,
-               unhexlify("ffeeddccbbaa"));
-  unspent_txos_.push_back(tx_out);
+  address_status_t address_status;
+  address_status.hash160 = unhexlify("0102030405");
+  address_status.value = 123456789;
+  address_status.is_public = true;  // this might be hard to remember
+  address_statuses_.push_back(address_status);
 }

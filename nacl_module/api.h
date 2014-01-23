@@ -96,7 +96,7 @@ class API {
  private:
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
-  void PopulateUnspentTxos(Json::Value& json_value);
+  // Not needed?  void PopulateUnspentTxos(Json::Value& json_value);
   void PopulateResponses(Json::Value& root);
 
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);

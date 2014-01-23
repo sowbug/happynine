@@ -204,9 +204,9 @@ TEST(ApiTest, HappyPath) {
 
   // TODO(miket): change to address_t, including value & is_public
   EXPECT_EQ("1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr",  // m/0'/0/0
-            response["address_statuses"][0].asString());
+            response["address_statuses"][0]["address"].asString());
   EXPECT_EQ("1J5rebbkQaunJTUoNVREDbeB49DqMNFFXk",  // m/0'/1/0
-            response["address_statuses"][8 + 0].asString());
+            response["address_statuses"][8 + 0]["address"].asString());
 
   // Pretend we sent blockchain.address.get_history for each address
   // and got back some stuff.
@@ -222,11 +222,11 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(HASH_9dfd, response["tx_requests"][0].asString());
 
   // Pretend we did a blockchain.transaction.get for the requested
-  // transaction.
+  // transaction. We should get back an update to an address balance.
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] = "0102030405060708";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["unspent_txos"].size());
+  EXPECT_EQ(1, response["address_statuses"].size());
 }

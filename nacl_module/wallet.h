@@ -57,15 +57,17 @@ class Wallet {
   void HandleTx(const bytes_t& tx);
 
   // Module-to-client
-  typedef bytes_t address_status_t;
+  typedef struct {
+    bytes_t hash160;
+    uint64_t value;
+    bool is_public;  // false = change address
+  } address_status_t;  // TODO: this might just be an unspent txo
   typedef std::vector<address_status_t> address_statuses_t;
   bool GetAddressStatusesToReport(address_statuses_t& statuses);
 
   typedef bytes_t tx_request_t;
   typedef std::vector<tx_request_t> tx_requests_t;
   bool GetTxRequestsToReport(tx_requests_t& requests);
-
-  bool GetUnspentTxosToReport(tx_outs_t& unspent_txos);
 
   // Utilities
   bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
@@ -82,7 +84,6 @@ class Wallet {
   Node* root_node_;
   address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
-  tx_outs_t unspent_txos_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };
