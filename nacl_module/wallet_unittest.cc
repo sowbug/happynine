@@ -48,10 +48,8 @@ TEST(WalletTest, HappyPath) {
   }
 
   // Generate a new node.
-  bytes_t extra_seed;
   bytes_t ext_prv_enc;
-  bytes_t seed_bytes;
-  EXPECT_TRUE(w.GenerateRootNode(extra_seed, ext_prv_enc, seed_bytes));
+  EXPECT_TRUE(w.GenerateRootNode(ext_prv_enc));
   Node* root_node = w.GetRootNode();
   uint32_t fp = root_node->fingerprint();
   EXPECT_NE(0, fp);  // This will fail one out of every 2^32 times.

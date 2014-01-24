@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #include <iostream>  // cerr
+#include <istream>
+#include <sstream>
 
 #include "base58.h"
 #include "credentials.h"
@@ -43,22 +45,13 @@ void Wallet::set_root_ext_keys(const bytes_t& ext_pub,
   root_ext_prv_enc_ = ext_prv_enc;
 }
 
-bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
-                              bytes_t& ext_prv_enc,
-                              bytes_t& seed_bytes) {
+bool Wallet::DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc) {
   if (credentials_.isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
     return false;
   }
-  seed_bytes = bytes_t(32, 0);
-  if (!Crypto::GetRandomBytes(seed_bytes)) {
-    return false;
-  }
-  seed_bytes.insert(seed_bytes.end(),
-                    extra_seed_bytes.begin(),
-                    extra_seed_bytes.end());
 
-  Node* node = NodeFactory::CreateNodeFromSeed(seed_bytes);
+  Node* node = NodeFactory::CreateNodeFromSeed(seed);
   if (node) {
     if (Crypto::Encrypt(credentials_.ephemeral_key(),
                         node->toSerialized(),
@@ -69,6 +62,18 @@ bool Wallet::GenerateRootNode(const bytes_t& extra_seed_bytes,
     delete node;
   }
   return false;
+}
+
+bool Wallet::GenerateRootNode(bytes_t& ext_prv_enc) {
+  if (credentials_.isLocked()) {
+    std::cerr << "wallet is locked" << std::endl;
+    return false;
+  }
+  bytes_t seed(32, 0);
+  if (!Crypto::GetRandomBytes(seed)) {
+    return false;
+  }
+  return DeriveRootNode(seed, ext_prv_enc);
 }
 
 bool Wallet::SetRootNode(const std::string& ext_pub_b58,
@@ -160,6 +165,7 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
         as.value = 0;
         as.is_public = true;
         address_statuses_.push_back(as);
+        public_addresses_in_wallet_.insert(as.hash160);
         delete address_node;
       }
     }
@@ -174,6 +180,7 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
         as.value = 0;
         as.is_public = false;
         address_statuses_.push_back(as);
+        change_addresses_in_wallet_.insert(as.hash160);
         delete address_node;
       }
     }
@@ -221,12 +228,70 @@ void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t /*height*/) {
   tx_requests_.push_back(hash);
 }
 
-void Wallet::HandleTx(const bytes_t& /*tx*/) {
-  address_status_t address_status;
-  address_status.hash160 = unhexlify("0102030405");
-  address_status.value = 123456789;
-  address_status.is_public = true;  // this might be hard to remember
-  address_statuses_.push_back(address_status);
+bool Wallet::DoesTxExist(const bytes_t& hash) {
+  return tx_hashes_to_txs_.count(hash) == 1;
+}
+
+Transaction& Wallet::GetTx(const bytes_t& hash) {
+  return tx_hashes_to_txs_[hash];
+}
+
+void Wallet::AddTx(const Transaction& transaction) {
+  // Stick it in the map.
+  tx_hashes_to_txs_[transaction.hash()] = transaction;
+
+  // Check every input to see which output it spends, and if we know
+  // about that output, mark it spent.
+  for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
+       i != tx_hashes_to_txs_.end();
+       ++i) {
+    for (tx_ins_t::const_iterator j = i->second.inputs().begin();
+         j != i->second.inputs().end();
+         ++j) {
+      if (DoesTxExist(j->prev_txo_hash())) {
+        Transaction& affected_tx = GetTx(j->prev_txo_hash());
+        affected_tx.MarkOutputSpent(j->prev_txo_index());
+      }
+    }
+  }
+}
+
+bool Wallet::IsPublicAddressInWallet(const bytes_t& hash160) {
+  return public_addresses_in_wallet_.count(hash160) == 1;
+}
+
+bool Wallet::IsChangeAddressInWallet(const bytes_t& hash160) {
+  return change_addresses_in_wallet_.count(hash160) == 1;
+}
+
+bool Wallet::IsAddressInWallet(const bytes_t& hash160) {
+  return IsPublicAddressInWallet(hash160) ||
+    IsChangeAddressInWallet(hash160);
+}
+
+void Wallet::HandleTx(const bytes_t& tx_bytes) {
+  std::istringstream is;
+  const char* p = reinterpret_cast<const char*>(&tx_bytes[0]);
+  is.rdbuf()->pubsetbuf(const_cast<char*>(p), tx_bytes.size());
+  Transaction tx(is);
+  AddTx(tx);
+
+  for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
+       i != tx_hashes_to_txs_.end();
+       ++i) {
+    for (tx_outs_t::const_iterator j = i->second.outputs().begin();
+         j != i->second.outputs().end();
+         ++j) {
+      const bytes_t hash160 = j->GetSigningAddress();
+      if (!j->is_spent() && IsAddressInWallet(hash160)) {
+        address_status_t address_status;
+        address_status.hash160 = hash160;
+        address_status.value = j->value();
+        address_status.is_public = IsPublicAddressInWallet(hash160);
+        address_statuses_.push_back(address_status);
+      }
+    }
+  }
 }
 
 bool Wallet::CreateTx(const tx_outs_t& /*recipients*/,
@@ -241,7 +306,26 @@ bool Wallet::CreateTx(const tx_outs_t& /*recipients*/,
   TxOut change_txo(0, Base58::toHash160(change_node->public_key()));
   delete change_node;
 
-  tx = unhexlify("0102030405060708090a");
+  // TODO: this is https://blockchain.info/tx/0eb2848657a8b0804041f6168f12e69b0297c2fa0fe85f39b8969a294846a6df
+  tx = unhexlify("01000000013a369be99568ef339c8f913dde760076dd3d7825272e957559d03cd8e6e55a55000000006b483045022100cddd9d990ef28591f75f02faf58c1627303954db1927503a3010174c910fa470022059540c028a2606613cd645bb40fd0957a3fc6ed930533882ab5079f48995974e012103ad1f0703fe90a3ae314b2a0e92717a2151331d7e8aeb1f5aedc0f242ffd1b122ffffffff02a0860100000000001976a9147dcdbe519137c8ccdf54da3032b16b0005d79b4488aca0860100000000001976a9147f33b7b268769df922c817dbd8d1cca48249c66288ac00000000");
 
   return true;
+}
+
+tx_outs_t Wallet::GetUnspentTxos() {
+  tx_outs_t unspent_txos;
+
+  for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
+       i != tx_hashes_to_txs_.end();
+       ++i) {
+    for (tx_outs_t::const_iterator j = i->second.outputs().begin();
+         j != i->second.outputs().end();
+         ++j) {
+      if (!j->is_spent()) {
+        unspent_txos.push_back(TxOut(j->value(), j->script(),
+                                     j->tx_output_n(), i->first));
+      }
+    }
+  }
+  return unspent_txos;
 }

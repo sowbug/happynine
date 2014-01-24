@@ -74,6 +74,9 @@ public:
     if (method == "unlock") {
       handled = api.HandleUnlock(params, result);
     }
+    if (method == "derive-root-node") {
+      handled = api.HandleDeriveRootNode(params, result);
+    }
     if (method == "generate-root-node") {
       handled = api.HandleGenerateRootNode(params, result);
     }

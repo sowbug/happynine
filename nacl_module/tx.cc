@@ -164,6 +164,10 @@ Transaction::Transaction() {
 
 Transaction::Transaction(std::istream& is) {
   version_ = ReadUint32(is);
+  if (version_ != 1) {
+    std::cerr << "rejecting unrecognized tx version" << std::endl;
+    return;
+  }
   uint64_t tx_in_count = ReadVarInt(is);
   for (uint64_t i = 0; i < tx_in_count; ++i) {
     inputs_.push_back(TxIn(is));

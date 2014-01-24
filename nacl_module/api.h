@@ -46,6 +46,8 @@ class API {
   bool HandleUnlock(const Json::Value& args, Json::Value& result);
 
   // Root Nodes
+  bool HandleDeriveRootNode(const Json::Value& args, Json::Value& result);
+
   bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
 
   bool HandleAddRootNode(const Json::Value& args, Json::Value& result);

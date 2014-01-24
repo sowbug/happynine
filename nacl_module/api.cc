@@ -110,21 +110,23 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
   }
 }
 
-bool API::HandleGenerateRootNode(const Json::Value& args,
-                                 Json::Value& result) {
-  if (credentials_.isLocked()) {
-    SetError(result, -1, "locked");
-    return true;
-  }
-
-  const bytes_t extra_seed_bytes(unhexlify(args.get("extra_seed_hex",
-                                                    "55").asString()));
+bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
+  const bytes_t seed(unhexlify(args["seed_hex"].asString()));
 
   bytes_t ext_prv_enc;
-  bytes_t seed_bytes;
-  if (wallet_.GenerateRootNode(extra_seed_bytes, ext_prv_enc, seed_bytes)) {
+  if (wallet_.DeriveRootNode(seed, ext_prv_enc)) {
     GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, true);
-    result["seed_hex"] = to_hex(seed_bytes);
+  } else {
+    SetError(result, -1, "Root node generation failed");
+  }
+  return true;
+}
+
+bool API::HandleGenerateRootNode(const Json::Value& /*args*/,
+                                 Json::Value& result) {
+  bytes_t ext_prv_enc;
+  if (wallet_.GenerateRootNode(ext_prv_enc)) {
+    GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, true);
   } else {
     SetError(result, -1, "Root node generation failed");
   }
@@ -150,11 +152,6 @@ bool API::HandleAddRootNode(const Json::Value& args,
 
 bool API::HandleImportRootNode(const Json::Value& args,
                                Json::Value& result) {
-  if (credentials_.isLocked()) {
-    SetError(result, -1, "locked");
-    return true;
-  }
-
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
@@ -200,16 +197,6 @@ void API::PopulateResponses(Json::Value& root) {
 
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
-  if (credentials_.isLocked()) {
-    SetError(result, -1, "locked");
-    return true;
-  }
-
-  if (!wallet_.hasRootNode()) {
-    SetError(result, -1, "Wallet is missing root node");
-    return true;
-  }
-
   const std::string path(args["path"].asString());
   const bool isWatchOnly(args["isWatchOnly"].asBool());
 

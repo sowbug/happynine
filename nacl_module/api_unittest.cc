@@ -155,24 +155,16 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.HandleSetPassphrase(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  // Import a bad xprv; should fail
+  // Import an xprv (see test/h9-test-vectors-script.txt)
   request = Json::Value();
   response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
-    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
-  EXPECT_TRUE(api.HandleImportRootNode(request, response));
-  EXPECT_FALSE(api.DidResponseSucceed(response));
-
-  // Import an xprv (BIP0032 TV1)
-  request = Json::Value();
-  response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
-    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
-  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  request["seed_hex"] = "baddecaf99887766554433221100";
+  EXPECT_TRUE(api.HandleDeriveRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
   const std::string ext_pub_b58(response["ext_pub_b58"].asString());
   const std::string ext_prv_enc(response["ext_prv_enc"].asString());
+  EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 
   // Generate a root node and make sure the response changed
   request = Json::Value();
@@ -188,7 +180,7 @@ TEST(ApiTest, HappyPath) {
   request["ext_prv_enc"] = ext_prv_enc;
   EXPECT_TRUE(api.HandleAddRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ("0x3442193e", response["fp"].asString());
+  EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 
   // Derive a child
   request = Json::Value();
@@ -199,47 +191,87 @@ TEST(ApiTest, HappyPath) {
   //  request["change_addr_n"] = 2;
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ("0x5c1bd648", response["fp"].asString());
+  EXPECT_EQ("0x5adb92c0", response["fp"].asString());
   EXPECT_EQ(8 + 8, response["address_statuses"].size());
 
   // TODO(miket): change to address_t, including value & is_public
-  EXPECT_EQ("1BvgsfsZQVtkLS69NvGF8rw6NZW2ShJQHr",  // m/0'/0/0
+  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",  // m/0'/0/0
             response["address_statuses"][0]["address"].asString());
-  EXPECT_EQ("1J5rebbkQaunJTUoNVREDbeB49DqMNFFXk",  // m/0'/1/0
+  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",  // m/0'/1/0
             response["address_statuses"][8 + 0]["address"].asString());
 
   // Pretend we sent blockchain.address.get_history for each address
   // and got back some stuff.
   request = Json::Value();
   response = Json::Value();
-  const std::string HASH_9dfd =
-    "9dfdda29c86f26722df2ebfdcf6d6d7b5c4d147cd7b59d90e586460153ae0ff5";
-  request["tx_statuses"][0]["hash"] = HASH_9dfd;
-  request["tx_statuses"][0]["height"] = 157752;
+  const std::string HASH_TX =
+    "555ae5e6d83cd05975952e2725783ddd760076de3d918f9c33ef6895e99b363a";
+  request["tx_statuses"][0]["hash"] = HASH_TX;
+  request["tx_statuses"][0]["height"] = 282172;
   EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["tx_requests"].size());
-  EXPECT_EQ(HASH_9dfd, response["tx_requests"][0].asString());
+  EXPECT_EQ(HASH_TX, response["tx_requests"][0].asString());
 
   // Pretend we did a blockchain.transaction.get for the requested
   // transaction. We should get back an update to an address balance.
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] = "0102030405060708";
+  request["txs"][0]["tx"] =
+    "01000000019970765cdbceee5b6ab67491218f74a130aa6c81932d088c9b44ece1be7fbe1"
+    "b010000006b483045022100cce48367450cc2a76e4033dd342b7792e7c36011bff6e71eef"
+    "314a498045f09e02205a7fdbcb0d7428f8b3ca0818902727e9babb28f8a0582f5608f3a49"
+    "c842d2e51012102ecbf6d557ccbf87295769deace203ee31fd3bb57813b38d1322881c38f"
+    "30674dffffffff02400d0300000000001976a914c8dd2744f160f0f24537606b82e40d5d0"
+    "815810388acb5941900000000001976a9147dcdbe519137c8ccdf54da3032b16b0005d79b"
+    "4488ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
-  EXPECT_EQ(123456789, response["address_statuses"][0]["value"].asUInt64());
+  EXPECT_EQ(200000, response["address_statuses"][0]["value"].asUInt64());
 
   // Spend some of the funds in the wallet.
   request = Json::Value();
   response = Json::Value();
-  request["recipients"][0]["addr_b58"] = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
-  request["recipients"][0]["value"] = 888;
-  request["fee"] = 42;
-  request["change_index"] = 7;
+  request["recipients"][0]["addr_b58"] = "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4";
+  request["recipients"][0]["value"] = 100000;
+  request["fee"] = 0;
+  request["change_index"] = 0;
   request["sign"] = true;
+
   EXPECT_TRUE(api.HandleCreateTx(request, response));
+
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_TRUE(response["tx"].asString().size() > 0);
+  const bytes_t tx(unhexlify(response["tx"].asString()));
+
+  // Broadcast, then report that we got the transaction. Expect new balance.
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] = to_hex(tx);
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["address_statuses"].size());
+  EXPECT_EQ(200000 - 100000 - 0,
+            response["address_statuses"][0]["value"].asUInt64());
+}
+
+TEST(ApiTest, BadInput) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
+  Json::Value request;
+  Json::Value response;
+
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Import a bad xprv; should fail
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
+    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
 }

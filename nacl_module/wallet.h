@@ -23,6 +23,10 @@
 #if !defined(__WALLET_H__)
 #define __WALLET_H__
 
+#include <map>
+#include <string>
+#include <set>
+
 #include "tx.h"
 #include "types.h"
 
@@ -35,9 +39,8 @@ class Wallet {
   virtual ~Wallet();
 
   // Root nodes
-  bool GenerateRootNode(const bytes_t& extra_seed_bytes,
-                        bytes_t& ext_prv_enc,
-                        bytes_t& seed_bytes);
+  bool DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc);
+  bool GenerateRootNode(bytes_t& ext_prv_enc);
   bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
   // Doesn't need wallet unlocked.
   bool SetRootNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc);
@@ -54,7 +57,7 @@ class Wallet {
 
   // Transactions
   void HandleTxStatus(const bytes_t& hash, uint32_t height);
-  void HandleTx(const bytes_t& tx);
+  void HandleTx(const bytes_t& tx_bytes);
   bool CreateTx(const tx_outs_t& recipients,
                 uint64_t fee,
                 uint32_t change_index,
@@ -83,12 +86,27 @@ class Wallet {
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
 
+  bool IsPublicAddressInWallet(const bytes_t& hash160);
+  bool IsChangeAddressInWallet(const bytes_t& hash160);
+  bool IsAddressInWallet(const bytes_t& hash160);
+
+  void AddTx(const Transaction& transaction);
+  bool DoesTxExist(const bytes_t& hash);
+  Transaction& GetTx(const bytes_t& hash);
+  tx_outs_t GetUnspentTxos();
+
   Credentials& credentials_;
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   Node* root_node_;
   address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
+
+  std::set<bytes_t> public_addresses_in_wallet_;
+  std::set<bytes_t> change_addresses_in_wallet_;
+
+  typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
+  tx_hashes_to_txs_t tx_hashes_to_txs_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };
