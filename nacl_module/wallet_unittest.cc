@@ -74,8 +74,6 @@ TEST(WalletTest, HappyPath) {
                                ext_prv_enc));
   EXPECT_EQ(0x3442193e, w.GetRootNode()->fingerprint());
 
-  Node* node = NULL;
-  EXPECT_TRUE(w.DeriveChildNode("m/0'", false, &node, ext_prv_enc));
-  EXPECT_EQ(0x5c1bd648, node->fingerprint());
-  delete node;
+  EXPECT_TRUE(w.DeriveChildNode("m/0'", false, ext_prv_enc));
+  EXPECT_EQ(0x5c1bd648, w.GetChildNode()->fingerprint());
 }

@@ -244,6 +244,7 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_TRUE(response["tx"].asString().size() > 0);
   const bytes_t tx(unhexlify(response["tx"].asString()));
+  std::cerr << response["tx"].asString() << std::endl;
 
   // Broadcast, then report that we got the transaction. Expect new balance.
   request = Json::Value();

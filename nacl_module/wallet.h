@@ -48,10 +48,9 @@ class Wallet {
   // Child nodes
   bool DeriveChildNode(const std::string& path,
                        bool isWatchOnly,
-                       Node** node,
                        bytes_t& ext_prv_enc);
   bool AddChildNode(const std::string& ext_pub_b58,
-                    const bytes_t& /*ext_prv_enc*/,
+                    const bytes_t& ext_prv_enc,
                     uint32_t public_address_count,
                     uint32_t change_address_count);
 
@@ -79,12 +78,16 @@ class Wallet {
 
   // Utilities
   bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
+  bool hasChildNode() { return !child_ext_pub_.empty(); }
 
   Node* GetRootNode();   // We retain ownership!
   void ClearRootNode();  // TODO(miket): implement and use
 
+  Node* GetChildNode();   // We retain ownership!
+
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
+  void set_child_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
 
   bool IsPublicAddressInWallet(const bytes_t& hash160);
   bool IsChangeAddressInWallet(const bytes_t& hash160);
@@ -101,6 +104,11 @@ class Wallet {
   Node* root_node_;
   address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
+
+  // TEMP
+  bytes_t child_ext_pub_;
+  bytes_t child_ext_prv_enc_;
+  Node* child_node_;
 
   std::set<bytes_t> public_addresses_in_wallet_;
   std::set<bytes_t> change_addresses_in_wallet_;

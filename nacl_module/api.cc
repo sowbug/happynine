@@ -200,13 +200,11 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   const std::string path(args["path"].asString());
   const bool isWatchOnly(args["isWatchOnly"].asBool());
 
-  Node *node = NULL;
   bytes_t ext_prv_enc;
-  if (wallet_.DeriveChildNode(path, isWatchOnly, &node, ext_prv_enc)) {
-    GenerateNodeResponse(result, node, ext_prv_enc, false);
+  if (wallet_.DeriveChildNode(path, isWatchOnly, ext_prv_enc)) {
+    GenerateNodeResponse(result, wallet_.GetChildNode(), ext_prv_enc, false);
     PopulateResponses(result);
     result["path"] = path;
-    delete node;  // TODO(miket): implement AddChildNode & move addr gen code
   } else {
     std::stringstream s;
     s << "Failed to derive child node @ "<< path << " from " <<
@@ -263,8 +261,10 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   bytes_t tx;
   if (wallet_.CreateTx(recipient_txos, fee, change_index, should_sign, tx)) {
     result["tx"] = to_hex(tx);
+    std::cerr << "yay " << to_hex(tx) << std::endl;
     PopulateResponses(result);
   } else {
+    std::cerr << "whoop" << std::endl;
     SetError(result, -1, "Transaction creation failed.");
   }
   return true;
