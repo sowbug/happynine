@@ -1,0 +1,47 @@
+Script started on Thu Jan 23 19:18:11 2014
+bash-3.2$ python -c 'import binascii; open("h9-master-private-key-entropy", "w+b") .write(binascii.unhexlify("baddecaf99887766554433221100"))'
+bash-3.2$ MPK=`genwallet h9-master-private-key-entropy`; rm h9-master-private-key- entropy
+bash-3.2$ genwallet -i -k $MPK -s .pub
+xpub661MyMwAqRbcGiZfyyojfvZ5ZxB8MQRtZmzFQfG6grYhX2dyFm3oB2LsoiCkgGUhZgjHU67T6auuvgx5JadUkikQwqVgnfPx28bWHtvAhWQ
+main network
+public key only
+public pair x:   45269211711149973131525051899750599731651660515086776934501407166507210358275
+public pair y:   23652867700222110455123611394728802330165582636175963945518305545945385699118
+tree depth:      0
+fingerprint:     8bb9cbc0
+parent f'print:  00000000
+child index:     0
+chain code:      da6cff6154a4d2aa1fc5cb10cbe9789753b265e557a7fab9bf3fda259ff55d8e
+Bitcoin address: 1DjoVzQrmQKVCbEoNDjHkXqRtsq5aHjnQK
+  uncompressed:  15Go4Vh6sdc2yWnwjPbGhutFHJWqdQmufm
+bash-3.2$ genwallet -k $MPK
+xprv9s21ZrQH143K4EVCsxGjJncM1vLdwwi3CZ4ecGrV8X1ieEJpiDjYdE2PxTu4zvKVkR9e8RW9JRHGmNvbQMusmgFDayakzs68YXYvyJw3rSU
+bash-3.2$ genwallet -k $MPK -s 0p.pub
+xpub68v4h4NaNEzUFwWJcgKkW2Vw4Jqy6Pm3dQqShDAgCSWMAD36GDEuZdobGwPgZkmASBpK9FnHBCuigWRYa4nVmuGkj4yHLP6rVNFtwMKK61M
+bash-3.2$ genwallet -i -k $MPK -s 0p
+xprv9uviHYqgXsSB3TRqWenk8tZCWH1Ugw3CGBuqtpm4e6yNHQhwifvf1qV7Rfh6L7aaCRwrTXDa1h3WXMWSZUdDJFCdHmU7XLdzqv7q3sNtAvW
+main network
+private key
+secret exponent: 108796203094764362249461284785063083778146329191822566417614818503186679139142
+public pair x:   32877611110337620764327630984080443795848750863252552230523259589845729014963
+public pair y:   36746538575059811724706608483056794184351496923407946470739422194127304832809
+tree depth:      1
+fingerprint:     5adb92c0
+parent f'print:  8bb9cbc0
+child index:     0p (2147483648)
+chain code:      4bc417b4248c5e59f04e752f92c19d4aab8a1c8f3fdbfe5006e7ec7c8797541d
+WIF:             L5HGwudrLQRwk1sfuk5DqwwGLPTx1QPTdG8F4pVXhjLGuo4rDgqX
+  uncompressed:  5KeDgB7Y7fPRBeopnUtFh6CPWKEMctX1bVoW1sBYRdn9bBpoZDC
+Bitcoin address: 19HQrUuhQ617u21o9uGyQkeRLgbqr4FmaQ
+  uncompressed:  12Rqrp4dA4SbNirjJBzVN72k3CezpnaS4e
+bash-3.2$ genwallet -k $MPK -s 0p/0/0 -a
+1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy
+bash-3.2$ genwallet -k $MPK -s 0p/0/0 -w
+Kyx32yVykvVkcRi7nKATYJJZyGqJ6L71J7CzuBsYSBsjJEtreSpW
+bash-3.2$ genwallet -k $MPK -s 0p/1/0 -a
+1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG
+bash-3.2$ genwallet -k $MPK -s 0p/1/0 -w
+KytLc8mFMxnPRdkHuws6QFQt4m4vCUYxek9KJ9v5BLiWNNGkvmMz
+bash-3.2$ exit
+
+Script done on Thu Jan 23 19:18:16 2014
