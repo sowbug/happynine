@@ -53,6 +53,12 @@ bytes_t Base58::fromBase58Check(const std::string s) {
   return bytes;
 }
 
+bytes_t Base58::fromAddress(const std::string addr_b58) {
+  const bytes_t addr_bytes_with_version(Base58::fromBase58Check(addr_b58));
+  return bytes_t(addr_bytes_with_version.begin() + 1,
+                 addr_bytes_with_version.end());
+}
+
 // https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
 bytes_t Base58::toHash160(const bytes_t& bytes) {
   if (bytes.size() == 0) {

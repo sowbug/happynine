@@ -228,3 +228,20 @@ void Wallet::HandleTx(const bytes_t& /*tx*/) {
   address_status.is_public = true;  // this might be hard to remember
   address_statuses_.push_back(address_status);
 }
+
+bool Wallet::CreateTx(const tx_outs_t& /*recipients*/,
+                      uint64_t /*fee*/,
+                      uint32_t change_index,
+                      bool /*should_sign*/,
+                      bytes_t& tx) {
+  std::string node_path("m/1/");
+  node_path += change_index;
+  Node* change_node =
+    NodeFactory::DeriveChildNodeWithPath(*GetRootNode(), node_path);
+  TxOut change_txo(0, Base58::toHash160(change_node->public_key()));
+  delete change_node;
+
+  tx = unhexlify("0102030405060708090a");
+
+  return true;
+}

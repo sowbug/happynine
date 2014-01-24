@@ -258,6 +258,31 @@ bool API::HandleReportTxs(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
+bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
+  const bool should_sign = args["sign"].asBool();
+  const uint64_t fee = args["fee"].asUInt64();
+  const uint32_t change_index = args["change_index"].asUInt();
+
+  tx_outs_t recipient_txos;
+  for (unsigned int i = 0; i < args["recipients"].size(); ++i) {
+    Json::Value recipient = args["recipients"][i];
+    const std::string address(recipient["addr_b58"].asString());
+    const bytes_t recipient_addr_b58(Base58::fromAddress(address));
+    uint64_t value = recipient["value"].asUInt64();
+    TxOut recipient_txo(value, recipient_addr_b58);
+    recipient_txos.push_back(recipient_txo);
+  }
+
+  bytes_t tx;
+  if (wallet_.CreateTx(recipient_txos, fee, change_index, should_sign, tx)) {
+    result["tx"] = to_hex(tx);
+    PopulateResponses(result);
+  } else {
+    SetError(result, -1, "Transaction creation failed.");
+  }
+  return true;
+}
+
 /////////////////////////
 
 void API::PopulateDictionaryFromNode(Json::Value& dict, Node* node) {

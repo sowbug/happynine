@@ -229,4 +229,17 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
+  EXPECT_EQ(123456789, response["address_statuses"][0]["value"].asUInt64());
+
+  // Spend some of the funds in the wallet.
+  request = Json::Value();
+  response = Json::Value();
+  request["recipients"][0]["addr_b58"] = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+  request["recipients"][0]["value"] = 888;
+  request["fee"] = 42;
+  request["change_index"] = 7;
+  request["sign"] = true;
+  EXPECT_TRUE(api.HandleCreateTx(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_TRUE(response["tx"].asString().size() > 0);
 }

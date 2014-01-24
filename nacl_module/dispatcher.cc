@@ -95,6 +95,9 @@ public:
     if (method == "report-txs") {
       handled = api.HandleReportTxs(params, result);
     }
+    if (method == "create-tx") {
+      handled = api.HandleCreateTx(params, result);
+    }
 
 
 

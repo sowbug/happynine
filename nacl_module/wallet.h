@@ -55,6 +55,11 @@ class Wallet {
   // Transactions
   void HandleTxStatus(const bytes_t& hash, uint32_t height);
   void HandleTx(const bytes_t& tx);
+  bool CreateTx(const tx_outs_t& recipients,
+                uint64_t fee,
+                uint32_t change_index,
+                bool should_sign,
+                bytes_t& tx);
 
   // Module-to-client
   typedef struct {

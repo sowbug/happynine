@@ -62,6 +62,8 @@ class API {
 
   bool HandleReportTxs(const Json::Value& args, Json::Value& result);
 
+  bool HandleCreateTx(const Json::Value& args, Json::Value& result);
+
   // The rest
   bool HandleGetNode(const Json::Value& args, Json::Value& result);
 
