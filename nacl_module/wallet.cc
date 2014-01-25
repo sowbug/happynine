@@ -339,7 +339,7 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
   }
 }
 
-bool Wallet::IsAddressUsed(const bytes_t& hash160) {
+bool Wallet::IsAddressUsed(const bytes_t& /*hash160*/) {
   return false;  // TODO(miket): implement
 }
 

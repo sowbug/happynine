@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <string>
 
 #include "base58.h"

@@ -24,6 +24,7 @@
 #define __WALLET_H__
 
 #include <map>
+#include <memory>
 #include <string>
 #include <set>
 
