@@ -158,7 +158,7 @@ TEST(ApiTest, HappyPath) {
             response["address_statuses"][0]["addr_b58"].asString());
 }
 
-TEST(ApiTest, BadInput) {
+TEST(ApiTest, BadExtPrvB58) {
   Credentials c;
   Wallet w(c);
   API api(c, w);
@@ -175,5 +175,23 @@ TEST(ApiTest, BadInput) {
   request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
     "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
   EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
+}
+
+TEST(ApiTest, BadSeedWhenDeriving) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
+  Json::Value request;
+  Json::Value response;
+
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Derive with no arguments
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api.HandleDeriveRootNode(request, response));
   EXPECT_FALSE(api.DidResponseSucceed(response));
 }

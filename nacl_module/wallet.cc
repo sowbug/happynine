@@ -55,9 +55,25 @@ void Wallet::set_child_ext_keys(const bytes_t& ext_pub,
   child_ext_prv_enc_ = ext_prv_enc;
 }
 
-bool Wallet::DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc) {
+bool Wallet::IsWalletLocked() const {
   if (credentials_.isLocked()) {
     std::cerr << "wallet is locked" << std::endl;
+    return true;
+  }
+  return false;
+}
+
+
+bool Wallet::DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc) {
+  if (IsWalletLocked()) {
+    return false;
+  }
+
+  // If the caller passed in a zero-length seed, as a policy we're going to
+  // error out. We don't want a user of this method to forget to supply
+  // entropy and ship something that seems to work, but gives the same root
+  // node to everyone.
+  if (seed.empty()) {
     return false;
   }
 
@@ -74,8 +90,7 @@ bool Wallet::DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc) {
 }
 
 bool Wallet::GenerateRootNode(bytes_t& ext_prv_enc) {
-  if (credentials_.isLocked()) {
-    std::cerr << "wallet is locked" << std::endl;
+  if (IsWalletLocked()) {
     return false;
   }
   bytes_t seed(32, 0);
@@ -98,11 +113,9 @@ bool Wallet::SetRootNode(const std::string& ext_pub_b58,
 
 bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
                             bytes_t& ext_prv_enc) {
-  if (credentials_.isLocked()) {
-    std::cerr << "wallet is locked" << std::endl;
+  if (IsWalletLocked()) {
     return false;
   }
-
   const bytes_t ext_prv = Base58::fromBase58Check(ext_prv_b58);
   std::auto_ptr<Node> node(NodeFactory::CreateNodeFromExtended(ext_prv));
   if (node.get()) {
@@ -119,8 +132,7 @@ bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
 bool Wallet::DeriveChildNode(const std::string& path,
                              bool isWatchOnly,
                              bytes_t& ext_prv_enc) {
-  if (!isWatchOnly && credentials_.isLocked()) {
-    std::cerr << "wallet is locked" << std::endl;
+  if (!isWatchOnly && IsWalletLocked()) {
     return false;
   }
   if (!hasRootNode()) {
@@ -156,8 +168,7 @@ bool Wallet::AddChildNode(const std::string& ext_pub_b58,
   const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
   std::auto_ptr<Node> child_node;
   if (!ext_prv_enc.empty()) {
-    if (credentials_.isLocked()) {
-      std::cerr << "wallet is locked" << std::endl;
+    if (IsWalletLocked()) {
       return false;
     }
     bytes_t ext_prv;
@@ -351,13 +362,16 @@ bytes_t Wallet::GetNextUnusedChangeAddress() {
 
 bool Wallet::CreateTx(const tx_outs_t& recipients,
                       uint64_t fee,
-                      bool /*should_sign*/,
+                      bool should_sign,
                       bytes_t& tx) {
+  if (should_sign && IsWalletLocked()) {
+    return false;
+  }
   TxOut change_txo(0, GetNextUnusedChangeAddress());
 
   Transaction transaction;
   int error_code = 0;
-  tx = transaction.Sign(*GetChildNode(),
+  tx = transaction.Sign(*GetChildNode(),  // TODO: should_sign
                         GetUnspentTxos(),
                         recipients,
                         change_txo,

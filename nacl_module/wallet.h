@@ -42,7 +42,6 @@ class Wallet {
   bool DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc);
   bool GenerateRootNode(bytes_t& ext_prv_enc);
   bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
-  // Doesn't need wallet unlocked.
   bool SetRootNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc);
 
   // Child nodes
@@ -79,10 +78,11 @@ class Wallet {
   bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
   bool hasChildNode() { return !child_ext_pub_.empty(); }
 
+  // TODO: can these be private?
   Node* GetRootNode();   // We retain ownership!
   void ClearRootNode();  // TODO(miket): implement and use
 
-  Node* GetChildNode();   // We retain ownership!
+  Node* GetChildNode();   // We retain ownership! TODO: multiple children
 
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
@@ -100,6 +100,8 @@ class Wallet {
   Transaction* GetTx(const bytes_t& hash);
   tx_outs_t GetUnspentTxos();
 
+  bool IsWalletLocked() const;
+
   Credentials& credentials_;
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
@@ -107,7 +109,6 @@ class Wallet {
   address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
 
-  // TEMP
   bytes_t child_ext_pub_;
   bytes_t child_ext_prv_enc_;
   std::auto_ptr<Node> child_node_;
