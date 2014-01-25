@@ -66,30 +66,6 @@ class API {
 
   bool HandleCreateTx(const Json::Value& args, Json::Value& result);
 
-  // The rest
-  bool HandleGetNode(const Json::Value& args, Json::Value& result);
-
-  bool HandleGetAddresses(const Json::Value& args,
-                          Json::Value& result);
-
-  bool HandleEncryptItem(const Json::Value& args,
-                         Json::Value& result);
-
-  bool HandleDecryptItem(const Json::Value& args,
-                         Json::Value& result);
-
-  bool HandleGetSignedTransaction(const Json::Value& args,
-                                  Json::Value& result);
-
-  bool HandleGetUnspentTxos(const Json::Value& args,
-                            Json::Value& result);
-
-  bool HandleReportAddressHistory(const Json::Value& args,
-                                  Json::Value& result);
-
-  bool HandleReportTransactions(const Json::Value& args,
-                                Json::Value& result);
-
   // Utilities
   void GetError(const Json::Value& obj, int& code, std::string& message);
 
@@ -100,7 +76,6 @@ class API {
  private:
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
-  // Not needed?  void PopulateUnspentTxos(Json::Value& json_value);
   void PopulateResponses(Json::Value& root);
 
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
@@ -114,17 +89,6 @@ class API {
                          int& error_code,
                          std::string& error_message);
   void SetError(Json::Value& obj, int code, const std::string& message);
-  Node* CreateNodeFromArgs(const Json::Value& args);
-  void GetAddresses(const Node& node,
-                    uint32_t start,
-                    uint32_t count,
-                    const std::string& base_node_path,
-                    Json::Value& result);
-  void GetHash160s(const Node& parent_node,
-                   uint32_t start,
-                   uint32_t count,
-                   const std::string& base_node_path,
-                   std::set<bytes_t>& result);
 
   Credentials& credentials_;
   Wallet& wallet_;

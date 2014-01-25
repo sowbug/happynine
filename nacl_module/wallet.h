@@ -59,7 +59,6 @@ class Wallet {
   void HandleTx(const bytes_t& tx_bytes);
   bool CreateTx(const tx_outs_t& recipients,
                 uint64_t fee,
-                uint32_t change_index,
                 bool should_sign,
                 bytes_t& tx);
 
@@ -93,27 +92,30 @@ class Wallet {
   bool IsChangeAddressInWallet(const bytes_t& hash160);
   bool IsAddressInWallet(const bytes_t& hash160);
 
-  void AddTx(const Transaction& transaction);
+  bool IsAddressUsed(const bytes_t& hash160);
+  bytes_t GetNextUnusedChangeAddress();
+
+  void AddTx(Transaction* transaction);
   bool DoesTxExist(const bytes_t& hash);
-  Transaction& GetTx(const bytes_t& hash);
+  Transaction* GetTx(const bytes_t& hash);
   tx_outs_t GetUnspentTxos();
 
   Credentials& credentials_;
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
-  Node* root_node_;
+  std::auto_ptr<Node> root_node_;
   address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
 
   // TEMP
   bytes_t child_ext_pub_;
   bytes_t child_ext_prv_enc_;
-  Node* child_node_;
+  std::auto_ptr<Node> child_node_;
 
   std::set<bytes_t> public_addresses_in_wallet_;
   std::set<bytes_t> change_addresses_in_wallet_;
 
-  typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
+  typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);

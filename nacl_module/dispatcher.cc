@@ -101,33 +101,6 @@ public:
     if (method == "create-tx") {
       handled = api.HandleCreateTx(params, result);
     }
-
-
-
-    if (method == "get-node") {
-      handled = api.HandleGetNode(params, result);
-    }
-    if (method == "get-addresses") {
-      handled = api.HandleGetAddresses(params, result);
-    }
-    if (method == "encrypt-item") {
-      handled = api.HandleEncryptItem(params, result);
-    }
-    if (method == "decrypt-item") {
-      handled = api.HandleDecryptItem(params, result);
-    }
-    if (method == "get-signed-transaction") {
-      handled = api.HandleGetSignedTransaction(params, result);
-    }
-    if (method == "get-unspent-txos") {
-      handled = api.HandleGetUnspentTxos(params, result);
-    }
-    if (method == "report-address-history") {
-      handled = api.HandleReportAddressHistory(params, result);
-    }
-    if (method == "report-transactions") {
-      handled = api.HandleReportTransactions(params, result);
-    }
     if (!handled) {
       result["error"]["code"] = -999;
       result["error"]["message"] = "Unrecognized method";

@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <boost/smart_ptr/scoped_ptr.hpp>
 
 #include "types.h"
 
@@ -160,22 +161,24 @@ class Transaction {
   tx_outs_t outputs_;
   uint32_t lock_time_;
   bytes_t hash_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(Transaction);
 };
 typedef std::vector<Transaction> transactions_t;
 
-class TransactionManager {
- public:
-  static TransactionManager& GetSingleton();
+/* class TransactionManager { */
+/*  public: */
+/*   static TransactionManager& GetSingleton(); */
 
-  void Add(const Transaction& transaction);
-  bool Exists(const bytes_t& hash);
-  Transaction& Get(const bytes_t& hash);
-  tx_outs_t GetUnspentTxos();
-  uint64_t GetUnspentValue();
+/*   void Add(const Transaction& transaction); */
+/*   bool Exists(const bytes_t& hash); */
+/*   Transaction& Get(const bytes_t& hash); */
+/*   tx_outs_t GetUnspentTxos(); */
+/*   uint64_t GetUnspentValue(); */
 
- private:
-  typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t;
-  tx_hashes_to_txs_t tx_hashes_to_txs_;
-};
+/*  private: */
+/*   typedef std::map<bytes_t, Transaction> tx_hashes_to_txs_t; */
+/*   tx_hashes_to_txs_t tx_hashes_to_txs_; */
+/* }; */
 
 #endif  // #if !defined(__TX_H__)

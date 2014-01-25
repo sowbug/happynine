@@ -1,9 +1,32 @@
+// Copyright 2014 Mike Tsao <mike@sowbug.com>
+
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use, copy,
+// modify, merge, publish, distribute, sublicense, and/or sell copies
+// of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "node_factory.h"
 
 #include <algorithm>
 #include <iterator>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -84,7 +107,7 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
     while (std::getline(iss, token, '/')) {
       node_path_parts.push_back(token);
     }
-    Node* child_node = new Node(parent_node);
+    std::auto_ptr<Node> child_node(new Node(parent_node));
     for (size_t i = 1; i < node_path_parts.size(); ++i) {
       std::string part = node_path_parts[i];
       if (part.empty()) {
@@ -107,10 +130,9 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
       if (temp_node->depth() != child_node->depth() + 1) {
         return NULL;
       }
-      delete child_node;
-      child_node = temp_node;
+      child_node.reset(temp_node);
     }
-    return child_node;
+    return child_node.release();
 }
 
 Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {

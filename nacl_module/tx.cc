@@ -23,6 +23,8 @@
 #include "tx.h"
 
 #include <iostream>  // cerr
+
+#include <algorithm>
 #include <istream>
 #include <iterator>
 #include <set>
@@ -196,8 +198,11 @@ void Transaction::Add(const TxOut& tx_out) {
 
 void Transaction::UpdateHash() {
   bytes_t serialized = Serialize();
-  hash_ = Crypto::DoubleSHA256(serialized);
-  // TODO(miket): crazy byte order
+  bytes_t hash_bigendian = Crypto::DoubleSHA256(serialized);
+  hash_.resize(hash_bigendian.size());
+  std::reverse_copy(hash_bigendian.begin(),
+                    hash_bigendian.end(),
+                    hash_.begin());
 }
 
 // https://en.bitcoin.it/wiki/Transactions
@@ -293,15 +298,15 @@ GenerateKeysForUnspentTxos(const Node& signing_node,
   for (uint32_t i = 0; i < count; ++i) {
     std::stringstream node_path;
     node_path << "m/0/" << (start + i);  // external path
-    Node* node =
-      NodeFactory::DeriveChildNodeWithPath(signing_node, node_path.str());
+    std::auto_ptr<Node> node(NodeFactory::
+                             DeriveChildNodeWithPath(signing_node,
+                                                     node_path.str()));
     bytes_t hash160 = Base58::toHash160(node->public_key());
     if (signing_addresses.find(hash160) !=
         signing_addresses.end()) {
       signing_keys[hash160] = node->secret_key();
       signing_public_keys[hash160] = node->public_key();
     }
-    delete node;
     if (signing_keys.size() == signing_addresses.size()) {
       break;
     }
@@ -485,67 +490,4 @@ bytes_t TxOut::Serialize() const {
   PushUint64(s, value_);
   PushBytesWithSize(s, script_);
   return s;
-}
-
-void TransactionManager::Add(const Transaction& transaction) {
-  // Stick it in the map.
-  tx_hashes_to_txs_[transaction.hash()] = transaction;
-
-  // Check every input to see which output it spends, and if we know
-  // about that output, mark it spent.
-  for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
-       i != tx_hashes_to_txs_.end();
-       ++i) {
-    for (tx_ins_t::const_iterator j = i->second.inputs().begin();
-         j != i->second.inputs().end();
-         ++j) {
-      if (Exists(j->prev_txo_hash())) {
-        Transaction& affected_tx = Get(j->prev_txo_hash());
-        affected_tx.MarkOutputSpent(j->prev_txo_index());
-      }
-    }
-  }
-}
-
-bool TransactionManager::Exists(const bytes_t& hash) {
-  return tx_hashes_to_txs_.count(hash) == 1;
-}
-
-Transaction& TransactionManager::Get(const bytes_t& hash) {
-  return tx_hashes_to_txs_[hash];
-}
-
-tx_outs_t TransactionManager::GetUnspentTxos() {
-  tx_outs_t unspent_txos;
-
-  for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
-       i != tx_hashes_to_txs_.end();
-       ++i) {
-    for (tx_outs_t::const_iterator j = i->second.outputs().begin();
-         j != i->second.outputs().end();
-         ++j) {
-      if (!j->is_spent()) {
-        unspent_txos.push_back(TxOut(j->value(), j->script(),
-                                     j->tx_output_n(), i->first));
-      }
-    }
-  }
-  return unspent_txos;
-}
-
-uint64_t TransactionManager::GetUnspentValue() {
-  tx_outs_t unspent_txos = GetUnspentTxos();
-  uint64_t value = 0;
-  for (tx_outs_t::const_iterator i = unspent_txos.begin();
-       i != unspent_txos.end();
-       ++i) {
-    value += i->value();
-  }
-  return value;
-}
-
-// http://stackoverflow.com/questions/1661529/is-meyers-implementation-of-singleton-pattern-thread-safe
-TransactionManager& TransactionManager::GetSingleton() {
-  static TransactionManager tm;
-  return tm;
 }
