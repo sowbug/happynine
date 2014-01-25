@@ -43,11 +43,10 @@ function Settings() {
     return o;
   };
 
-  this.loadStorableObject = function(o, callbackVoid) {
+  this.loadStorableObject = function(o) {
     this.init();
     this.units = o.units;
-    callbackVoid.call(callbackVoid);
-  }
+  };
 
   this.satoshiToUnit = function(satoshis) {
     switch (this.units) {
@@ -80,14 +79,21 @@ function Settings() {
   };
 
   this.STORAGE_NAME = 'settings';
-  this.load = function(callbackVoid) {
-    loadStorage(this.STORAGE_NAME, function(object) {
-      if (object) {
-        this.loadStorableObject(object, callbackVoid);
-      } else {
-        this.init();
-        callbackVoid.call(callbackVoid);
-      }
+  this.load = function() {
+    return new Promise(function(resolve, reject) {
+      var success = function(response) {
+        if (response) {
+          this.loadStorableObject(response);
+        } else {
+          this.init();
+        }
+        resolve();
+      };
+      var failure = function(response) {
+        reject(response);
+      };
+      loadStorage(this.STORAGE_NAME).then(success.bind(this),
+                                          failure.bind(this));
     }.bind(this));
   };
 

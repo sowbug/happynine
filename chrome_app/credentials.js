@@ -42,13 +42,15 @@ function Credentials() {
     return o;
   };
 
-  this.loadStorableObject = function(o, callbackVoid) {
-    this.init();
-    this.check = o.check;
-    this.ephemeralKeyEncrypted = o.ekey_enc;
-    this.salt = o.salt;
-    this.loadCredentials(callbackVoid);
-  }
+  this.loadStorableObject = function(o) {
+    return new Promise(function(resolve, reject) {
+      this.init();
+      this.check = o.check;
+      this.ephemeralKeyEncrypted = o.ekey_enc;
+      this.salt = o.salt;
+      this.loadCredentials(function() { resolve(); } );
+    }.bind(this));
+  };
 
   this.isPassphraseSet = function() {
     return !!this.check;
@@ -127,14 +129,21 @@ function Credentials() {
   };
 
   this.STORAGE_NAME = 'credentials';
-  this.load = function(callbackVoid) {
-    loadStorage(this.STORAGE_NAME, function(object) {
-      if (object) {
-        this.loadStorableObject(object, callbackVoid);
-      } else {
-        this.init();
-        callbackVoid.call(callbackVoid);
-      }
+  this.load = function() {
+    return new Promise(function(resolve, reject) {
+      var success = function(response) {
+        if (response) {
+          this.loadStorableObject(response).then(function() { resolve(); });
+        } else {
+          this.init();
+          resolve();
+        }
+      };
+      var failure = function(response) {
+        reject(response);
+      };
+      loadStorage(this.STORAGE_NAME).then(success.bind(this),
+                                          failure.bind(this));
     }.bind(this));
   };
 

@@ -79,13 +79,15 @@ var walletAppController = function($scope,
   };
 
   $scope.startLoading = function() {
-    $scope.settings.load(function() {
-      $scope.credentials.load(function() {
-        $scope.wallet.load(function() {
-          $scope.$apply();
-          $scope.addPostLoadWatchers();
-        });
-      });
+    $scope.settings.load().then(function() {
+      return $scope.credentials.load();
+    }).then(function() {
+      return $scope.wallet.load();
+    }).then(function() {
+      $scope.$apply();
+      $scope.addPostLoadWatchers();
+    }).catch(function(err) {
+      console.log("error", err);
     });
   };
 

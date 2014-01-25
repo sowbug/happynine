@@ -22,20 +22,21 @@
 
 'use strict';
 
-function loadStorage(saved_name, callback) {
-  if (!chrome || !chrome.storage) {
-    console.log("!chrome; skipping load of", saved_name);
-    callback.call(this, null);
-    return;
-  }
-  chrome.storage.sync.get(saved_name, function(result) {
-    var items = result[saved_name];
-    if (items) {
-      console.log("loaded", saved_name, "from storage", items);
-    } else {
-      console.log("empty:", saved_name);
+function loadStorage(saved_name) {
+  return new Promise(function(resolve, reject) {
+    if (!chrome || !chrome.storage) {
+      reject("!chrome; skipping load of", saved_name);
+      return;
     }
-    callback.call(this, items);
+    chrome.storage.sync.get(saved_name, function(result) {
+      var items = result[saved_name];
+      if (items) {
+        console.log("loaded", saved_name, "from storage", items);
+      } else {
+        console.log("empty:", saved_name);
+      }
+      resolve(items);
+    });
   });
 }
 

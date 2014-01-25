@@ -45,37 +45,40 @@ function Wallet(credentials) {
     return o;
   };
 
-  this.loadStorableObject = function(o, callbackVoid) {
-    this.init();
-    var rootNodes = [];
-    for (var i in o.rnodes) {
-      rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
-    }
-    this.nodes = [];
-    for (var i in o.nodes) {
-      this.nodes.push(Node.fromStorableObject(o.nodes[i]));
-    }
-//    this.deriveNodes(callbackVoid);
-    this.installRootNodes(rootNodes, callbackVoid);
-  }
-
-  this.installRootNodes = function(rootNodes, callbackVoid) {
-    var f = function() {
-      if (rootNodes.length) {
-        var rootNode = rootNodes.pop();
-        var params = {
-          'ext_pub_b58': rootNode.extendedPublicBase58,
-          'ext_prv_enc': rootNode.extendedPrivateEncrypted,
-        };
-        postRPCWithCallback(
-          'add-root-node',
-          params,
-          this.setNodeCallback.bind(this, true, f.bind(this)));
-      } else {
-        callbackVoid.call(callbackVoid);
+  this.loadStorableObject = function(o) {
+    return new Promise(function(resolve, reject) {
+      this.init();
+      var rootNodes = [];
+      for (var i in o.rnodes) {
+        rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
       }
-    };
-    f.call(this);
+      this.nodes = [];
+      for (var i in o.nodes) {
+        this.nodes.push(Node.fromStorableObject(o.nodes[i]));
+      }
+      this.installRootNodes(rootNodes).then(function() { resolve(); });
+    }.bind(this));
+  };
+
+  this.installRootNodes = function(rootNodes) {
+    return new Promise(function(resolve, reject) {
+      var f = function() {
+        if (rootNodes.length) {
+          var rootNode = rootNodes.pop();
+          var params = {
+            'ext_pub_b58': rootNode.extendedPublicBase58,
+            'ext_prv_enc': rootNode.extendedPrivateEncrypted,
+          };
+          postRPCWithCallback(
+            'add-root-node',
+            params,
+            this.setNodeCallback.bind(this, true, f.bind(this)));
+        } else {
+          resolve();
+        }
+      };
+      f.call(this);
+    }.bind(this));
   };
 
   this.deriveNodes = function(callback) {
@@ -221,14 +224,21 @@ function Wallet(credentials) {
   };
 
   this.STORAGE_NAME = 'wallet';
-  this.load = function(callbackVoid) {
-    loadStorage(this.STORAGE_NAME, function(object) {
-      if (object) {
-        this.loadStorableObject(object, callbackVoid);
-      } else {
-        this.init();
-        callbackVoid.call(callbackVoid);
-      }
+  this.load = function() {
+    return new Promise(function(resolve, reject) {
+      var success = function(response) {
+        if (response) {
+          this.loadStorableObject(response).then(function() { resolve(); });
+        } else {
+          this.init();
+          resolve();
+        }
+      };
+      var failure = function(response) {
+        reject(response);
+      };
+      loadStorage(this.STORAGE_NAME).then(success.bind(this),
+                                          failure.bind(this));
     }.bind(this));
   };
 
