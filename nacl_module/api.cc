@@ -181,10 +181,10 @@ void API::PopulateResponses(Json::Value& root) {
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
   const std::string path(args["path"].asString());
-  const bool isWatchOnly(args["is_watch_only"].asBool());
+  const bool is_watch_only(args["is_watch_only"].asBool());
 
   bytes_t ext_prv_enc;
-  if (wallet_.DeriveChildNode(path, isWatchOnly, ext_prv_enc)) {
+  if (wallet_.DeriveChildNode(path, is_watch_only, ext_prv_enc)) {
     GenerateNodeResponse(result, wallet_.GetChildNode(), ext_prv_enc, false);
     PopulateResponses(result);
     result["path"] = path;

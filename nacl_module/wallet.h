@@ -46,7 +46,7 @@ class Wallet {
 
   // Child nodes
   bool DeriveChildNode(const std::string& path,
-                       bool isWatchOnly,
+                       bool is_watch_only,
                        bytes_t& ext_prv_enc);
 
   // All nodes
@@ -102,8 +102,8 @@ class Wallet {
 
   bool IsWalletLocked() const;
 
-  void RestoreRootNode(Node* node);
-  void RestoreChildNode(Node* node);
+  void RestoreRootNode(const Node* node);
+  void RestoreChildNode(const Node* node);
 
   Credentials& credentials_;
   bytes_t root_ext_pub_;

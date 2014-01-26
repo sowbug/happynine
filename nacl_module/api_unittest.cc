@@ -91,7 +91,7 @@ TEST(ApiTest, HappyPath) {
   request = Json::Value();
   response = Json::Value();
   request["path"] = "m/9999'";
-  request["is_watch_only"] = false;  // TODO(miket): true fails!
+  request["is_watch_only"] = true;
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x03c06f37", response["fp"].asString());
@@ -276,7 +276,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   request = Json::Value();
   response = Json::Value();
   request["path"] = "m/0'/1";
-  request["is_watch_only"] = false;  // TODO(miket): true fails!
+  request["is_watch_only"] = true;
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0xbef5a2f9", response["fp"].asString());

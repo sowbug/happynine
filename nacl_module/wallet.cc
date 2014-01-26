@@ -121,9 +121,9 @@ bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
 }
 
 bool Wallet::DeriveChildNode(const std::string& path,
-                             bool isWatchOnly,
+                             bool is_watch_only,
                              bytes_t& ext_prv_enc) {
-  if (!isWatchOnly && IsWalletLocked()) {
+  if (!is_watch_only && IsWalletLocked()) {
     return false;
   }
   if (!hasRootNode()) {
@@ -138,7 +138,7 @@ bool Wallet::DeriveChildNode(const std::string& path,
   if (child_node.get()) {
     const std::string ext_pub_b58 =
       Base58::toBase58Check(child_node->toSerializedPublic());
-    if (!isWatchOnly) {
+    if (!is_watch_only) {
       if (!Crypto::Encrypt(credentials_.ephemeral_key(),
                            child_node->toSerialized(),
                            ext_prv_enc)) {
@@ -153,11 +153,11 @@ bool Wallet::DeriveChildNode(const std::string& path,
   return result;
 }
 
-void Wallet::RestoreRootNode(Node* /*node*/) {
+void Wallet::RestoreRootNode(const Node* /*node*/) {
   // Nothing to do!
 }
 
-void Wallet::RestoreChildNode(Node* node) {
+void Wallet::RestoreChildNode(const Node* node) {
   uint32_t public_address_count = 8;
   uint32_t change_address_count = 8;
   for (uint32_t i = 0; i < public_address_count; ++i) {
@@ -243,7 +243,7 @@ Node* Wallet::GetChildNode() {
     return NULL;
   }
 
-  if (credentials_.isLocked()) {
+  if (credentials_.isLocked() || child_ext_prv_enc_.empty()) {
     child_node_.reset(NodeFactory::CreateNodeFromExtended(child_ext_pub_));
   } else {
     bytes_t ext_prv;
