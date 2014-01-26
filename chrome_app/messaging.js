@@ -27,16 +27,18 @@ var callbackId = 1;
 
 var shouldLog = true;
 
-var postRPCWithCallback = function(method, params, callback) {
-  var rpc = { 'jsonrpc': '2.0',
-              'id': callbackId++,
-              'method': method,
-              'params': params,
-            };
-  callbacks[rpc.id] = callback;
-  common.naclModule.postMessage(JSON.stringify(rpc));
-  if (shouldLog)
-    console.log(rpc);
+var postRPC = function(method, params) {
+  return new Promise(function(resolve, reject) {
+    var rpc = { 'jsonrpc': '2.0',
+                'id': callbackId++,
+                'method': method,
+                'params': params,
+              };
+    callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
+    common.naclModule.postMessage(JSON.stringify(rpc));
+    if (shouldLog)
+      console.log(rpc);
+  });
 };
 
 function handleMessage(message) {
@@ -47,8 +49,10 @@ function handleMessage(message) {
   if (callbacks[id]) {
     if (message_object.error) {
       logRpcError(message_object.error);
+      callbacks[id].reject(message_object.error);
+    } else {
+      callbacks[id].resolve(message_object.result);
     }
-    callbacks[id].call(this, message_object.result);
     delete callbacks[id];
   } else {
     console.log("strange: unrecognized id", message_object);

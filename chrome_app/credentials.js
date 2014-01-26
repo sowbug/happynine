@@ -48,9 +48,7 @@ function Credentials() {
       this.check = o.check;
       this.ephemeralKeyEncrypted = o.ekey_enc;
       this.salt = o.salt;
-      this.loadCredentials().then(function() {
-        resolve();
-      });
+      this.loadCredentials().then(resolve);
     }.bind(this));
   };
 
@@ -71,20 +69,18 @@ function Credentials() {
         return;
       }
 
+      var success = function(response) {
+        this.check = response.check;
+        this.ephemeralKeyEncrypted = response.ekey_enc;
+        this.salt = response.salt;
+        this.setRelockTimeout(relockCallbackVoid);
+        resolve();
+      };
+
       var params = {
         'new_passphrase': newPassphrase,
       };
-      postRPCWithCallback('set-passphrase', params, function(response) {
-        if (response.error) {
-          callbackBool.call(callbackBool, false);
-        } else {
-          this.check = response.check;
-          this.ephemeralKeyEncrypted = response.ekey_enc;
-          this.salt = response.salt;
-          this.setRelockTimeout(relockCallbackVoid);
-          resolve();
-        }
-      }.bind(this));
+      postRPC('set-passphrase', params).then(success.bind(this), reject);
     }.bind(this));
   };
 
@@ -95,9 +91,7 @@ function Credentials() {
         'ekey_enc': this.ephemeralKeyEncrypted,
         'salt': this.salt,
       };
-      postRPCWithCallback('set-credentials', params, function() {
-        resolve();
-      });
+      postRPC('set-credentials', params).then(resolve);
     }.bind(this));
   };
 
@@ -119,22 +113,21 @@ function Credentials() {
   this.lock = function() {
     return new Promise(function(resolve, reject) {
       this.isLocked = true;
-      postRPCWithCallback('lock', {}, function() { resolve(); });
+      postRPC('lock', {}).then(resolve);
     }.bind(this));
   };
 
   this.unlock = function(passphrase, relockCallbackVoid) {
     return new Promise(function(resolve, reject) {
-      postRPCWithCallback('unlock',
-                          {'passphrase': passphrase},
-                          function(r) {
-                            if (r.success) {
-                              this.setRelockTimeout(relockCallbackVoid);
-                              resolve();
-                            } else {
-                              reject();
-                            }
-                          }.bind(this));
+      postRPC('unlock',
+              {'passphrase': passphrase}).then(function(response) {
+                if (response.success) {
+                  this.setRelockTimeout(relockCallbackVoid);
+                  resolve();
+                } else {
+                  reject();
+                }
+              }.bind(this), reject);
     }.bind(this));
   };
 
@@ -143,7 +136,7 @@ function Credentials() {
     return new Promise(function(resolve, reject) {
       var success = function(response) {
         if (response) {
-          this.loadStorableObject(response).then(function() { resolve(); });
+          this.loadStorableObject(response).then(resolve);
         } else {
           this.init();
           resolve();

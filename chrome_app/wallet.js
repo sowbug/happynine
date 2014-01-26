@@ -46,65 +46,37 @@ function Wallet(credentials) {
   };
 
   this.loadStorableObject = function(o) {
-    return new Promise(function(resolve, reject) {
-      this.init();
-      var rootNodes = [];
-      for (var i in o.rnodes) {
-        rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
-      }
-      var nodes = [];
-      for (var i in o.nodes) {
-        nodes.push(Node.fromStorableObject(o.nodes[i]));
-      }
-      this.installRootNodes(rootNodes).then(function() {
-        this.installNodes(nodes);
-      }.bind(this)).then(function() {
-        resolve();
-      });
-    }.bind(this));
+    this.init();
+    var nodes = [];
+    for (var i in o.rnodes) {
+      nodes.push(Node.fromStorableObject(o.rnodes[i]));
+    }
+    for (var i in o.nodes) {
+      nodes.push(Node.fromStorableObject(o.nodes[i]));
+    }
+    return Promise.all(nodes.map(this.restoreNode.bind(this)));
   };
 
-  this.installRootNodes = function(nodes) {
+  this.restoreNode = function(node) {
     return new Promise(function(resolve, reject) {
-      var f = function() {
-        if (nodes.length) {
-          var node = nodes.pop();
-          var params = {
-            'ext_pub_b58': node.extendedPublicBase58,
-            'ext_prv_enc': node.extendedPrivateEncrypted,
-          };
-          postRPCWithCallback(
-            'restore-node',
-            params,
-            this.setNodeCallback.bind(this, true, f.bind(this)));
-        } else {
-          resolve();
-        }
+      var params = {
+        'ext_pub_b58': node.extendedPublicBase58,
+        'ext_prv_enc': node.extendedPrivateEncrypted,
       };
-      f.call(this);
-    }.bind(this));
-  };
-
-  // *sob* learn promises
-  // TODO: this is probably the same as installRootNodes
-  this.installNodes = function(nodes) {
-    return new Promise(function(resolve, reject) {
-      var f = function() {
-        if (nodes.length) {
-          var node = nodes.pop();
-          var params = {
-            'ext_pub_b58': node.extendedPublicBase58,
-            'ext_prv_enc': node.extendedPrivateEncrypted,
-          };
-          postRPCWithCallback(
-            'restore-node',
-            params,
-            this.setNodeCallback.bind(this, false, f.bind(this)));
-        } else {
-          resolve();
-        }
-      };
-      f.call(this);
+      postRPC('restore-node', params)
+        .then(function(response) {
+          if (response.fp) {
+            var node = Node.fromStorableObject(response);
+            if (response.pfp == "0x00000000") {
+              this.rootNodes.push(node);
+            } else {
+              this.nodes.push(node);
+            }
+            resolve();
+          } else {
+            reject(response);
+          }
+        }.bind(this));
     }.bind(this));
   };
 
@@ -170,7 +142,7 @@ function Wallet(credentials) {
     }
   };
 
-  this.setNodeCallback = function(isRoot, callbackBool, response) {
+  this.setNodeCallback = function(isRoot, response) {
     if (response.fp) {
       var node = Node.fromStorableObject(response);
       if (isRoot) {
@@ -178,24 +150,25 @@ function Wallet(credentials) {
       } else {
         this.nodes.push(node);
       }
-      callbackBool.call(callbackBool, true);
-    } else {
-      callbackBool.call(callbackBool, false);
     }
   };
 
   this.addRandomMasterKey = function(callbackVoid) {
-    postRPCWithCallback('generate-root-node', {},
-                        this.setNodeCallback.bind(this, true, callbackVoid));
+    postRPC('generate-root-node', {})
+      .then(function() {
+        this.setNodeCallback.call(this, true, callbackVoid);
+      }.bind(this));
   };
 
   this.importMasterKey = function(ext_prv_b58, callbackBool) {
     var params = {
       'ext_prv_b58': ext_prv_b58
     };
-    postRPCWithCallback('import-root-node', params,
-                        this.setNodeCallback.bind(this, true, callbackBool));
-  }
+    postRPC('import-root-node', params)
+      .then(function() {
+        this.setNodeCallback.bind(this, true, callbackBool);
+      }.bind(this));
+  };
 
   this.addNewNode = function(isRoot, callback, node) {
     if (node) {
@@ -223,8 +196,10 @@ function Wallet(credentials) {
       'path': "m/0'",
       'isWatchOnly': isWatchOnly,
     };
-    postRPCWithCallback('derive-child-node', params,
-                        this.setNodeCallback.bind(this, false, callbackBool));
+    postRPC('derive-child-node', params)
+      .then(function() {
+        this.setNodeCallback.call(this, false, callbackBool);
+      }.bind(this));
   };
 
   this.getAccountCount = function() {
@@ -236,7 +211,7 @@ function Wallet(credentials) {
     return new Promise(function(resolve, reject) {
       var success = function(response) {
         if (response) {
-          this.loadStorableObject(response).then(function() { resolve(); });
+          this.loadStorableObject(response).then(resolve);
         } else {
           this.init();
           resolve();
