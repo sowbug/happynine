@@ -237,8 +237,9 @@ var walletAppController = function($scope,
     }
 
     $scope.credentials.setPassphrase($scope.w.passphraseNew,
-                                     function() { $scope.$apply(); },
-                                     function(succeeded) {
+                                     function() {
+                                       $scope.$apply();
+                                     }).then(function() {
                                        $scope.$apply();
                                      });
 

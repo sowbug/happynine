@@ -136,25 +136,6 @@ function Wallet(credentials) {
     return this.rootNodes.length > 0;
   };
 
-  this.decryptSecrets = function(callback) {
-    if (!this.credentials.isKeyAvailable()) {
-      console.log("can't decrypt without key");
-      callback.call(this, false);
-      return;
-    }
-    if (this.extendedPrivateBase58Encrypted) {
-      this.credentials.decrypt(
-        this.extendedPrivateBase58Encrypted,
-        function(item) {
-          this.extendedPrivateBase58 = item;
-          callback.call(this, !!item);
-        }.bind(this));
-    } else {
-      // Callers are depending on this method to be asynchonous.
-      window.setTimeout(callback.bind(this, true), 0);
-    }
-  };
-
   this.getAccounts = function() {
     return this.nodes;
   };

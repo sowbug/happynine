@@ -48,7 +48,9 @@ function Credentials() {
       this.check = o.check;
       this.ephemeralKeyEncrypted = o.ekey_enc;
       this.salt = o.salt;
-      this.loadCredentials(function() { resolve(); } );
+      this.loadCredentials().then(function() {
+        resolve();
+      });
     }.bind(this));
   };
 
@@ -62,37 +64,41 @@ function Credentials() {
   };
 
   this.setPassphrase = function(newPassphrase,
-                                relockCallbackVoid,
-                                callbackBool) {
-    if (this.isPassphraseSet() && this.isWalletLocked()) {
-      console.log("passphrase set/wallet is unlocked; can't set passphrase");
-      delayedCallback(callbackBool.bind(callbackBool, false));
-      return;
-    }
-
-    var params = {
-      'new_passphrase': newPassphrase,
-    };
-    postRPCWithCallback('set-passphrase', params, function(response) {
-      if (response.error) {
-        callbackBool.call(callbackBool, false);
-      } else {
-        this.check = response.check;
-        this.ephemeralKeyEncrypted = response.ekey_enc;
-        this.salt = response.salt;
-        this.setRelockTimeout(relockCallbackVoid);
-        callbackBool.call(callbackBool, true);
+                                relockCallbackVoid) {
+    return new Promise(function(resolve, reject) {
+      if (this.isPassphraseSet() && this.isWalletLocked()) {
+        reject("passphrase set/wallet is unlocked; can't set passphrase");
+        return;
       }
-    }.bind(this));
-  }
 
-  this.loadCredentials = function(callbackVoid) {
-    var params = {
-      'check': this.check,
-      'ekey_enc': this.ephemeralKeyEncrypted,
-      'salt': this.salt,
-    };
-    postRPCWithCallback('set-credentials', params, callbackVoid);
+      var params = {
+        'new_passphrase': newPassphrase,
+      };
+      postRPCWithCallback('set-passphrase', params, function(response) {
+        if (response.error) {
+          callbackBool.call(callbackBool, false);
+        } else {
+          this.check = response.check;
+          this.ephemeralKeyEncrypted = response.ekey_enc;
+          this.salt = response.salt;
+          this.setRelockTimeout(relockCallbackVoid);
+          resolve();
+        }
+      }.bind(this));
+    }.bind(this));
+  };
+
+  this.loadCredentials = function() {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'check': this.check,
+        'ekey_enc': this.ephemeralKeyEncrypted,
+        'salt': this.salt,
+      };
+      postRPCWithCallback('set-credentials', params, function() {
+        resolve();
+      });
+    }.bind(this));
   };
 
   this.clearRelockTimeout = function() {
