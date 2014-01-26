@@ -227,7 +227,7 @@ bool API::HandleReportTxStatuses(const Json::Value& args,
   for (Json::Value::iterator i = tx_statuses.begin();
        i != tx_statuses.end();
        ++i) {
-    wallet_.HandleTxStatus(unhexlify((*i)["hash"].asString()),
+    wallet_.HandleTxStatus(unhexlify((*i)["tx_hash"].asString()),
                            (*i)["height"].asUInt());
   }
   PopulateResponses(result);
