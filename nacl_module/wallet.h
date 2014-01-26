@@ -34,6 +34,23 @@
 class Credentials;
 class Node;
 
+class Address {
+ public:
+  Address(const bytes_t& hash160, uint32_t child_num, bool is_public);
+  const bytes_t& hash160() const { return hash160_; }
+  uint32_t child_num() const { return child_num_; }
+  bool is_public() const { return is_public_; }
+  uint64_t balance() const { return balance_; }
+  void set_balance(uint64_t balance) { balance_ = balance; }
+
+  typedef std::vector<const Address*> addresses_t;
+ private:
+  const bytes_t hash160_;
+  const uint32_t child_num_;
+  const bool is_public_;
+  uint64_t balance_;
+};
+
 class Wallet {
  public:
   Wallet(Credentials& credentials);
@@ -62,13 +79,7 @@ class Wallet {
                 bytes_t& tx);
 
   // Module-to-client
-  typedef struct {
-    bytes_t hash160;
-    uint64_t value;
-    bool is_public;  // false = change address
-  } address_status_t;  // TODO: this might just be an unspent txo
-  typedef std::vector<address_status_t> address_statuses_t;
-  bool GetAddressStatusesToReport(address_statuses_t& statuses);
+  bool GetAddressStatusesToReport(Address::addresses_t& statuses);
 
   typedef bytes_t tx_request_t;
   typedef std::vector<tx_request_t> tx_requests_t;
@@ -105,19 +116,25 @@ class Wallet {
   void RestoreRootNode(const Node* node);
   void RestoreChildNode(const Node* node);
 
+  void WatchAddress(const bytes_t& hash160,
+                    uint32_t child_num,
+                    bool is_public);
+  bool IsAddressWatched(const bytes_t& hash160);
+  void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
+
+  typedef std::map<bytes_t, Address*> hash_to_address_t;
+  hash_to_address_t watched_addresses_;
+  std::set<bytes_t> addresses_to_report_;
+
   Credentials& credentials_;
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   std::auto_ptr<Node> root_node_;
-  address_statuses_t address_statuses_;
   tx_requests_t tx_requests_;
 
   bytes_t child_ext_pub_;
   bytes_t child_ext_prv_enc_;
   std::auto_ptr<Node> child_node_;
-
-  std::set<bytes_t> public_addresses_in_wallet_;
-  std::set<bytes_t> change_addresses_in_wallet_;
 
   typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;

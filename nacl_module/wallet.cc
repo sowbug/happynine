@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #include <iostream>  // cerr
+
+#include <algorithm>
 #include <istream>
 #include <sstream>
 
@@ -32,6 +34,11 @@
 #include "node_factory.h"
 #include "wallet.h"
 
+Address::Address(const bytes_t& hash160, uint32_t child_num, bool is_public)
+  : hash160_(hash160), child_num_(child_num), is_public_(is_public),
+    balance_(0) {
+}
+
 Wallet::Wallet(Credentials& credentials)
   : credentials_(credentials), root_node_(NULL), child_node_(NULL) {
 }
@@ -39,6 +46,11 @@ Wallet::Wallet(Credentials& credentials)
 Wallet::~Wallet() {
   for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
        i != tx_hashes_to_txs_.end();
+       ++i) {
+    delete i->second;
+  }
+  for (hash_to_address_t::const_iterator i = watched_addresses_.begin();
+       i != watched_addresses_.end();
        ++i) {
     delete i->second;
   }
@@ -54,6 +66,8 @@ void Wallet::set_child_ext_keys(const bytes_t& ext_pub,
                                 const bytes_t& ext_prv_enc) {
   child_ext_pub_ = ext_pub;
   child_ext_prv_enc_ = ext_prv_enc;
+  watched_addresses_.clear();
+  addresses_to_report_.clear();
 }
 
 bool Wallet::IsWalletLocked() const {
@@ -154,6 +168,32 @@ bool Wallet::DeriveChildNode(const std::string& path,
   return result;
 }
 
+void Wallet::WatchAddress(const bytes_t& hash160,
+                          uint32_t child_num,
+                          bool is_public) {
+  if (IsAddressWatched(hash160)) {
+    return;
+  }
+  Address* address = new Address(hash160, child_num, is_public);
+  watched_addresses_[hash160] = address;
+  addresses_to_report_.insert(hash160);
+}
+
+bool Wallet::IsAddressWatched(const bytes_t& hash160) {
+  return watched_addresses_.count(hash160) == 1;
+}
+
+void Wallet::UpdateAddressBalance(const bytes_t& hash160, uint64_t balance) {
+  if (!IsAddressWatched(hash160)) {
+    std::cerr << "oops, update address of unwatched address" << std::endl;
+    return;
+  }
+  if (watched_addresses_[hash160]->balance() != balance) {
+    watched_addresses_[hash160]->set_balance(balance);
+    addresses_to_report_.insert(hash160);
+  }
+}
+
 void Wallet::RestoreRootNode(const Node* /*node*/) {
   // Nothing to do!
 }
@@ -168,12 +208,7 @@ void Wallet::RestoreChildNode(const Node* node) {
       address_node(NodeFactory::DeriveChildNodeWithPath(*node,
                                                         node_path.str()));
     if (address_node.get()) {
-      address_status_t as;
-      as.hash160 = Base58::toHash160(address_node->public_key());
-      as.value = 0;
-      as.is_public = true;
-      address_statuses_.push_back(as);
-      public_addresses_in_wallet_.insert(as.hash160);
+      WatchAddress(Base58::toHash160(address_node->public_key()), i, true);
     }
   }
   for (uint32_t i = 0; i < change_address_count; ++i) {
@@ -183,12 +218,7 @@ void Wallet::RestoreChildNode(const Node* node) {
       address_node(NodeFactory::DeriveChildNodeWithPath(*node,
                                                         node_path.str()));
     if (address_node.get()) {
-      address_status_t as;
-      as.hash160 = Base58::toHash160(address_node->public_key());
-      as.value = 0;
-      as.is_public = false;
-      address_statuses_.push_back(as);
-      change_addresses_in_wallet_.insert(as.hash160);
+      WatchAddress(Base58::toHash160(address_node->public_key()), i, false);
     }
   }
 }
@@ -259,9 +289,21 @@ Node* Wallet::GetChildNode() {
   return child_node_.get();
 }
 
-bool Wallet::GetAddressStatusesToReport(address_statuses_t& statuses) {
-  statuses = address_statuses_;
-  address_statuses_.clear();
+static bool SortAddresses(const Address* a, const Address* b) {
+  if (a->is_public() != b->is_public()) {
+    return a->is_public() > b->is_public();
+  }
+  return a->child_num() < b->child_num();
+}
+
+bool Wallet::GetAddressStatusesToReport(Address::addresses_t& statuses) {
+  for (std::set<bytes_t>::const_iterator i = addresses_to_report_.begin();
+       i != addresses_to_report_.end();
+       ++i) {
+    statuses.push_back(watched_addresses_[*i]);
+  }
+  std::sort(statuses.begin(), statuses.end(), SortAddresses);
+  addresses_to_report_.clear();
   return true;
 }
 
@@ -303,25 +345,19 @@ void Wallet::AddTx(Transaction* transaction) {
   }
 }
 
-bool Wallet::IsPublicAddressInWallet(const bytes_t& hash160) {
-  return public_addresses_in_wallet_.count(hash160) == 1;
-}
-
-bool Wallet::IsChangeAddressInWallet(const bytes_t& hash160) {
-  return change_addresses_in_wallet_.count(hash160) == 1;
-}
-
-bool Wallet::IsAddressInWallet(const bytes_t& hash160) {
-  return IsPublicAddressInWallet(hash160) ||
-    IsChangeAddressInWallet(hash160);
-}
-
 void Wallet::HandleTx(const bytes_t& tx_bytes) {
   std::istringstream is;
   const char* p = reinterpret_cast<const char*>(&tx_bytes[0]);
   is.rdbuf()->pubsetbuf(const_cast<char*>(p), tx_bytes.size());
   Transaction* tx = new Transaction(is);
   AddTx(tx);
+
+  std::map<bytes_t, uint64_t> balances;
+  for (hash_to_address_t::const_iterator i = watched_addresses_.begin();
+       i != watched_addresses_.end();
+       ++i) {
+    balances[i->first] = 0;
+  }
 
   for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
        i != tx_hashes_to_txs_.end();
@@ -330,14 +366,18 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
          j != i->second->outputs().end();
          ++j) {
       const bytes_t hash160 = j->GetSigningAddress();
-      if (!j->is_spent() && IsAddressInWallet(hash160)) {
-        address_status_t address_status;
-        address_status.hash160 = hash160;
-        address_status.value = j->value();
-        address_status.is_public = IsPublicAddressInWallet(hash160);
-        address_statuses_.push_back(address_status);
+      if (IsAddressWatched(hash160)) {
+        if (!j->is_spent()) {
+          balances[hash160] += j->value();
+        }
       }
     }
+  }
+
+  for (std::map<bytes_t, uint64_t>::const_iterator i = balances.begin();
+       i != balances.end();
+       ++i) {
+    UpdateAddressBalance(i->first, i->second);
   }
 }
 
@@ -395,8 +435,7 @@ tx_outs_t Wallet::GetUnspentTxos() {
          j != i->second->outputs().end();
          ++j) {
       const bytes_t& address = j->GetSigningAddress();
-      if (public_addresses_in_wallet_.count(address) == 1 ||
-          change_addresses_in_wallet_.count(address) == 1) {
+      if (IsAddressWatched(address)) {
         if (!j->is_spent()) {
           unspent_txos.push_back(TxOut(j->value(), j->script(),
                                        j->tx_output_n(), i->first));

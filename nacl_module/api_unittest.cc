@@ -60,9 +60,13 @@ static void Spend(API &api,
   request["txs"][0]["tx"] = to_hex(tx);
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["address_statuses"].size());
+  EXPECT_TRUE(response["address_statuses"].size() > 0);
   actual_sender = response["address_statuses"][0]["addr_b58"].asString();
-  actual_new_balance = response["address_statuses"][0]["value"].asUInt64();
+
+  actual_new_balance = 0;
+  for (unsigned int i = 0; i < response["address_statuses"].size(); ++i) {
+    actual_new_balance += response["address_statuses"][i]["value"].asUInt64();
+  }
 }
 
 TEST(ApiTest, HappyPath) {
@@ -199,14 +203,14 @@ TEST(ApiTest, HappyPath) {
         actual_new_balance);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG", actual_sender);
   EXPECT_EQ(expected_balance, actual_new_balance);
+  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy", actual_sender);
 
   // Now spend the rest of the funds in the wallet. This is different
   // because it requires the wallet to report a zero balance without
   // reporting *all* zero balances.
   fee = 2;
-  amount_to_spend = expected_balance - fee - 1;  // TODO: remove -1
+  amount_to_spend = expected_balance - fee;
   Spend(api,
         "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4",
         amount_to_spend,

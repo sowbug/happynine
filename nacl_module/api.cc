@@ -150,15 +150,16 @@ bool API::HandleImportRootNode(const Json::Value& args,
 }
 
 void API::PopulateAddressStatuses(Json::Value& json_value) {
-  Wallet::address_statuses_t items;
+  Address::addresses_t items;
   wallet_.GetAddressStatusesToReport(items);
-  for (Wallet::address_statuses_t::const_iterator i = items.begin();
+  for (Address::addresses_t::const_iterator i = items.begin();
        i != items.end();
        ++i) {
     Json::Value as;
-    as["addr_b58"] = Base58::hash160toAddress(i->hash160);
-    as["value"] = (Json::Value::UInt64)i->value;
-    as["is_public"] = i->is_public;
+    as["addr_b58"] = Base58::hash160toAddress((*i)->hash160());
+    as["child_num"] = (*i)->child_num();
+    as["is_public"] = (*i)->is_public();
+    as["value"] = (Json::Value::UInt64)(*i)->balance();
     json_value.append(as);
   }
 }
