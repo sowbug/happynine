@@ -116,22 +116,26 @@ function Credentials() {
     }.bind(this), 1000 * 60 * 1);
   };
 
-  this.lock = function(callbackVoid) {
-    this.isLocked = true;
-    postRPCWithCallback('lock', {}, callbackVoid);
+  this.lock = function() {
+    return new Promise(function(resolve, reject) {
+      this.isLocked = true;
+      postRPCWithCallback('lock', {}, function() { resolve(); });
+    }.bind(this));
   };
 
-  this.unlock = function(passphrase, relockCallbackVoid, callbackBool) {
-    postRPCWithCallback('unlock',
-                        {'passphrase': passphrase},
-                        function(r) {
-                          if (r.success) {
-                            this.setRelockTimeout(relockCallbackVoid);
-                            callbackBool.call(callbackBool, true);
-                          } else {
-                            callbackBool.call(callbackBool, false); 
-                          }
-                        }.bind(this));
+  this.unlock = function(passphrase, relockCallbackVoid) {
+    return new Promise(function(resolve, reject) {
+      postRPCWithCallback('unlock',
+                          {'passphrase': passphrase},
+                          function(r) {
+                            if (r.success) {
+                              this.setRelockTimeout(relockCallbackVoid);
+                              resolve();
+                            } else {
+                              reject();
+                            }
+                          }.bind(this));
+    }.bind(this));
   };
 
   this.STORAGE_NAME = 'credentials';

@@ -200,23 +200,23 @@ var walletAppController = function($scope,
   };
 
   $scope.unlockWallet = function() {
-    var unlockCallback = function(succeeded) {
-      if (succeeded) {
-        $("#unlock-wallet-modal").modal('hide');
-      }
+    var unlockSuccessful = function() {
+      $("#unlock-wallet-modal").modal('hide');
       $scope.w.passphraseNew = null;
       $scope.$apply();
     };
-
+    var unlockFailed = function() {
+      $scope.w.passphraseNew = null;
+      $scope.$apply();
+    };
     var relockCallback = function() {
       //$scope.w.showPrivateKey = false;
       $scope.$apply();
     };
 
-    $scope.credentials.unlock(
-      $scope.w.passphraseNew,
-      relockCallback.bind(this),
-      unlockCallback.bind(this));
+    $scope.credentials.unlock($scope.w.passphraseNew,
+                              relockCallback.bind(this))
+      .then(unlockSuccessful, unlockFailed);
   };
 
   $scope.lockWallet = function() {
