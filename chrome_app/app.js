@@ -32,13 +32,16 @@ walletApp.factory('credentials', function() {
   return new Credentials();
 });
 
-walletApp.factory('wallet', ['credentials', function(credentials) {
-  return new Wallet(credentials);
-}]);
-
 walletApp.factory('electrum', ['$http', function($http) {
   return new Electrum($http);
 }]);
+
+walletApp.factory('wallet', ['credentials',
+                             'electrum',
+                             function(credentials, electrum) {
+                               return new Wallet(credentials, electrum);
+                             }]
+                 );
 
 walletApp.controller('MainCtrl', ['$scope',
                                   '$http',

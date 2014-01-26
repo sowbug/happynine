@@ -23,12 +23,14 @@
 'use strict';
 
 // A Wallet is a collection of Nodes with a bunch of helper functions.
-function Wallet(credentials) {
+function Wallet(credentials, electrum) {
   this.credentials = credentials;
+  this.electrum = electrum;
 
   this.init = function() {
     this.rootNodes = [];
     this.nodes = [];
+    this.watchedAddresses = {};
   };
   this.init();
 
@@ -72,32 +74,12 @@ function Wallet(credentials) {
             } else {
               this.nodes.push(node);
             }
-            this.checkForNotifications(response);
             resolve();
           } else {
-            this.checkForNotifications(response);
             reject(response);
           }
         }.bind(this));
     }.bind(this));
-  };
-
-  this.checkForNotifications = function(response) {
-    if (response.address_statuses) {
-      console.log("noticed address_statuses");
-      var as = response.address_statuses;
-      for (var i in as) {
-        console.log(as[i].addr_b58);
-      }
-      $.event.trigger({
-        'type': 'address_statuses',
-        'message': as,
-        time: new Date(),
-      });
-
-    } else if (response.tx_requests) {
-      console.log("noticed tx_requests");
-    }
   };
 
   this.deriveNodes = function(callback) {
@@ -233,15 +215,68 @@ function Wallet(credentials) {
     return this.nodes.length;
   };
 
-  this.handleGetHistory = function(txs) {
+  this.handleAddressGetHistory = function(txs) {
     return new Promise(function(resolve, reject) {
       postRPC('report-tx-statuses', { 'tx_statuses': txs })
         .then(function(response) {
-          console.log("cool:", response);
           resolve();
         }.bind(this));
     }.bind(this));
   };
+
+  this.handleAddressSubscribe = function(response) {
+    return new Promise(function(resolve, reject) {
+      console.log("for address subscribe", response);
+    }.bind(this));
+  };
+
+  this.handleTransactionGet = function(tx) {
+    return new Promise(function(resolve, reject) {
+      postRPC('report-txs', { 'txs': [{'tx': tx}] })
+        .then(function(response) {
+          resolve();
+        }.bind(this));
+    }.bind(this));
+  };
+
+  this.isWatching = function(addr_b58) {
+    return !!this.watchedAddresses[addr_b58];
+  }
+
+  this.watchAddress = function(addr_b58) {
+    this.watchedAddresses[addr_b58] = {};
+    this.electrum.enqueueRpc("blockchain.address.get_history",
+                             [addr_b58])
+      .then(this.handleAddressGetHistory.bind(this));
+    this.electrum.enqueueRpc("blockchain.address.subscribe",
+                             [addr_b58])
+      .then(this.handleAddressSubscribe.bind(this));
+  };
+
+  this.updateAddress = function(addr_status) {
+    this.watchedAddresses[addr_status.addr_b58] = addr_status;
+    console.log("now we know", addr_status);
+  };
+
+  $(document).on("address_statuses", function(evt) {
+    var addrs = evt.message;
+    for (var a in addrs) {
+      var addr = addrs[a];
+      if (!this.isWatching(addr.addr_b58)) {
+        this.watchAddress(addr.addr_b58);
+      }
+      this.updateAddress(addr);
+    }
+  }.bind(this));
+
+  $(document).on("tx_requests", function(evt) {
+    var tx_requests = evt.message;
+    for (var t in tx_requests) {
+      this.electrum.enqueueRpc("blockchain.transaction.get",
+                               [tx_requests[t]])
+        .then(this.handleTransactionGet.bind(this));
+    }
+  }.bind(this));
 
   this.STORAGE_NAME = 'wallet';
   this.load = function() {

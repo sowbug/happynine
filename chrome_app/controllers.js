@@ -364,16 +364,6 @@ var walletAppController = function($scope,
     return $scope.settings.unitLabel();
   };
 
-  $(document).on("address_statuses", function(evt) {
-    console.log("received", evt.message);
-    var addrs = evt.message;
-    for (var a in addrs) {
-      $scope.electrum.enqueueRpc("blockchain.address.get_history",
-                                 [addrs[a].addr_b58])
-        .then($scope.wallet.handleGetHistory.bind(this));
-    }
-  });
-
   // TODO(miket): this might be a race with moduleDidLoad.
   var listenerDiv = document.getElementById('listener');
   listenerDiv.addEventListener('load', function() {

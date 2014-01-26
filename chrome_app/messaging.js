@@ -41,38 +41,57 @@ var postRPC = function(method, params) {
   });
 };
 
+var checkForNotifications = function(response) {
+  if (response.address_statuses) {
+    console.log("noticed address_statuses");
+    var as = response.address_statuses;
+    for (var i in as) {
+      console.log(as[i].addr_b58);
+    }
+    $.event.trigger({
+      'type': 'address_statuses',
+      'message': as,
+      time: new Date(),
+    });
+  }
+  if (response.tx_requests) {
+    console.log("noticed tx_requests");
+    var tx_requests = response.tx_requests;
+    for (var i in tx_requests) {
+      console.log(tx_requests[i]);
+    }
+    $.event.trigger({
+      'type': 'tx_requests',
+      'message': tx_requests,
+      time: new Date(),
+    });
+  }
+};
+
 function handleMessage(message) {
-  var message_object = JSON.parse(message.data);
+  var o = JSON.parse(message.data);
   if (shouldLog)
-    console.log(message_object);
-  var id = message_object.id;
+    console.log(o);
+  var id = o.id;
   if (id) {
     if (callbacks[id]) {
-      if (message_object.error) {
-        logRpcError(message_object.error);
-        callbacks[id].reject(message_object.error);
+      if (o.error) {
+        logRpcError(o.error);
+        callbacks[id].reject(o.error);
       } else {
-        callbacks[id].resolve(message_object.result);
+        callbacks[id].resolve(o.result);
+        checkForNotifications(o.result);
       }
       delete callbacks[id];
     } else {
-      console.log("strange: unrecognized id", message_object);
+      console.log("strange: unrecognized id", o);
     }
   } else {
-    console.log("posting", message_object);
+    console.log("posting", o);
     $.event.trigger({
-      'type': message_object.method,
-      'message': message_object.result,
+      'type': o.method,
+      'message': o.result,
       time: new Date(),
     });
-
-
-//    $(document).on("invalidFormData", function (evt) {
-  //    $('txtForSubmissionAttempts').val( "Event fired from "
-    //                               + evt.currentTarget.nodeName + " at "
-      //                                   + evt.time.toLocaleString() + ": " + evt.message
-        //                               );
-  //  });
-
   }
 }
