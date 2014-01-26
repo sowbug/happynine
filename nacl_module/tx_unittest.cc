@@ -117,37 +117,4 @@ TEST(TxTest, CoinbaseToFritterAway) {
     TxOut tx2_out(TX_2_1_VALUE, ADDR2);
     tx2.Add(tx2_out);
   }
-
-  // {
-  //   // Add one. Confirm its outputs are considered unspent.
-  //   TransactionManager tm;
-  //   tm.Add(tx);
-  //   tx_outs_t unspent = tm.GetUnspentTxos();
-  //   EXPECT_EQ(tx.outputs().size(), unspent.size());
-  //   EXPECT_EQ(TX_1_0_VALUE, tm.GetUnspentValue());
-
-  //   // Add the other, which spends the first. Confirm the prior output
-  //   // is spent, and the new ones are unspent.
-  //   tm.Add(tx2);
-
-  //   unspent = tm.GetUnspentTxos();
-  //   EXPECT_EQ(tx2.outputs().size(), unspent.size());
-  //   EXPECT_EQ(TX_2_0_VALUE + TX_2_1_VALUE, tm.GetUnspentValue());
-  // }
-
-  // {
-  //   // Add out-of-order. Should be same result.
-  //   TransactionManager tm;
-  //   tm.Add(tx2);
-
-  //   tx_outs_t unspent = tm.GetUnspentTxos();
-  //   EXPECT_EQ(tx2.outputs().size(), unspent.size());
-  //   EXPECT_EQ(TX_2_0_VALUE + TX_2_1_VALUE, tm.GetUnspentValue());
-
-  //   tm.Add(tx);
-
-  //   unspent = tm.GetUnspentTxos();
-  //   EXPECT_EQ(tx2.outputs().size(), unspent.size());
-  //   EXPECT_EQ(TX_2_0_VALUE + TX_2_1_VALUE, tm.GetUnspentValue());
-  // }
 }

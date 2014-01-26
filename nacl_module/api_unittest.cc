@@ -337,3 +337,93 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 }
+
+TEST(ApiTest, ReportActualTransactions) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
+  Json::Value request;
+  Json::Value response;
+
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Import an xprv (see test/h9-test-vectors-script.txt)
+  request = Json::Value();
+  response = Json::Value();
+  request["seed_hex"] = "baddecaf99887766554433221100";
+  EXPECT_TRUE(api.HandleDeriveRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Derive a child
+  request = Json::Value();
+  response = Json::Value();
+  request["path"] = "m/0'";
+  request["is_watch_only"] = false;
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x5adb92c0", response["fp"].asString());
+  EXPECT_EQ(8 + 8, response["address_statuses"].size());
+
+  // https://blockchain.info/tx/555ae5e6d83cd05975952e2725783ddd760076de3d918f9c33ef6895e99b363a
+  // 1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy - 0.002 BTC (in wallet)
+  // 1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4 - 0.01676469 BTC (not in wallet)
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] =
+    "01000000019970765cdbceee5b6ab67491218f74a130aa6c81932d088c9b44ece1be7fbe1"
+    "b010000006b483045022100cce48367450cc2a76e4033dd342b7792e7c36011bff6e71eef"
+    "314a498045f09e02205a7fdbcb0d7428f8b3ca0818902727e9babb28f8a0582f5608f3a49"
+    "c842d2e51012102ecbf6d557ccbf87295769deace203ee31fd3bb57813b38d1322881c38f"
+    "30674dffffffff02400d0300000000001976a914c8dd2744f160f0f24537606b82e40d5d0"
+    "815810388acb5941900000000001976a9147dcdbe519137c8ccdf54da3032b16b0005d79b"
+    "4488ac00000000";
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["address_statuses"].size());
+  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",
+            response["address_statuses"][0]["addr_b58"].asString());
+  EXPECT_EQ(200000, response["address_statuses"][0]["value"].asUInt64());
+
+  // https://blockchain.info/tx/0eb2848657a8b0804041f6168f12e69b0297c2fa0fe85f39b8969a294846a6df
+  // 1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4 - 0.001 BTC (not in wallet)
+  // 1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG - 0.001 BTC (in wallet)
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] =
+    "01000000013a369be99568ef339c8f913dde760076dd3d7825272e957559d03cd8e6e55a"
+    "55000000006b483045022100cddd9d990ef28591f75f02faf58c1627303954db1927503a"
+    "3010174c910fa470022059540c028a2606613cd645bb40fd0957a3fc6ed930533882ab50"
+    "79f48995974e012103ad1f0703fe90a3ae314b2a0e92717a2151331d7e8aeb1f5aedc0f2"
+    "42ffd1b122ffffffff02a0860100000000001976a9147dcdbe519137c8ccdf54da3032b1"
+    "6b0005d79b4488aca0860100000000001976a9147f33b7b268769df922c817dbd8d1cca4"
+    "8249c66288ac000000000";
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(2, response["address_statuses"].size());
+  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",
+            response["address_statuses"][1]["addr_b58"].asString());
+  EXPECT_EQ(100000, response["address_statuses"][1]["value"].asUInt64());
+  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",
+            response["address_statuses"][0]["addr_b58"].asString());
+  EXPECT_EQ(0, response["address_statuses"][0]["value"].asUInt64());
+
+  // https://blockchain.info/tx/0eb2848657a8b0804041f6168f12e69b0297c2fa0fe85f39b8969a294846a6df
+  // 1CST89hhCpa6mXEai8rirBU8TXCcgPuff2  - 0.0009 BTC (not in wallet)
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] =
+    "0100000001dfa64648299a96b8395fe80ffac297029be6128f16f6414080b0a8578684b2"
+    "0e010000006c493046022100a7fa39817fed7c948ac3aa0faf027d27d8b9a0151c5e5bb9"
+    "be6454d2792ceb800221009ead82115ea1f45a86a2ddcf516227e62989c7880f42e5a790"
+    "34af739c4808cc0121031107058177122c42bffa466ca9951199225bfef4d801811e11e1"
+    "2d208cd397deffffffff01905f0100000000001976a9147d7996db006e5f9a9140d1cf72"
+    "98967c12da31e788ac00000000";
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["address_statuses"].size());
+  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",
+            response["address_statuses"][0]["addr_b58"].asString());
+  EXPECT_EQ(0, response["address_statuses"][0]["value"].asUInt64());
+}

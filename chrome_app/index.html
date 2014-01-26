@@ -160,18 +160,18 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getCurrentAccount().getPublicAddresses() track by $index">
+                    <tr data-ng-repeat="(addr_b58, addr) in getPublicAddresses() track by $index">
                       <td>
                         <div class="dropdown">
-                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
+                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr_b58}} <span class="caret"></span></a>
                           <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="https://blockchain.info/address/{{addr.address}}" target="_blank" >Visit Blockchain.info for this address</a></li>
+                            <li><a href="https://blockchain.info/address/{{addr_b58}}" target="_blank" >Visit Blockchain.info for this address</a></li>
                             <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
                             <li><a href="#">Generate receiving QR code</a></li>
                           </ul>
                         </div>
                       </td>
-                      <td>{{satoshiToUnit(addr.balance)}}</td>
+                      <td>{{satoshiToUnit(addr.value)}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -183,18 +183,18 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getCurrentAccount().getChangeAddresses() track by $index">
+                    <tr data-ng-repeat="(addr_b58, addr) in getChangeAddresses() track by $index">
                       <td>
                         <div class="dropdown">
-                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr.address}} <span class="caret"></span></a>
+                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr_b58}} <span class="caret"></span></a>
                           <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="https://blockchain.info/address/{{addr.address}}" target="_blank" >Visit Blockchain.info for this address</a></li>
+                            <li><a href="https://blockchain.info/address/{{addr_b58}}" target="_blank" >Visit Blockchain.info for this address</a></li>
                             <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
                             <li><a href="#">Generate receiving QR code</a></li>
                           </ul>
                         </div>
                       </td>
-                      <td>{{satoshiToUnit(addr.balance)}}</td>
+                      <td>{{satoshiToUnit(addr.value)}}</td>
                     </tr>
                   </tbody>
                 </table>

@@ -296,6 +296,10 @@ var walletAppController = function($scope,
     return $scope.wallet.getAccounts();
   };
 
+  $scope.getPublicAddresses = function() {
+    return $scope.wallet.watchedAddresses;
+  }
+
   $scope.getCurrentAccount = function() {
     return $scope.w.currentAccount;
   };

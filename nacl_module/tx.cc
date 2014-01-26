@@ -122,7 +122,13 @@ static void PushBytesWithSize(bytes_t& out, const bytes_t& b) {
 }
 
 TxIn::TxIn(std::istream& is) {
-  ReadIntoBytes(is, prev_txo_hash_, 32);
+  bytes_t hash_serialized;
+  ReadIntoBytes(is, hash_serialized, 32);
+  prev_txo_hash_.resize(hash_serialized.size());
+  std::reverse_copy(hash_serialized.begin(),
+                    hash_serialized.end(),
+                    prev_txo_hash_.begin());
+
   prev_txo_index_ = ReadUint32(is);
   uint64_t script_len = ReadVarInt(is);
   ReadIntoBytes(is, script_, script_len);
@@ -151,7 +157,10 @@ TxIn::TxIn(const bytes_t& hash,
 }
 
 bytes_t TxIn::Serialize() const {
-  bytes_t s(prev_txo_hash_.begin(), prev_txo_hash_.end());
+  bytes_t s(prev_txo_hash_.size(), 0);
+  std::reverse_copy(prev_txo_hash_.begin(),
+                    prev_txo_hash_.end(),
+                    s.begin());
   PushUint32(s, prev_txo_index_);
   if (should_serialize_script_) {
     PushBytesWithSize(s, script_);
