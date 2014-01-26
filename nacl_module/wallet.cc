@@ -27,6 +27,7 @@
 #include "base58.h"
 #include "credentials.h"
 #include "crypto.h"
+#include "errors.h"
 #include "node.h"
 #include "node_factory.h"
 #include "wallet.h"
@@ -378,7 +379,10 @@ bool Wallet::CreateTx(const tx_outs_t& recipients,
                         change_txo,
                         fee,
                         error_code);
-  return true;
+  if (error_code != ERROR_NONE) {
+    std::cerr << "CreateTx failed: " << error_code << std::endl;
+  }
+  return error_code == ERROR_NONE;
 }
 
 tx_outs_t Wallet::GetUnspentTxos() {

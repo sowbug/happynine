@@ -30,6 +30,41 @@
 #include "jsoncpp/json/writer.h"
 #include "types.h"
 
+static void Spend(API &api,
+                  const std::string& recipient,
+                  uint64_t value,
+                  uint64_t fee,
+                  std::string& actual_sender,
+                  uint64_t& actual_new_balance) {
+  Json::Value request;
+  Json::Value response;
+
+  // Generate the signed transaction.
+  request = Json::Value();
+  response = Json::Value();
+  request["recipients"][0]["addr_b58"] = recipient;
+  request["recipients"][0]["value"] = (Json::Value::UInt64)value;
+  request["fee"] = (Json::Value::UInt64)fee;
+  request["sign"] = true;
+
+  EXPECT_TRUE(api.HandleCreateTx(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_TRUE(response["tx"].asString().size() > 0);
+  const bytes_t tx(unhexlify(response["tx"].asString()));
+
+  // Broadcast the transaction (no code, pretend).
+
+  // Report that we got the transaction. Expect new balance.
+  request = Json::Value();
+  response = Json::Value();
+  request["txs"][0]["tx"] = to_hex(tx);
+  EXPECT_TRUE(api.HandleReportTxs(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(1, response["address_statuses"].size());
+  actual_sender = response["address_statuses"][0]["addr_b58"].asString();
+  actual_new_balance = response["address_statuses"][0]["value"].asUInt64();
+}
+
 TEST(ApiTest, HappyPath) {
   Credentials c;
   Wallet w(c);
@@ -154,34 +189,34 @@ TEST(ApiTest, HappyPath) {
   uint64_t amount_to_spend = 99777;
   uint64_t fee = 42;
 
-  request = Json::Value();
-  response = Json::Value();
-  request["recipients"][0]["addr_b58"] = "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4";
-  request["recipients"][0]["value"] = (Json::Value::UInt64)amount_to_spend;
-  request["fee"] = (Json::Value::UInt64)fee;
-  request["change_index"] = 0;
-  request["sign"] = true;
-
-  EXPECT_TRUE(api.HandleCreateTx(request, response));
-
-  EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_TRUE(response["tx"].asString().size() > 0);
-  const bytes_t tx(unhexlify(response["tx"].asString()));
-  //std::cerr << response["tx"].asString() << std::endl;
-
-  // Broadcast, then report that we got the transaction. Expect new balance.
+  std::string actual_sender;
+  uint64_t actual_new_balance;
+  Spend(api,
+        "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4",
+        amount_to_spend,
+        fee,
+        actual_sender,
+        actual_new_balance);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  request = Json::Value();
-  response = Json::Value();
-  request["txs"][0]["tx"] = to_hex(tx);
-  EXPECT_TRUE(api.HandleReportTxs(request, response));
-  EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["address_statuses"].size());
-  EXPECT_EQ(expected_balance,
-            response["address_statuses"][0]["value"].asUInt64());
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",
-            response["address_statuses"][0]["addr_b58"].asString());
+  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG", actual_sender);
+  EXPECT_EQ(expected_balance, actual_new_balance);
+
+  // Now spend the rest of the funds in the wallet. This is different
+  // because it requires the wallet to report a zero balance without
+  // reporting *all* zero balances.
+  fee = 2;
+  amount_to_spend = expected_balance - fee - 1;  // TODO: remove -1
+  Spend(api,
+        "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4",
+        amount_to_spend,
+        fee,
+        actual_sender,
+        actual_new_balance);
+  expected_balance -= amount_to_spend;
+  expected_balance -= fee;
+  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG", actual_sender);
+  EXPECT_EQ(expected_balance, actual_new_balance);
 }
 
 TEST(ApiTest, BadExtPrvB58) {

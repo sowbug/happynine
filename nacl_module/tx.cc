@@ -34,6 +34,7 @@
 
 #include "base58.h"
 #include "crypto.h"
+#include "errors.h"
 #include "node.h"
 #include "node_factory.h"
 
@@ -261,7 +262,7 @@ bool Transaction::IdentifyUnspentTxos(const tx_outs_t& unspent_txos,
   }
   if (required_value != 0) {
     // Not enough funds to cover transaction.
-    error_code = -10;
+    error_code = ERROR_NOT_ENOUGH_FUNDS;
     return false;
   }
   return true;
@@ -312,9 +313,25 @@ GenerateKeysForUnspentTxos(const Node& signing_node,
       break;
     }
   }
+  for (uint32_t i = 0; i < count; ++i) {
+    std::stringstream node_path;
+    node_path << "m/1/" << (start + i);  // internal path; TODO refactor
+    std::auto_ptr<Node> node(NodeFactory::
+                             DeriveChildNodeWithPath(signing_node,
+                                                     node_path.str()));
+    bytes_t hash160 = Base58::toHash160(node->public_key());
+    if (signing_addresses.find(hash160) !=
+        signing_addresses.end()) {
+      signing_keys[hash160] = node->secret_key();
+      signing_public_keys[hash160] = node->public_key();
+    }
+    if (signing_keys.size() == signing_addresses.size()) {
+      break;
+    }
+  }
   if (signing_keys.size() != signing_addresses.size()) {
     // We don't have all the keys we need to spend these funds.
-    error_code = -11;
+    error_code = ERROR_KEY_NOT_FOUND;
     return false;
   }
   return true;
