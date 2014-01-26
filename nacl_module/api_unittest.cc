@@ -107,6 +107,8 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(8 + 8, response["address_statuses"].size());
 
   // TODO(miket): change to address_t, including value & is_public
+  // TODO(miket): neither of these is valid; see
+  // https://github.com/sowbug/happynine/issues/35
   EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",  // m/0'/0/0
             response["address_statuses"][0]["addr_b58"].asString());
   EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",  // m/0'/1/0
@@ -234,7 +236,15 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api.HandleSetCredentials(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  // Restore root node
+  // Import root node with just extended private. This should fail
+  // with a locked wallet.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
+
+  // Restore root node with both
   request = Json::Value();
   response = Json::Value();
   request["ext_pub_b58"] = "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8";
@@ -270,4 +280,21 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0xbef5a2f9", response["fp"].asString());
+
+  // Import root node with just extended private. This is possible
+  // with an unlocked wallet.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
+
+  // Import root node with just extended private. This should succeed
+  // with an unlocked wallet.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K4EVCsxGjJncM1vLdwwi3CZ4ecGrV8X1ieEJpiDjYdE2PxTu4zvKVkR9e8RW9JRHGmNvbQMusmgFDayakzs68YXYvyJw3rSU";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 }

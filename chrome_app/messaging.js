@@ -46,15 +46,33 @@ function handleMessage(message) {
   if (shouldLog)
     console.log(message_object);
   var id = message_object.id;
-  if (callbacks[id]) {
-    if (message_object.error) {
-      logRpcError(message_object.error);
-      callbacks[id].reject(message_object.error);
+  if (id) {
+    if (callbacks[id]) {
+      if (message_object.error) {
+        logRpcError(message_object.error);
+        callbacks[id].reject(message_object.error);
+      } else {
+        callbacks[id].resolve(message_object.result);
+      }
+      delete callbacks[id];
     } else {
-      callbacks[id].resolve(message_object.result);
+      console.log("strange: unrecognized id", message_object);
     }
-    delete callbacks[id];
   } else {
-    console.log("strange: unrecognized id", message_object);
+    console.log("posting", message_object);
+    $.event.trigger({
+      'type': message_object.method,
+      'message': message_object.result,
+      time: new Date(),
+    });
+
+
+//    $(document).on("invalidFormData", function (evt) {
+  //    $('txtForSubmissionAttempts').val( "Event fired from "
+    //                               + evt.currentTarget.nodeName + " at "
+      //                                   + evt.time.toLocaleString() + ": " + evt.message
+        //                               );
+  //  });
+
   }
 }

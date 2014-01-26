@@ -181,7 +181,7 @@ void API::PopulateResponses(Json::Value& root) {
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
   const std::string path(args["path"].asString());
-  const bool isWatchOnly(args["isWatchOnly"].asBool());
+  const bool isWatchOnly(args["is_watch_only"].asBool());
 
   bytes_t ext_prv_enc;
   if (wallet_.DeriveChildNode(path, isWatchOnly, ext_prv_enc)) {
@@ -202,7 +202,7 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
 
-  if (!ext_pub_b58.empty() && !ext_prv_enc.empty()) {
+  if (!ext_prv_enc.empty()) {
     bool is_root;
     if (wallet_.RestoreNode(ext_pub_b58, ext_prv_enc, is_root)) {
       GenerateNodeResponse(result,
@@ -216,7 +216,7 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
       SetError(result, -1, "Extended key failed validation");
     }
   } else {
-    SetError(result, -1, "Missing required ext_pub_b58 & ext_prv_enc params");
+    SetError(result, -1, "Missing required ext_prv_enc param");
   }
   return true;
 }

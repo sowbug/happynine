@@ -199,7 +199,10 @@ bool Wallet::RestoreNode(const std::string& ext_pub_b58,
   std::auto_ptr<Node> node;
   node.reset(NodeFactory::CreateNodeFromExtended(ext_pub));
   if (node.get()) {
-    if (node->parent_fingerprint() == 0 && node->child_num() == 0) {
+    if (node->child_num() == 0) {
+      if (ext_prv_enc.empty()) {
+        return false;
+      }
       is_root = true;
       set_root_ext_keys(ext_pub, ext_prv_enc);
       RestoreRootNode(node.get());

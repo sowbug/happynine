@@ -153,21 +153,20 @@ var walletAppController = function($scope,
     });
 
   $scope.newMasterKey = function() {
-    $scope.wallet.addRandomMasterKey(function() {
-      $scope.$apply();
-    });
+    $scope.wallet.addRandomMasterKey()
+      .then(function() {
+        $scope.$apply();
+      });
   };
 
   $scope.importMasterKey = function() {
-    $scope.wallet.importMasterKey(
-      $scope.w.importMasterKey,
-      function(succeeded) {
-        if (succeeded) {
-          $scope.w.importMasterKey = null;
-          $("#import-master-key-modal").modal('hide');
-        }
+    $scope.wallet.importMasterKey($scope.w.importMasterKey)
+      .then(function() {
+        $scope.w.importMasterKey = null;
+        $("#import-master-key-modal").modal('hide');
         $scope.$apply();
-      });
+      }.bind(this),
+            function() { console.log("nope"); }.bind(this));
   };
 
   $scope.removeMasterKey = function() {
@@ -364,6 +363,16 @@ var walletAppController = function($scope,
   $scope.unitLabel = function() {
     return $scope.settings.unitLabel();
   };
+
+  $(document).on("address_statuses", function(evt) {
+    console.log("received", evt.message);
+    var addrs = evt.message;
+    for (var a in addrs) {
+      $scope.electrum.enqueueRpc("blockchain.address.get_history",
+                                 [addrs[a].addr_b58])
+        .then($scope.wallet.handleGetHistory.bind(this));
+    }
+  });
 
   // TODO(miket): this might be a race with moduleDidLoad.
   var listenerDiv = document.getElementById('listener');

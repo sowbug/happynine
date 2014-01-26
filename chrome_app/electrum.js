@@ -61,16 +61,18 @@ function Electrum($http) {
     this.advanceTimeoutDuration();
   };
 
-  this.enqueueRpc = function(method, params, callback) {
-    var rpc = { "id": this.callbackId++,
-                "method": method,
-                "params": params,
-              };
-    this.rpcQueue.push(rpc);
-    this.callbacks[rpc.id] = callback;
-    this.pendingRpcCount++;
-    this.resetTimeoutDuration();
-    this.scheduleNextConnect();
+  this.enqueueRpc = function(method, params) {
+    return new Promise(function(resolve, reject) {
+      var rpc = { "id": this.callbackId++,
+                  "method": method,
+                  "params": params,
+                };
+      this.rpcQueue.push(rpc);
+      this.callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
+      this.pendingRpcCount++;
+      this.resetTimeoutDuration();
+      this.scheduleNextConnect();
+    }.bind(this));
   };
 
   this.connect = function() {
@@ -83,7 +85,7 @@ function Electrum($http) {
     var handleResponse = function(o) {
       var id = o.id;
       if (this.callbacks[id]) {
-        this.callbacks[id].call(this, o.result);
+        this.callbacks[id].resolve(o.result);
         delete this.callbacks[id];
         this.pendingRpcCount--;
       } else {

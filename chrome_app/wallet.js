@@ -72,12 +72,32 @@ function Wallet(credentials) {
             } else {
               this.nodes.push(node);
             }
+            this.checkForNotifications(response);
             resolve();
           } else {
+            this.checkForNotifications(response);
             reject(response);
           }
         }.bind(this));
     }.bind(this));
+  };
+
+  this.checkForNotifications = function(response) {
+    if (response.address_statuses) {
+      console.log("noticed address_statuses");
+      var as = response.address_statuses;
+      for (var i in as) {
+        console.log(as[i].addr_b58);
+      }
+      $.event.trigger({
+        'type': 'address_statuses',
+        'message': as,
+        time: new Date(),
+      });
+
+    } else if (response.tx_requests) {
+      console.log("noticed tx_requests");
+    }
   };
 
   this.deriveNodes = function(callback) {
@@ -153,21 +173,31 @@ function Wallet(credentials) {
     }
   };
 
-  this.addRandomMasterKey = function(callbackVoid) {
-    postRPC('generate-root-node', {})
-      .then(function() {
-        this.setNodeCallback.call(this, true, callbackVoid);
-      }.bind(this));
+  this.addRandomMasterKey = function() {
+    return new Promise(function(resolve, reject) {
+      postRPC('generate-root-node', {})
+        .then(function(response) {
+          var node = Node.fromStorableObject(response);
+          this.restoreNode(node).then(resolve);
+        }.bind(this));
+    }.bind(this));
   };
 
-  this.importMasterKey = function(ext_prv_b58, callbackBool) {
-    var params = {
-      'ext_prv_b58': ext_prv_b58
-    };
-    postRPC('import-root-node', params)
-      .then(function() {
-        this.setNodeCallback.bind(this, true, callbackBool);
-      }.bind(this));
+  this.importMasterKey = function(ext_prv_b58) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'ext_prv_b58': ext_prv_b58
+      };
+      postRPC('import-root-node', params)
+        .then(function(response) {
+          if (response.fp) {
+            var node = Node.fromStorableObject(response);
+            this.restoreNode(node).then(resolve);
+          } else {
+            reject();
+          }
+        }.bind(this));
+    }.bind(this));
   };
 
   this.addNewNode = function(isRoot, callback, node) {
@@ -184,26 +214,33 @@ function Wallet(credentials) {
   };
 
   this.removeMasterKey = function() {
-    if (!this.credentials.isKeyAvailable()) {
-      console.log("can't remove master key; wallet is locked");
-      return;
-    }
     this.rootNodes = [];
   };
 
   this.deriveNextAccount = function(isWatchOnly, callbackBool) {
     var params = {
       'path': "m/0'",
-      'isWatchOnly': isWatchOnly,
+      'is_watch_only': isWatchOnly,
     };
     postRPC('derive-child-node', params)
-      .then(function() {
-        this.setNodeCallback.call(this, false, callbackBool);
+      .then(function(response) {
+        var node = Node.fromStorableObject(response);
+        this.restoreNode(node).then(resolve);
       }.bind(this));
   };
 
   this.getAccountCount = function() {
     return this.nodes.length;
+  };
+
+  this.handleGetHistory = function(txs) {
+    return new Promise(function(resolve, reject) {
+      postRPC('report-tx-statuses', { 'tx_statuses': txs })
+        .then(function(response) {
+          console.log("cool:", response);
+          resolve();
+        }.bind(this));
+    }.bind(this));
   };
 
   this.STORAGE_NAME = 'wallet';
