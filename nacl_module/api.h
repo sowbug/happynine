@@ -50,14 +50,15 @@ class API {
 
   bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleAddRootNode(const Json::Value& args, Json::Value& result);
-
   bool HandleImportRootNode(const Json::Value& args, Json::Value& result);
 
   // Child Nodes
   bool HandleDeriveChildNode(const Json::Value& args, Json::Value& result);
 
   bool HandleAddChildNode(const Json::Value& args, Json::Value& result);
+
+  // All Nodes
+  bool HandleRestoreNode(const Json::Value& args, Json::Value& result);
 
   // Transactions
   bool HandleReportTxStatuses(const Json::Value& args, Json::Value& result);

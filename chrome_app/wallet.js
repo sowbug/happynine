@@ -52,27 +52,54 @@ function Wallet(credentials) {
       for (var i in o.rnodes) {
         rootNodes.push(Node.fromStorableObject(o.rnodes[i]));
       }
-      this.nodes = [];
+      var nodes = [];
       for (var i in o.nodes) {
-        this.nodes.push(Node.fromStorableObject(o.nodes[i]));
+        nodes.push(Node.fromStorableObject(o.nodes[i]));
       }
-      this.installRootNodes(rootNodes).then(function() { resolve(); });
+      this.installRootNodes(rootNodes).then(function() {
+        this.installNodes(nodes);
+      }.bind(this)).then(function() {
+        resolve();
+      });
     }.bind(this));
   };
 
-  this.installRootNodes = function(rootNodes) {
+  this.installRootNodes = function(nodes) {
     return new Promise(function(resolve, reject) {
       var f = function() {
-        if (rootNodes.length) {
-          var rootNode = rootNodes.pop();
+        if (nodes.length) {
+          var node = nodes.pop();
           var params = {
-            'ext_pub_b58': rootNode.extendedPublicBase58,
-            'ext_prv_enc': rootNode.extendedPrivateEncrypted,
+            'ext_pub_b58': node.extendedPublicBase58,
+            'ext_prv_enc': node.extendedPrivateEncrypted,
           };
           postRPCWithCallback(
-            'add-root-node',
+            'restore-node',
             params,
             this.setNodeCallback.bind(this, true, f.bind(this)));
+        } else {
+          resolve();
+        }
+      };
+      f.call(this);
+    }.bind(this));
+  };
+
+  // *sob* learn promises
+  // TODO: this is probably the same as installRootNodes
+  this.installNodes = function(nodes) {
+    return new Promise(function(resolve, reject) {
+      var f = function() {
+        if (nodes.length) {
+          var node = nodes.pop();
+          var params = {
+            'ext_pub_b58': node.extendedPublicBase58,
+            'ext_prv_enc': node.extendedPrivateEncrypted,
+          };
+          postRPCWithCallback(
+            'restore-node',
+            params,
+            this.setNodeCallback.bind(this, false, f.bind(this)));
         } else {
           resolve();
         }

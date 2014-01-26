@@ -43,16 +43,15 @@ class Wallet {
   bool DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc);
   bool GenerateRootNode(bytes_t& ext_prv_enc);
   bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
-  bool SetRootNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc);
 
   // Child nodes
   bool DeriveChildNode(const std::string& path,
                        bool isWatchOnly,
                        bytes_t& ext_prv_enc);
-  bool AddChildNode(const std::string& ext_pub_b58,
-                    const bytes_t& ext_prv_enc,
-                    uint32_t public_address_count,
-                    uint32_t change_address_count);
+
+  // All nodes
+  bool RestoreNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc,
+                   bool& is_root);
 
   // Transactions
   void HandleTxStatus(const bytes_t& hash, uint32_t height);
@@ -102,6 +101,9 @@ class Wallet {
   tx_outs_t GetUnspentTxos();
 
   bool IsWalletLocked() const;
+
+  void RestoreRootNode(Node* node);
+  void RestoreChildNode(Node* node);
 
   Credentials& credentials_;
   bytes_t root_ext_pub_;

@@ -80,17 +80,14 @@ public:
     if (method == "generate-root-node") {
       handled = api.HandleGenerateRootNode(params, result);
     }
-    if (method == "add-root-node") {
-      handled = api.HandleAddRootNode(params, result);
-    }
     if (method == "import-root-node") {
       handled = api.HandleImportRootNode(params, result);
     }
     if (method == "derive-child-node") {
       handled = api.HandleDeriveChildNode(params, result);
     }
-    if (method == "add-child-node") {
-      handled = api.HandleAddChildNode(params, result);
+    if (method == "restore-node") {
+      handled = api.HandleRestoreNode(params, result);
     }
     if (method == "report-tx-statuses") {
       handled = api.HandleReportTxStatuses(params, result);

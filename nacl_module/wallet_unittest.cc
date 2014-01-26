@@ -57,7 +57,9 @@ TEST(WalletTest, HappyPath) {
     ext_pub_b58(Base58::toBase58Check(root_node->toSerializedPublic()));
 
   // Set to the new node and confirm we got it back.
-  EXPECT_TRUE(w.SetRootNode(ext_pub_b58, ext_prv_enc));
+  bool is_root;
+  EXPECT_TRUE(w.RestoreNode(ext_pub_b58, ext_prv_enc, is_root));
+  EXPECT_TRUE(is_root);
   EXPECT_EQ(fp, w.GetRootNode()->fingerprint());
 
   // Does importing a bad xprv fail?

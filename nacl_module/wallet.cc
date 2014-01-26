@@ -100,17 +100,6 @@ bool Wallet::GenerateRootNode(bytes_t& ext_prv_enc) {
   return DeriveRootNode(seed, ext_prv_enc);
 }
 
-bool Wallet::SetRootNode(const std::string& ext_pub_b58,
-                         const bytes_t& ext_prv_enc) {
-  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
-  std::auto_ptr<Node> node(NodeFactory::CreateNodeFromExtended(ext_pub));
-  if (node.get()) {
-    set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
-    return true;
-  }
-  return false;
-}
-
 bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
                             bytes_t& ext_prv_enc) {
   if (IsWalletLocked()) {
@@ -122,6 +111,8 @@ bool Wallet::ImportRootNode(const std::string& ext_prv_b58,
     if (Crypto::Encrypt(credentials_.ephemeral_key(),
                         ext_prv,
                         ext_prv_enc)) {
+      // TODO: this should call RestoreNode instead. search for
+      // all calls to this method & do same
       set_root_ext_keys(node->toSerializedPublic(), ext_prv_enc);
       return true;
     }
@@ -155,63 +146,70 @@ bool Wallet::DeriveChildNode(const std::string& path,
       }
     }
     if (result) {
-      AddChildNode(ext_pub_b58, ext_prv_enc, 8, 8);
+      bool is_root;
+      RestoreNode(ext_pub_b58, ext_prv_enc, is_root);
     }
   }
   return result;
 }
 
-bool Wallet::AddChildNode(const std::string& ext_pub_b58,
-                          const bytes_t& ext_prv_enc,
-                          uint32_t public_address_count,
-                          uint32_t change_address_count) {
-  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
-  std::auto_ptr<Node> child_node;
-  if (!ext_prv_enc.empty()) {
-    if (IsWalletLocked()) {
-      return false;
+void Wallet::RestoreRootNode(Node* /*node*/) {
+  // Nothing to do!
+}
+
+void Wallet::RestoreChildNode(Node* node) {
+  uint32_t public_address_count = 8;
+  uint32_t change_address_count = 8;
+  for (uint32_t i = 0; i < public_address_count; ++i) {
+    std::stringstream node_path;
+    node_path << "m/0/" << i;  // external path
+    std::auto_ptr<Node>
+      address_node(NodeFactory::DeriveChildNodeWithPath(*node,
+                                                        node_path.str()));
+    if (address_node.get()) {
+      address_status_t as;
+      as.hash160 = Base58::toHash160(address_node->public_key());
+      as.value = 0;
+      as.is_public = true;
+      address_statuses_.push_back(as);
+      public_addresses_in_wallet_.insert(as.hash160);
     }
-    bytes_t ext_prv;
-    if (Crypto::Decrypt(credentials_.ephemeral_key(),
-                        ext_prv_enc,
-                        ext_prv)) {
-      child_node.reset(NodeFactory::CreateNodeFromExtended(ext_prv));
-    }
-  } else {
-    child_node.reset(NodeFactory::CreateNodeFromExtended(ext_pub));
   }
-  if (child_node.get()) {
-    for (uint32_t i = 0; i < public_address_count; ++i) {
-      std::stringstream node_path;
-      node_path << "m/0/" << i;  // external path
-      std::auto_ptr<Node>
-        address_node(NodeFactory::DeriveChildNodeWithPath(*child_node,
-                                                          node_path.str()));
-      if (address_node.get()) {
-        address_status_t as;
-        as.hash160 = Base58::toHash160(address_node->public_key());
-        as.value = 0;
-        as.is_public = true;
-        address_statuses_.push_back(as);
-        public_addresses_in_wallet_.insert(as.hash160);
-      }
+  for (uint32_t i = 0; i < change_address_count; ++i) {
+    std::stringstream node_path;
+    node_path << "m/1/" << i;  // internal path
+    std::auto_ptr<Node>
+      address_node(NodeFactory::DeriveChildNodeWithPath(*node,
+                                                        node_path.str()));
+    if (address_node.get()) {
+      address_status_t as;
+      as.hash160 = Base58::toHash160(address_node->public_key());
+      as.value = 0;
+      as.is_public = false;
+      address_statuses_.push_back(as);
+      change_addresses_in_wallet_.insert(as.hash160);
     }
-    for (uint32_t i = 0; i < change_address_count; ++i) {
-      std::stringstream node_path;
-      node_path << "m/1/" << i;  // internal path
-      std::auto_ptr<Node>
-        address_node(NodeFactory::DeriveChildNodeWithPath(*child_node,
-                                                          node_path.str()));
-      if (address_node.get()) {
-        address_status_t as;
-        as.hash160 = Base58::toHash160(address_node->public_key());
-        as.value = 0;
-        as.is_public = false;
-        address_statuses_.push_back(as);
-        change_addresses_in_wallet_.insert(as.hash160);
-      }
+  }
+}
+
+bool Wallet::RestoreNode(const std::string& ext_pub_b58,
+                         const bytes_t& ext_prv_enc,
+                         bool& is_root) {
+  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
+  std::auto_ptr<Node> node;
+  node.reset(NodeFactory::CreateNodeFromExtended(ext_pub));
+  if (node.get()) {
+    if (node->parent_fingerprint() == 0 && node->child_num() == 0) {
+      is_root = true;
+      set_root_ext_keys(ext_pub, ext_prv_enc);
+      RestoreRootNode(node.get());
+      GetRootNode();  // groan -- this regenerates the cached node
+    } else {
+      is_root = false;
+      set_child_ext_keys(ext_pub, ext_prv_enc);
+      RestoreChildNode(node.get());
+      GetChildNode();  // groan -- this regenerates the cached node
     }
-    set_child_ext_keys(ext_pub, ext_prv_enc);
     return true;
   }
   return false;
