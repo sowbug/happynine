@@ -82,30 +82,6 @@ function Wallet(credentials, electrum) {
     }.bind(this));
   };
 
-  this.deriveNodes = function(callback) {
-    var ns = this.rootNodes.concat(this.nodes);
-    var f = function() {
-      if (ns.length) {
-        ns.pop().deriveSelf(f.bind(this));
-      } else {
-        callback.call(this);
-      }
-    };
-    f();
-  };
-
-  this.unlockNodes = function(credentials, callback) {
-    var ns = this.rootNodes.concat(this.nodes);
-    var f = function() {
-      if (ns.length) {
-        ns.pop().unlock(credentials, f.bind(this));
-      } else {
-        callback.call(this, true);
-      }
-    };
-    f();
-  };
-
   this.isKeySet = function() {
     return this.rootNodes.length > 0;
   };
@@ -119,9 +95,6 @@ function Wallet(credentials, electrum) {
   };
 
   this.getExtendedPrivateBase58 = function() {
-    if (!this.credentials.isKeyAvailable()) {
-      console.log("warning: getPrivateBase58 with locked wallet");
-    }
     if (this.rootNodes.length > 0) {
       return this.rootNodes[0].extendedPrivateBase58;
     }
@@ -141,17 +114,6 @@ function Wallet(credentials, electrum) {
   this.getFingerprint = function() {
     if (this.rootNodes.length > 0) {
       return this.rootNodes[0].fingerprint;
-    }
-  };
-
-  this.setNodeCallback = function(isRoot, response) {
-    if (response.fp) {
-      var node = Node.fromStorableObject(response);
-      if (isRoot) {
-        this.rootNodes.push(node);
-      } else {
-        this.nodes.push(node);
-      }
     }
   };
 
@@ -180,19 +142,6 @@ function Wallet(credentials, electrum) {
           }
         }.bind(this));
     }.bind(this));
-  };
-
-  this.addNewNode = function(isRoot, callback, node) {
-    if (node) {
-      if (isRoot) {
-        this.rootNodes.push(node);
-      } else {
-        this.nodes.push(node);
-      }
-      this.deriveNodes(callback.bind(this, true));
-    } else {
-      callback.call(this, false);
-    }
   };
 
   this.removeMasterKey = function() {

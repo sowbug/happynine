@@ -338,7 +338,7 @@
                   <div class="panel-body">
                     <div class="row">
                       <div class="col-md-10 col-md-offset-2">
-                        <button class="btn btn-success" ng-click="generateNextAccount()">Generate {{nextAccountName()}}</button>
+                        <button class="btn btn-success" ng-click="deriveNextAccount()">Generate {{nextAccountName()}}</button>
                         <button class="btn btn-default" ng-click="watchNextAccount()">Watch {{nextAccountName()}}</button>
                       </div>
                     </div>
@@ -470,7 +470,7 @@
     <!-- Import master key modal -->
     <div class="modal fade" id="import-master-key-modal" tabindex="-1" role="dialog" aria-labelledby="import-master-key-label" aria-hidden="true">
       <div class="modal-dialog">
-        <form class="form-horizontal" role="form" ng-submit="console.log(222);importMasterKey()">
+        <form class="form-horizontal" role="form" ng-submit="importMasterKey()">
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>

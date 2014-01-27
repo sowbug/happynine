@@ -120,18 +120,6 @@ var walletAppController = function($scope,
   );
 
   $scope.$watch(
-    'getCurrentAccount().isDerivationComplete',
-    function(newVal, oldVal) {
-      if (newVal != oldVal) {
-        if (newVal) {
-          var account = $scope.getCurrentAccount();
-          account.retrieveAllTransactions($scope.electrum);
-        }
-      }
-    }
-  );
-
-  $scope.$watch(
     'getCurrentAccountFingerprint()',
     function(newVal, oldVal) {
       if (newVal != oldVal) {
@@ -182,7 +170,7 @@ var walletAppController = function($scope,
     return "Account " + $scope.wallet.getNextAccountNumber();
   };
 
-  $scope.generateNextAccount = function() {
+  $scope.deriveNextAccount = function() {
     $scope.wallet.deriveNextAccount(false, function(succeeded) {
       if (succeeded) {
         $scope.$apply();
@@ -313,15 +301,6 @@ var walletAppController = function($scope,
 
   $scope.areRequestsPending = function() {
     return $scope.electrum.areRequestsPending();
-  };
-
-  $scope.______refreshAccount = function() {
-    $scope.w.currentAccount.fetchAddresses(function() {
-      $scope.w.currentAccount.fetchBalances($http,
-                                            function(succeeded) {});
-      $scope.w.currentAccount.fetchUnspent($http,
-                                           function(succeeded) {});
-    });
   };
 
   $scope.setCurrentAccountByIndex = function(index) {
