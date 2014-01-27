@@ -1,5 +1,5 @@
-$ python -c 'import binascii; open("h9-master-p rivate-key-entropy", "w+b").write(binascii.unhexlify("baddecaf998877665544332211 00"))'
-$ MPK=`genwallet h9-master-private-key-entropy` ; rm h9-master-private-key-entropy
+$ python -c 'import binascii; open("h9-master-private-key-entropy", "w+b").write(binascii.unhexlify("baddecaf99887766554433221100"))'
+$ MPK=`genwallet h9-master-private-key-entropy`; rm h9-master-private-key-entropy
 $ genwallet -i -k $MPK -s .pub
 xpub661MyMwAqRbcGiZfyyojfvZ5ZxB8MQRtZmzFQfG6grYhX2dyFm3oB2LsoiCkgGUhZgjHU67T6auuvgx5JadUkikQwqVgnfPx28bWHtvAhWQ
 main network
