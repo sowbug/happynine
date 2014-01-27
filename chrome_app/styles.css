@@ -25,6 +25,11 @@ html, body {
   margin-bottom: 20px;
 }
 
+#receive-panel-body {
+  overflow-y: auto;
+  max-height: 458px;
+}
+
 .invisible {
   visibility: hidden;
 }
