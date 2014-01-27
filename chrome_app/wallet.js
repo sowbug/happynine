@@ -159,6 +159,27 @@ function Wallet(electrum) {
       }.bind(this));
   };
 
+  this.sendFunds = function(sendTo, sendValue, sendFee) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'sign': true,
+        'fee': sendFee,
+        'recipients': [{'addr_b58': sendTo, 'value': sendValue}],
+      };
+      postRPC('create-tx', params)
+        .then(function(response) {
+          if (response.tx) {
+            console.log("got", response.tx);
+            electrum.enqueueRpc("blockchain.transaction.broadcast",
+                                [response.tx])
+              .then(resolve);
+          } else {
+            reject("create-tx failed");
+          }
+        }.bind(this));
+    }.bind(this));
+  };
+
   this.getAccountCount = function() {
     return this.nodes.length;
   };
@@ -213,7 +234,6 @@ function Wallet(electrum) {
 
   this.updateAddress = function(addr_status) {
     this.watchedAddresses[addr_status.addr_b58] = addr_status;
-    console.log("now we know", addr_status);
   };
 
   $(document).on("address_statuses", function(evt) {
@@ -232,6 +252,11 @@ function Wallet(electrum) {
                           [tx_requests[t]])
         .then(this.handleTransactionGet.bind(this));
     }
+  }.bind(this));
+
+  $(document).on("blockchain.address.subscribe", function(evt) {
+    var params = evt.message;
+    this.handleAddressGetHistory([{'tx_hash': params[1], 'height': 0}]);
   }.bind(this));
 
   this.STORAGE_NAME = 'wallet';

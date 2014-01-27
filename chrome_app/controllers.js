@@ -333,13 +333,10 @@ var walletAppController = function($scope,
     if (sendValue > 0 && sendFee > 0 && sendTo.length > 25) {
       console.log("send", sendTo, sendValue, $scope.unitLabel(),
                   "for", sendFee);
-      $scope.getCurrentAccount().sendFunds($http,
-                                           sendTo,
-                                           sendValue,
-                                           sendFee,
-                                           function() {
-                                             $scope.$apply();
-                                           });
+      $scope.wallet.sendFunds(sendTo, sendValue, sendFee)
+        .then(function() {
+          $scope.$apply();
+        });
     }
   };
 

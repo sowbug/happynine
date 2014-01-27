@@ -89,7 +89,17 @@ function Electrum($http) {
         delete this.callbacks[id];
         this.pendingRpcCount--;
       } else {
-        console.log("strange: unrecognized id", o);
+        console.log("notification from electrum", o);
+        var ALLOWED_METHODS = [
+          'blockchain.address.subscribe',
+        ];
+        if (ALLOWED_METHODS.indexOf(o.method) != -1) {
+          $.event.trigger({
+            'type': o.method,
+            'message': o.params,
+            time: new Date(),
+          });
+        }
       }
     };
 
