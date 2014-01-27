@@ -248,6 +248,7 @@ function Wallet(electrum) {
   $(document).on("tx_requests", function(evt) {
     var tx_requests = evt.message;
     for (var t in tx_requests) {
+      console.log("requesting", tx_requests[t]);
       electrum.enqueueRpc("blockchain.transaction.get",
                           [tx_requests[t]])
         .then(this.handleTransactionGet.bind(this));
@@ -256,7 +257,9 @@ function Wallet(electrum) {
 
   $(document).on("blockchain.address.subscribe", function(evt) {
     var params = evt.message;
-    this.handleAddressGetHistory([{'tx_hash': params[1], 'height': 0}]);
+    electrum.enqueueRpc("blockchain.address.get_history",
+                        [params[0]])
+      .then(this.handleAddressGetHistory.bind(this));
   }.bind(this));
 
   this.STORAGE_NAME = 'wallet';
