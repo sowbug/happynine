@@ -1,7 +1,6 @@
-Script started on Thu Jan 23 19:18:11 2014
-bash-3.2$ python -c 'import binascii; open("h9-master-private-key-entropy", "w+b") .write(binascii.unhexlify("baddecaf99887766554433221100"))'
-bash-3.2$ MPK=`genwallet h9-master-private-key-entropy`; rm h9-master-private-key- entropy
-bash-3.2$ genwallet -i -k $MPK -s .pub
+$ python -c 'import binascii; open("h9-master-p rivate-key-entropy", "w+b").write(binascii.unhexlify("baddecaf998877665544332211 00"))'
+$ MPK=`genwallet h9-master-private-key-entropy` ; rm h9-master-private-key-entropy
+$ genwallet -i -k $MPK -s .pub
 xpub661MyMwAqRbcGiZfyyojfvZ5ZxB8MQRtZmzFQfG6grYhX2dyFm3oB2LsoiCkgGUhZgjHU67T6auuvgx5JadUkikQwqVgnfPx28bWHtvAhWQ
 main network
 public key only
@@ -14,11 +13,11 @@ child index:     0
 chain code:      da6cff6154a4d2aa1fc5cb10cbe9789753b265e557a7fab9bf3fda259ff55d8e
 Bitcoin address: 1DjoVzQrmQKVCbEoNDjHkXqRtsq5aHjnQK
   uncompressed:  15Go4Vh6sdc2yWnwjPbGhutFHJWqdQmufm
-bash-3.2$ genwallet -k $MPK
+$ genwallet -k $MPK
 xprv9s21ZrQH143K4EVCsxGjJncM1vLdwwi3CZ4ecGrV8X1ieEJpiDjYdE2PxTu4zvKVkR9e8RW9JRHGmNvbQMusmgFDayakzs68YXYvyJw3rSU
-bash-3.2$ genwallet -k $MPK -s 0p.pub
+$ genwallet -k $MPK -s 0p.pub
 xpub68v4h4NaNEzUFwWJcgKkW2Vw4Jqy6Pm3dQqShDAgCSWMAD36GDEuZdobGwPgZkmASBpK9FnHBCuigWRYa4nVmuGkj4yHLP6rVNFtwMKK61M
-bash-3.2$ genwallet -i -k $MPK -s 0p
+$ genwallet -i -k $MPK -s 0p
 xprv9uviHYqgXsSB3TRqWenk8tZCWH1Ugw3CGBuqtpm4e6yNHQhwifvf1qV7Rfh6L7aaCRwrTXDa1h3WXMWSZUdDJFCdHmU7XLdzqv7q3sNtAvW
 main network
 private key
@@ -34,14 +33,19 @@ WIF:             L5HGwudrLQRwk1sfuk5DqwwGLPTx1QPTdG8F4pVXhjLGuo4rDgqX
   uncompressed:  5KeDgB7Y7fPRBeopnUtFh6CPWKEMctX1bVoW1sBYRdn9bBpoZDC
 Bitcoin address: 19HQrUuhQ617u21o9uGyQkeRLgbqr4FmaQ
   uncompressed:  12Rqrp4dA4SbNirjJBzVN72k3CezpnaS4e
-bash-3.2$ genwallet -k $MPK -s 0p/0/0 -a
-1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy
-bash-3.2$ genwallet -k $MPK -s 0p/0/0 -w
-Kyx32yVykvVkcRi7nKATYJJZyGqJ6L71J7CzuBsYSBsjJEtreSpW
-bash-3.2$ genwallet -k $MPK -s 0p/1/0 -a
-1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG
-bash-3.2$ genwallet -k $MPK -s 0p/1/0 -w
-KytLc8mFMxnPRdkHuws6QFQt4m4vCUYxek9KJ9v5BLiWNNGkvmMz
-bash-3.2$ exit
-
-Script done on Thu Jan 23 19:18:16 2014
+$ genwallet -k $MPK -s 0p/0/1 -a
+199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC
+$ genwallet -k $MPK -s 0p/0/1 -w
+KzywabYUJeczRmj1Gdppc2ZUJ3AT9GQHj6ezjRw8DamAs35oiwjc
+$ genwallet -k $MPK -s 0p/0/2 -a
+1EAUa7EiaQbKnrx3cvjJHv1s1iQoCottzH
+$ genwallet -k $MPK -s 0p/0/2 -w
+Kww99SEPQUrAUGJcQJyyz4tzAHBkgmERXyD4MHVkxaciqgnGDajg
+$ genwallet -k $MPK -s 0p/1/1 -a
+1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd
+$ genwallet -k $MPK -s 0p/1/1 -w
+KzNE3psfPLQ14ts1PdeRN3gmMRbSHyoDqScL7AJ4Fbx2xJp3fp1W
+$ genwallet -k $MPK -s 0p/1/2 -a
+1D1cL4DDAUVMYaTEYFHsXxPACqnhkea9ZH
+$ genwallet -k $MPK -s 0p/1/2 -w
+L4eoCZCiQNfkEGVA9dyrPn9iCVwxYALcVj9kSu71ge7u2Gp9gFGU
