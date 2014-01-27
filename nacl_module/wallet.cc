@@ -199,9 +199,10 @@ void Wallet::RestoreRootNode(const Node* /*node*/) {
 }
 
 void Wallet::RestoreChildNode(const Node* node) {
+  uint32_t start = 1;
   uint32_t public_address_count = 8;
   uint32_t change_address_count = 8;
-  for (uint32_t i = 0; i < public_address_count; ++i) {
+  for (uint32_t i = start; i < start + public_address_count; ++i) {
     std::stringstream node_path;
     node_path << "m/0/" << i;  // external path
     std::auto_ptr<Node>
@@ -211,7 +212,7 @@ void Wallet::RestoreChildNode(const Node* node) {
       WatchAddress(Base58::toHash160(address_node->public_key()), i, true);
     }
   }
-  for (uint32_t i = 0; i < change_address_count; ++i) {
+  for (uint32_t i = start; i < start + change_address_count; ++i) {
     std::stringstream node_path;
     node_path << "m/1/" << i;  // internal path
     std::auto_ptr<Node>
