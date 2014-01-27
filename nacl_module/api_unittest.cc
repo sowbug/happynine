@@ -396,36 +396,40 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 29000));
 
-  // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
+  // https://blockchain.info/tx/b447c55ee8b02d34727b2f8bd8c05ebdfb1cf19ea31fc0202afdc348f5aa3e3c
   // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00014 BTC (not in wallet)
   // 1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd - 0.00014 BTC (in wallet)
+  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - .000001 BTC (in wallet) oops
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
     "0100000001bd5f907b4779caa99f12422affd86aa1535f6f70bf2a0d43e4254b24b8f3cb"
-    "1b000000006c493046022100b9e686cb5d6826f34400dd84e3bb6c5f006fc25c6962446a"
-    "e4c1ac6103c07821022100f2ca9e18873e9f6a2ebce95efc167328ec3ec5816ae933963d"
-    "a3e13967b21948012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e"
-    "3a0f544621a2ffffffff02b0360000000000001976a914f33d441fd850487267ed7681b1"
-    "9550761bf1e4cd88acb0360000000000001976a914ae8d5613d9e7e7281451c0abf5424a"
-    "3e4295fc5088ac00000000";
+    "1b000000006a473044022042df6ab1964bb0e84b18a60f84b300c97d1bf10e0ebcb08d16"
+    "090f7ae27ff9a0022059cd04c622895a7043341e3cbb5d5c9afe4a843d648f8aafb226f0"
+    "e79743f235012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f"
+    "544621a2ffffffff03b0360000000000001976a914f33d441fd850487267ed7681b19550"
+    "761bf1e4cd88acb0360000000000001976a914ae8d5613d9e7e7281451c0abf5424a3e42"
+    "95fc5088ace8030000000000001976a914595a67df1963dc16c5567abdd4a6443c82780d"
+    "1688ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(2, response["address_statuses"].size());
-  StatusContains(response["address_statuses"],
-                 "1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1", 14000);
-  StatusContains(response["address_statuses"],
-                 "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000);
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 1000));
 
   // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
   // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00013 BTC (not in wallet)
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "0100000001f0205f491f8ef345130c2302bef852040dd0dcc20447cf0af8715637b67b3ce0010000006a47304402205fa3486432b17c2f9ab99f928bbec1a10e30344484b0e3d1c901418f98301cc902200b33c79e5ccc48fd2a5e69cdf612270cd8f5de8f4bfb0833f9d1b7c9e7d2b514012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
+    "01000000023c3eaaf548c3fd2a20c01fa39ef11cfbbd5ec0d88b2f7b72342db0e85ec547b4020000006b483045022100ad1a7eff50f18cdd9a7a4e9663f8c63635c3a155ea3300a65d0b216f199f12f502204d58af27ec9a850140ce58625cc730d1817068e4991ecac14b8798836c062fe5012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f544621a2ffffffff3c3eaaf548c3fd2a20c01fa39ef11cfbbd5ec0d88b2f7b72342db0e85ec547b4010000006b483045022100c1b606b3fb0dd19535746a99bb0508ad1d85d606c1dc35f806194d692849f95502205741b0cc0035d9408d6d7bdfaeb9db4a79527c9fe34bb72ad57560b1abbdea0e012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01913a0000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["address_statuses"].size());
-  StatusContains(response["address_statuses"],
-                 "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0);
+  EXPECT_EQ(2, response["address_statuses"].size());
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0));
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
 }
