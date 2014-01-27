@@ -23,14 +23,13 @@
 'use strict';
 
 // A Wallet is a collection of Nodes with a bunch of helper functions.
-function Wallet(credentials, electrum) {
-  this.credentials = credentials;
-  this.electrum = electrum;
-
+function Wallet(electrum) {
   this.init = function() {
     this.rootNodes = [];
     this.nodes = [];
     this.watchedAddresses = {};
+    this.publicAddresses = [];
+    this.changeAddresses = [];
   };
   this.init();
 
@@ -192,13 +191,23 @@ function Wallet(credentials, electrum) {
     return !!this.watchedAddresses[addr_b58];
   }
 
-  this.watchAddress = function(addr_b58) {
+  this.watchAddress = function(addr_b58, is_public) {
+    if (this.isWatching(addr_b58)) {
+      return;
+    }
     this.watchedAddresses[addr_b58] = {};
-    this.electrum.enqueueRpc("blockchain.address.get_history",
-                             [addr_b58])
+    if (is_public) {
+      // We assume the backend will always tell us about these
+      // addresses in order.
+      this.publicAddresses.push(addr_b58);
+    } else {
+      this.changeAddresses.push(addr_b58);
+    }
+    electrum.enqueueRpc("blockchain.address.get_history",
+                        [addr_b58])
       .then(this.handleAddressGetHistory.bind(this));
-    this.electrum.enqueueRpc("blockchain.address.subscribe",
-                             [addr_b58])
+    electrum.enqueueRpc("blockchain.address.subscribe",
+                        [addr_b58])
       .then(this.handleAddressSubscribe.bind(this));
   };
 
@@ -211,9 +220,7 @@ function Wallet(credentials, electrum) {
     var addrs = evt.message;
     for (var a in addrs) {
       var addr = addrs[a];
-      if (!this.isWatching(addr.addr_b58)) {
-        this.watchAddress(addr.addr_b58);
-      }
+      this.watchAddress(addr.addr_b58, addr.is_public);
       this.updateAddress(addr);
     }
   }.bind(this));
@@ -221,8 +228,8 @@ function Wallet(credentials, electrum) {
   $(document).on("tx_requests", function(evt) {
     var tx_requests = evt.message;
     for (var t in tx_requests) {
-      this.electrum.enqueueRpc("blockchain.transaction.get",
-                               [tx_requests[t]])
+      electrum.enqueueRpc("blockchain.transaction.get",
+                          [tx_requests[t]])
         .then(this.handleTransactionGet.bind(this));
     }
   }.bind(this));

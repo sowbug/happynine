@@ -36,10 +36,9 @@ walletApp.factory('electrum', ['$http', function($http) {
   return new Electrum($http);
 }]);
 
-walletApp.factory('wallet', ['credentials',
-                             'electrum',
-                             function(credentials, electrum) {
-                               return new Wallet(credentials, electrum);
+walletApp.factory('wallet', ['electrum',
+                             function(electrum) {
+                               return new Wallet(electrum);
                              }]
                  );
 

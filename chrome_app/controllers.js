@@ -285,7 +285,15 @@ var walletAppController = function($scope,
   };
 
   $scope.getPublicAddresses = function() {
-    return $scope.wallet.watchedAddresses;
+    return $scope.wallet.publicAddresses;
+  }
+
+  $scope.getChangeAddresses = function() {
+    return $scope.wallet.changeAddresses;
+  }
+
+  $scope.getAddressBalance = function(addr_b58) {
+    return $scope.wallet.watchedAddresses[addr_b58].value;
   }
 
   $scope.getCurrentAccount = function() {
