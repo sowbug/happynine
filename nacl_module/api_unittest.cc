@@ -30,6 +30,8 @@
 #include "jsoncpp/json/writer.h"
 #include "types.h"
 
+const bool BE_LOUD = false;
+
 static void Spend(API &api,
                   const std::string& recipient,
                   uint64_t value,
@@ -53,6 +55,9 @@ static void Spend(API &api,
   const bytes_t tx(unhexlify(response["tx"].asString()));
 
   // Broadcast the transaction (no code, pretend).
+  if (BE_LOUD) {
+    std::cerr << response["tx"].asString() << std::endl;
+  }
 
   // Report that we got the transaction. Expect new balance.
   request = Json::Value();
@@ -67,6 +72,18 @@ static void Spend(API &api,
   for (unsigned int i = 0; i < response["address_statuses"].size(); ++i) {
     actual_new_balance += response["address_statuses"][i]["value"].asUInt64();
   }
+}
+
+static bool StatusContains(Json::Value& statuses,
+                           const std::string& expected_addr_b58,
+                           uint64_t expected_value) {
+  for (int i = 0; i < statuses.size(); ++i) {
+    if (statuses[i]["addr_b58"].asString() == expected_addr_b58 &&
+        statuses[i]["value"].asUInt64() == expected_value) {
+      return true;
+    }
+  }
+  return false;
 }
 
 TEST(ApiTest, HappyPath) {
@@ -114,8 +131,6 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
   request["path"] = "m/0'";
   request["is_watch_only"] = false;
-  //  request["public_addr_n"] = 2;  TODO: wallet should update these
-  //  request["change_addr_n"] = 2;
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
@@ -146,11 +161,9 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(8 + 8, response["address_statuses"].size());
 
   // TODO(miket): change to address_t, including value & is_public
-  // TODO(miket): neither of these is valid; see
-  // https://github.com/sowbug/happynine/issues/35
-  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",  // m/0'/0/0
+  EXPECT_EQ("199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC",  // m/0'/0/1
             response["address_statuses"][0]["addr_b58"].asString());
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",  // m/0'/1/0
+  EXPECT_EQ("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd",  // m/0'/1/1
             response["address_statuses"][8 + 0]["addr_b58"].asString());
 
   // Pretend we sent blockchain.address.get_history for each address
@@ -158,7 +171,7 @@ TEST(ApiTest, HappyPath) {
   request = Json::Value();
   response = Json::Value();
   const std::string HASH_TX =
-    "555ae5e6d83cd05975952e2725783ddd760076de3d918f9c33ef6895e99b363a";
+    "1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd";
   request["tx_statuses"][0]["tx_hash"] = HASH_TX;
   request["tx_statuses"][0]["height"] = 282172;
   EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
@@ -171,18 +184,17 @@ TEST(ApiTest, HappyPath) {
   request = Json::Value();
   response = Json::Value();
 
-  // https://blockchain.info/tx/555ae5e6d83cd05975952e2725783ddd760076de3d918f9c33ef6895e99b363a
-  // 1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy - 0.002 BTC
-  // 1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4 - 0.01676469 BTC
-  expected_balance += 200000;
+  // https://blockchain.info/tx/1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd
+  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - 0.00029
+  expected_balance += 29000;
   request["txs"][0]["tx"] =
-    "01000000019970765cdbceee5b6ab67491218f74a130aa6c81932d088c9b44ece1be7fbe1"
-    "b010000006b483045022100cce48367450cc2a76e4033dd342b7792e7c36011bff6e71eef"
-    "314a498045f09e02205a7fdbcb0d7428f8b3ca0818902727e9babb28f8a0582f5608f3a49"
-    "c842d2e51012102ecbf6d557ccbf87295769deace203ee31fd3bb57813b38d1322881c38f"
-    "30674dffffffff02400d0300000000001976a914c8dd2744f160f0f24537606b82e40d5d0"
-    "815810388acb5941900000000001976a9147dcdbe519137c8ccdf54da3032b16b0005d79b"
-    "4488ac00000000";
+    "01000000018498a6567575912c5b891afa51d028b250465c2423fafa121b7dfe8c9382de"
+    "d3000000008b48304502207a9e02fba54f78c220ef1d3c9c2e40f49b042a3e00c6073133"
+    "97d02109d9907d022100f87cbf506772763cf6a5b8cd63ec2d9c574bc956af892f0d87a9"
+    "3b339f115b03014104c3ff3d7202a81877b8537ed836529269b79ce245d69aaf52907514"
+    "cb412bbb93bf61e66a72dba22064757236063cd9ddd2094e9356bc62e955ea7752e7aa5b"
+    "7bffffffff0148710000000000001976a914595a67df1963dc16c5567abdd4a6443c8278"
+    "0d1688ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
@@ -190,7 +202,7 @@ TEST(ApiTest, HappyPath) {
             response["address_statuses"][0]["value"].asUInt64());
 
   // Spend some of the funds in the wallet.
-  uint64_t amount_to_spend = 99777;
+  uint64_t amount_to_spend = 888;
   uint64_t fee = 42;
 
   std::string actual_sender;
@@ -204,7 +216,7 @@ TEST(ApiTest, HappyPath) {
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
   EXPECT_EQ(expected_balance, actual_new_balance);
-  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy", actual_sender);
+  EXPECT_EQ("199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", actual_sender);
 
   // Now spend the rest of the funds in the wallet. This is different
   // because it requires the wallet to report a zero balance without
@@ -219,7 +231,7 @@ TEST(ApiTest, HappyPath) {
         actual_new_balance);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG", actual_sender);
+  EXPECT_EQ("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", actual_sender);
   EXPECT_EQ(expected_balance, actual_new_balance);
 }
 
@@ -366,64 +378,54 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
   EXPECT_EQ(8 + 8, response["address_statuses"].size());
 
-  // https://blockchain.info/tx/555ae5e6d83cd05975952e2725783ddd760076de3d918f9c33ef6895e99b363a
-  // 1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy - 0.002 BTC (in wallet)
-  // 1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4 - 0.01676469 BTC (not in wallet)
+  // https://blockchain.info/tx/1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd
+  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - 0.00029
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "01000000019970765cdbceee5b6ab67491218f74a130aa6c81932d088c9b44ece1be7fbe1"
-    "b010000006b483045022100cce48367450cc2a76e4033dd342b7792e7c36011bff6e71eef"
-    "314a498045f09e02205a7fdbcb0d7428f8b3ca0818902727e9babb28f8a0582f5608f3a49"
-    "c842d2e51012102ecbf6d557ccbf87295769deace203ee31fd3bb57813b38d1322881c38f"
-    "30674dffffffff02400d0300000000001976a914c8dd2744f160f0f24537606b82e40d5d0"
-    "815810388acb5941900000000001976a9147dcdbe519137c8ccdf54da3032b16b0005d79b"
-    "4488ac00000000";
+    "01000000018498a6567575912c5b891afa51d028b250465c2423fafa121b7dfe8c9382de"
+    "d3000000008b48304502207a9e02fba54f78c220ef1d3c9c2e40f49b042a3e00c6073133"
+    "97d02109d9907d022100f87cbf506772763cf6a5b8cd63ec2d9c574bc956af892f0d87a9"
+    "3b339f115b03014104c3ff3d7202a81877b8537ed836529269b79ce245d69aaf52907514"
+    "cb412bbb93bf61e66a72dba22064757236063cd9ddd2094e9356bc62e955ea7752e7aa5b"
+    "7bffffffff0148710000000000001976a914595a67df1963dc16c5567abdd4a6443c8278"
+    "0d1688ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
-  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",
-            response["address_statuses"][0]["addr_b58"].asString());
-  EXPECT_EQ(200000, response["address_statuses"][0]["value"].asUInt64());
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 29000));
 
-  // https://blockchain.info/tx/0eb2848657a8b0804041f6168f12e69b0297c2fa0fe85f39b8969a294846a6df
-  // 1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4 - 0.001 BTC (not in wallet)
-  // 1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG - 0.001 BTC (in wallet)
+  // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
+  // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00014 BTC (not in wallet)
+  // 1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd - 0.00014 BTC (in wallet)
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "01000000013a369be99568ef339c8f913dde760076dd3d7825272e957559d03cd8e6e55a"
-    "55000000006b483045022100cddd9d990ef28591f75f02faf58c1627303954db1927503a"
-    "3010174c910fa470022059540c028a2606613cd645bb40fd0957a3fc6ed930533882ab50"
-    "79f48995974e012103ad1f0703fe90a3ae314b2a0e92717a2151331d7e8aeb1f5aedc0f2"
-    "42ffd1b122ffffffff02a0860100000000001976a9147dcdbe519137c8ccdf54da3032b1"
-    "6b0005d79b4488aca0860100000000001976a9147f33b7b268769df922c817dbd8d1cca4"
-    "8249c66288ac000000000";
+    "0100000001bd5f907b4779caa99f12422affd86aa1535f6f70bf2a0d43e4254b24b8f3cb"
+    "1b000000006c493046022100b9e686cb5d6826f34400dd84e3bb6c5f006fc25c6962446a"
+    "e4c1ac6103c07821022100f2ca9e18873e9f6a2ebce95efc167328ec3ec5816ae933963d"
+    "a3e13967b21948012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e"
+    "3a0f544621a2ffffffff02b0360000000000001976a914f33d441fd850487267ed7681b1"
+    "9550761bf1e4cd88acb0360000000000001976a914ae8d5613d9e7e7281451c0abf5424a"
+    "3e4295fc5088ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(2, response["address_statuses"].size());
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",
-            response["address_statuses"][1]["addr_b58"].asString());
-  EXPECT_EQ(100000, response["address_statuses"][1]["value"].asUInt64());
-  EXPECT_EQ("1KK55Nf8ZZ88jQzG5pwfEzwukyDvgFxKRy",
-            response["address_statuses"][0]["addr_b58"].asString());
-  EXPECT_EQ(0, response["address_statuses"][0]["value"].asUInt64());
+  StatusContains(response["address_statuses"],
+                 "1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1", 14000);
+  StatusContains(response["address_statuses"],
+                 "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000);
 
-  // https://blockchain.info/tx/0eb2848657a8b0804041f6168f12e69b0297c2fa0fe85f39b8969a294846a6df
-  // 1CST89hhCpa6mXEai8rirBU8TXCcgPuff2  - 0.0009 BTC (not in wallet)
+  // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
+  // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00013 BTC (not in wallet)
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "0100000001dfa64648299a96b8395fe80ffac297029be6128f16f6414080b0a8578684b2"
-    "0e010000006c493046022100a7fa39817fed7c948ac3aa0faf027d27d8b9a0151c5e5bb9"
-    "be6454d2792ceb800221009ead82115ea1f45a86a2ddcf516227e62989c7880f42e5a790"
-    "34af739c4808cc0121031107058177122c42bffa466ca9951199225bfef4d801811e11e1"
-    "2d208cd397deffffffff01905f0100000000001976a9147d7996db006e5f9a9140d1cf72"
-    "98967c12da31e788ac00000000";
+    "0100000001f0205f491f8ef345130c2302bef852040dd0dcc20447cf0af8715637b67b3ce0010000006a47304402205fa3486432b17c2f9ab99f928bbec1a10e30344484b0e3d1c901418f98301cc902200b33c79e5ccc48fd2a5e69cdf612270cd8f5de8f4bfb0833f9d1b7c9e7d2b514012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
-  EXPECT_EQ("1CbammCCGPPU4LX64xe33QcdjsYBWv4gHG",
-            response["address_statuses"][0]["addr_b58"].asString());
-  EXPECT_EQ(0, response["address_statuses"][0]["value"].asUInt64());
+  StatusContains(response["address_statuses"],
+                 "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0);
 }

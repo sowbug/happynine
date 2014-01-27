@@ -387,7 +387,7 @@ bool Wallet::IsAddressUsed(const bytes_t& /*hash160*/) {
 }
 
 bytes_t Wallet::GetNextUnusedChangeAddress() {
-  uint32_t i = 0;
+  uint32_t i = 1;  // Never use zeroth child
   while (true) {
     std::stringstream node_path;
     node_path << "m/1/" << i++;  // internal path
