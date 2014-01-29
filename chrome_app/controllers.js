@@ -38,6 +38,7 @@ var walletAppController = function($scope,
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
   $scope.w.showPrivateKey = false;
+  $scope.w.selectedAddress = undefined;
 
   if (chrome && chrome.runtime) {
     var manifest = chrome.runtime.getManifest();
@@ -342,14 +343,15 @@ var walletAppController = function($scope,
           };
           var message =
             "Happynine: BIP 0038 Master Key Export\r\n" +
-            "Fingerprint: " + $scope.getWalletKeyFingerprint() + "\r\n" +
-            "Public Key: " + $scope.getWalletKeyPublic() + "\r\n" +
+            $scope.getWalletKeyFingerprint() + ": " +
+            $scope.getWalletKeyPublic() + "\r\n" +
             "Private Key [NOT YET IMPLEMENTED]\r\n\r\n" +
             "THIS IS NOT A BACKUP OF YOUR KEY! THAT FEATURE IS COMING.\r\n";
           message += "Meanwhile, here is a proof of concept text " +
-            "QR code (NOT YOURS). " +
-            "Print (monospace font, duh) and try it!\r\n\r\n" +
-            "\u2588\u2588\u2588\u2588\u2588\u2588\u2588  \u2588\u2588\u2588 \u2588\u2588 \u2588\u2588\u2588\u2588  \u2588   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\r\n\u2588     \u2588 \u2588\u2588\u2588\u2588   \u2588 \u2588\u2588 \u2588\u2588  \u2588 \u2588     \u2588\r\n\u2588 \u2588\u2588\u2588 \u2588  \u2588 \u2588\u2588 \u2588    \u2588\u2588\u2588\u2588\u2588  \u2588 \u2588\u2588\u2588 \u2588\r\n\u2588 \u2588\u2588\u2588 \u2588  \u2588 \u2588\u2588   \u2588  \u2588\u2588\u2588    \u2588 \u2588\u2588\u2588 \u2588\r\n\u2588 \u2588\u2588\u2588 \u2588  \u2588\u2588 \u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2588\u2588 \u2588  \u2588 \u2588\u2588\u2588 \u2588\r\n\u2588     \u2588 \u2588\u2588  \u2588\u2588      \u2588\u2588\u2588   \u2588     \u2588\r\n\u2588\u2588\u2588\u2588\u2588\u2588\u2588 \u2588 \u2588 \u2588 \u2588 \u2588 \u2588 \u2588 \u2588 \u2588 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\r\n        \u2588\u2588\u2588\u2588\u2588    \u2588   \u2588  \u2588        \r\n    \u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588  \u2588 \u2588 \u2588 \u2588 \u2588 \u2588\u2588   \u2588 \r\n\u2588\u2588\u2588\u2588    \u2588\u2588\u2588     \u2588 \u2588\u2588 \u2588 \u2588 \u2588\u2588\u2588     \r\n\u2588\u2588\u2588\u2588  \u2588\u2588   \u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2588 \u2588 \u2588 \u2588  \u2588\u2588   \r\n\u2588  \u2588\u2588      \u2588  \u2588\u2588     \u2588      \u2588\u2588   \r\n\u2588 \u2588\u2588  \u2588   \u2588\u2588 \u2588\u2588\u2588\u2588\u2588 \u2588\u2588\u2588    \u2588\u2588 \u2588  \u2588\r\n \u2588       \u2588\u2588\u2588\u2588 \u2588   \u2588 \u2588 \u2588  \u2588 \u2588 \u2588\u2588  \r\n  \u2588 \u2588\u2588\u2588\u2588     \u2588\u2588     \u2588 \u2588\u2588\u2588 \u2588 \u2588    \r\n\u2588  \u2588 \u2588 \u2588\u2588\u2588   \u2588\u2588\u2588\u2588\u2588\u2588\u2588 \u2588\u2588    \u2588    \u2588\r\n\u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 \u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\r\n\u2588\u2588 \u2588\u2588  \u2588\u2588 \u2588  \u2588\u2588\u2588 \u2588\u2588\u2588\u2588    \u2588    \u2588 \u2588\r\n \u2588\u2588\u2588\u2588\u2588\u2588\u2588 \u2588  \u2588 \u2588\u2588 \u2588    \u2588\u2588\u2588\u2588 \u2588   \u2588 \r\n   \u2588 \u2588 \u2588\u2588    \u2588\u2588  \u2588 \u2588 \u2588\u2588 \u2588 \u2588     \u2588\r\n\u2588\u2588 \u2588\u2588 \u2588\u2588\u2588 \u2588\u2588 \u2588    \u2588\u2588\u2588\u2588\u2588   \u2588\u2588\u2588 \u2588 \u2588\r\n\u2588 \u2588\u2588 \u2588 \u2588  \u2588\u2588 \u2588 \u2588\u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588   \u2588\u2588  \r\n   \u2588  \u2588 \u2588\u2588\u2588    \u2588\u2588  \u2588\u2588  \u2588\u2588  \u2588\u2588\u2588   \r\n   \u2588 \u2588  \u2588\u2588  \u2588\u2588   \u2588 \u2588\u2588\u2588 \u2588\u2588 \u2588 \u2588  \u2588 \r\n\u2588\u2588\u2588\u2588 \u2588\u2588\u2588\u2588\u2588  \u2588\u2588   \u2588\u2588\u2588  \u2588 \u2588\u2588\u2588\u2588\u2588 \u2588 \u2588\r\n        \u2588    \u2588\u2588\u2588\u2588\u2588    \u2588 \u2588   \u2588 \u2588\u2588\u2588\r\n\u2588\u2588\u2588\u2588\u2588\u2588\u2588 \u2588 \u2588\u2588  \u2588\u2588\u2588 \u2588 \u2588\u2588  \u2588 \u2588 \u2588  \u2588 \r\n\u2588     \u2588 \u2588 \u2588 \u2588  \u2588  \u2588\u2588 \u2588\u2588 \u2588   \u2588    \r\n\u2588 \u2588\u2588\u2588 \u2588 \u2588\u2588\u2588  \u2588\u2588         \u2588\u2588\u2588\u2588\u2588  \u2588 \r\n\u2588 \u2588\u2588\u2588 \u2588   \u2588     \u2588\u2588\u2588\u2588 \u2588 \u2588  \u2588\u2588  \u2588\u2588 \r\n\u2588 \u2588\u2588\u2588 \u2588  \u2588\u2588 \u2588   \u2588   \u2588 \u2588\u2588 \u2588\u2588 \u2588\u2588   \r\n\u2588     \u2588  \u2588  \u2588  \u2588 \u2588\u2588 \u2588\u2588\u2588\u2588\u2588    \u2588   \r\n\u2588\u2588\u2588\u2588\u2588\u2588\u2588  \u2588\u2588 \u2588\u2588 \u2588\u2588\u2588\u2588 \u2588  \u2588\u2588    \u2588  \u2588";
+            "QR code (NOT YOURS). \r\n\r\n";
+          var qr = $('<div></div>');
+          qr.qrcode({'text': $scope.getWalletKeyPublic(), 'render': 'text'});
+          message += qr.text();
           var blob = new Blob([message], {type: 'text/plain; charset=utf-8'});
           writer.write(blob);
         }, errorHandler);
@@ -369,6 +371,15 @@ var walletAppController = function($scope,
           $scope.$apply();
         });
     }
+  };
+
+  $scope.setAddress = function(a) {
+    console.log("called", a);
+    $scope.w.selectedAddress = a;
+    $('#qrcode').qrcode({
+      'width': 128,
+      'height': 128,
+      'text': a});
   };
 
   $scope.satoshiToUnit = function(satoshis) {

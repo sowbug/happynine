@@ -43,14 +43,13 @@
       <div class="row">
         <div class="col-md-6 col-md-offset-3">
           <div class="panel panel-info">
-            <div class="panel-heading">Loading &hellip;</div>
+            <div class="panel-heading" id="statusField">Loading &hellip;</div>
             <div class="panel-body">
               <div class="progress progress-striped active">
                 <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 4100%">
                   <span class="sr-only">Loading</span>
                 </div>
               </div>
-              <div id="statusField" class="alert alert-info">NO-STATUS</div>
             </div>
           </div>
         </div>
@@ -162,14 +161,7 @@
                   <tbody>
                     <tr data-ng-repeat="addr in getPublicAddresses() track by $index">
                       <td>
-                        <div class="dropdown">
-                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr}} <span class="caret"></span></a>
-                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="https://blockchain.info/address/{{addr}}" target="_blank" >Visit Blockchain.info for this address</a></li>
-                            <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
-                            <li><a href="#">Generate receiving QR code</a></li>
-                          </ul>
-                        </div>
+                        <a class="addr-qr" data-toggle="modal" data-target="#address-detail-modal" ng-click="setAddress(addr)">{{addr}}</a>
                       </td>
                       <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
                     </tr>
@@ -494,7 +486,29 @@
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 
+    <!-- Address detail modal -->
+    <div class="modal fade" id="address-detail-modal" tabindex="-1" role="dialog" aria-labelledby="address-detail-label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="address-detail-label" ng-bind="w.selectedAddress"></h4>
+          </div>
+          <div class="modal-body">
+            <div class="center-block">
+              <div id="qrcode"></div>
+              <a href="https://blockchain.info/address/{{w.selectedAddress}}" target="_blank">More&#8230;</a>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-default" data-dismiss="modal">OK</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
     <script type="text/javascript" src="js/jquery/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery.qrcode.min.js"></script>
     <script type="text/javascript" src="js/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/angular/angular.min.js"></script>
     <script type="text/javascript" src="utils.js"></script>
