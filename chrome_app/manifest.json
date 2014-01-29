@@ -1,7 +1,7 @@
 {
-  "name": "Happynine",
+  "name": "PRODUCTNAME",
   "description": "A Bitcoin HD wallet that's BIP-0032 compliant.",
-  "version": "0.0.7.0",
+  "version": "MAJOR.MINOR.BUILD.PATCH",
   "app": {
     "background": {
       "scripts": ["background.js"]

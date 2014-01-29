@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. ./VERSION
+
+if [ -n ! "$(git status --porcelain )" ]; then
+  echo "Tree is dirty"
+  exit 1
+else
+  TAG="H9_${MAJOR}_${MINOR}_${BUILD}_${PATCH}"
+  git tag -a $TAG -m $TAG
+  BUILD=`expr $BUILD + 1`
+  echo -e "MAJOR=$MAJOR\nMINOR=$MINOR\nBUILD=$BUILD\nPATCH=$PATCH" > ./VERSION
+  VER_STR="$MAJOR.$MINOR.$BUILD.$PATCH"
+  git commit -m "Bump version => $VER_STR" VERSION
+  git checkout $TAG
+  make clean
+  PRODUCTNAME="Happynine" \
+		MAJOR=${MAJOR} BUILD=${BUILD} PATCH=${PATCH} make
+  git checkout master
+fi
