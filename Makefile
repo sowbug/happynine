@@ -4,10 +4,21 @@ ZIPBASE := $(OUTBASE)/zip
 APP_FILES := chrome_app/index.html
 ZIP := happynine.zip
 
+PRODUCTNAME ?= Happynine DEV
+MAJOR ?= 0
+MINOR ?= 0
+BUILD ?= 0
+PATCH ?= 1
+
 all: $(ZIP)
 
 $(ZIP): force_look
 	cd chrome_app; ZIPBASE=$(ZIPBASE) $(MAKE) $(MFLAGS)
+	sed -i'' "s/PRODUCTNAME/${PRODUCTNAME}/" $(ZIPBASE)/manifest.json
+	sed -i'' "s/MAJOR/${MAJOR}/" $(ZIPBASE)/manifest.json
+	sed -i'' "s/MINOR/${MINOR}/" $(ZIPBASE)/manifest.json
+	sed -i'' "s/BUILD/${BUILD}/" $(ZIPBASE)/manifest.json
+	sed -i'' "s/PATCH/${PATCH}/" $(ZIPBASE)/manifest.json
 	cd nacl_module; OUTBASE=$(OUTBASE) ZIPBASE=$(ZIPBASE) $(MAKE) $(MFLAGS)
 	rm -rf $(OUTBASE)/$(ZIP)
 	cd $(ZIPBASE); zip -r $(OUTBASE)/$(ZIP) .
