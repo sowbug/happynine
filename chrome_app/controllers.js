@@ -374,8 +374,8 @@ var walletAppController = function($scope,
   };
 
   $scope.setAddress = function(a) {
-    console.log("called", a);
     $scope.w.selectedAddress = a;
+    $('#qrcode').empty();
     $('#qrcode').qrcode({
       'width': 128,
       'height': 128,
