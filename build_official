@@ -2,6 +2,8 @@
 
 . ./VERSION
 
+pushd nacl_module && make -f TestMakefile && popd
+
 if [ -n ! "$(git status --porcelain )" ]; then
   echo "Tree is dirty"
   exit 1
