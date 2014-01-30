@@ -1,14 +1,14 @@
-DIRS := chrome_app nacl_module
-OUTBASE ?= $(PWD)/out
-ZIPBASE := $(OUTBASE)/zip
-APP_FILES := chrome_app/index.html
-ZIP := happynine.zip
-
 PRODUCTNAME ?= Happynine DEV
 MAJOR ?= 0
 MINOR ?= 0
 BUILD ?= 0
 PATCH ?= 1
+
+DIRS := chrome_app nacl_module
+OUTBASE ?= $(PWD)/out
+ZIPBASE := $(OUTBASE)/zip
+APP_FILES := chrome_app/index.html
+ZIP := happynine-$(MAJOR)-$(MINOR)-$(BUILD)-$(PATCH).zip
 
 all: $(ZIP)
 
