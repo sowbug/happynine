@@ -138,7 +138,7 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
-  EXPECT_EQ(8 + 8, response["address_statuses"].size());
+  EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   // Save its serializable stuff
   const std::string child_ext_pub_b58(response["ext_pub_b58"].asString());
@@ -162,13 +162,17 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.HandleRestoreNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(child_fp, response["fp"].asString());
-  EXPECT_EQ(8 + 8, response["address_statuses"].size());
+  EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   // TODO(miket): change to address_t, including value & is_public
-  EXPECT_EQ("199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC",  // m/0'/0/1
-            response["address_statuses"][0]["addr_b58"].asString());
-  EXPECT_EQ("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd",  // m/0'/1/1
-            response["address_statuses"][8 + 0]["addr_b58"].asString());
+  // m/0'/0/1
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
+  EXPECT_TRUE(response["address_statuses"][0]["is_public"].asBool());
+  // m/0'/1/1
+  EXPECT_TRUE(StatusContains(response["address_statuses"],
+                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0));
+  EXPECT_FALSE(response["address_statuses"][4 + 0]["is_public"].asBool());
 
   // Pretend we sent blockchain.address.get_history for each address
   // and got back some stuff.
@@ -201,7 +205,8 @@ TEST(ApiTest, HappyPath) {
     "0d1688ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["address_statuses"].size());
+  // + 4 because using addresses generates another block
+  EXPECT_EQ(1 + 4, response["address_statuses"].size());
   EXPECT_EQ(expected_balance,
             response["address_statuses"][0]["value"].asUInt64());
 
@@ -380,7 +385,7 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
-  EXPECT_EQ(8 + 8, response["address_statuses"].size());
+  EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   // https://blockchain.info/tx/1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd
   // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - 0.00029
@@ -396,7 +401,8 @@ TEST(ApiTest, ReportActualTransactions) {
     "0d1688ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(1, response["address_statuses"].size());
+  // + 4 because using addresses generates another block
+  EXPECT_EQ(1 + 4, response["address_statuses"].size());
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 29000));
 
@@ -415,7 +421,8 @@ TEST(ApiTest, ReportActualTransactions) {
     "95fc5088ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(2, response["address_statuses"].size());
+  // + 4 because using addresses generates another block
+  EXPECT_EQ(2 + 4, response["address_statuses"].size());
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
   EXPECT_TRUE(StatusContains(response["address_statuses"],

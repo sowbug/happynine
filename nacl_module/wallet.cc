@@ -40,7 +40,16 @@ Address::Address(const bytes_t& hash160, uint32_t child_num, bool is_public)
 }
 
 Wallet::Wallet(Credentials& credentials)
-  : credentials_(credentials), root_node_(NULL), child_node_(NULL) {
+  : credentials_(credentials), root_node_(NULL), child_node_(NULL),
+    public_address_gap_(4), change_address_gap_(4),
+    public_address_start_(1), change_address_start_(1),
+    next_change_address_index_(change_address_start_) {
+  ResetGaps();
+}
+
+void Wallet::ResetGaps() {
+  public_address_count_ = 0;
+  change_address_count_ = 0;
 }
 
 Wallet::~Wallet() {
@@ -67,6 +76,8 @@ void Wallet::set_child_ext_keys(const bytes_t& ext_pub,
   child_ext_pub_ = ext_pub;
   child_ext_prv_enc_ = ext_prv_enc;
   watched_addresses_.clear();
+  ResetGaps();
+  next_change_address_index_ = change_address_start_;
   addresses_to_report_.clear();
 }
 
@@ -189,7 +200,13 @@ void Wallet::UpdateAddressBalance(const bytes_t& hash160, uint64_t balance) {
     return;
   }
   if (watched_addresses_[hash160]->balance() != balance) {
-    watched_addresses_[hash160]->set_balance(balance);
+    Address* a = watched_addresses_[hash160];
+    a->set_balance(balance);
+    if (a->is_public()) {
+      CheckPublicAddressGap(a->child_num());
+    } else {
+      CheckChangeAddressGap(a->child_num());
+    }
     addresses_to_report_.insert(hash160);
   }
 }
@@ -198,30 +215,60 @@ void Wallet::RestoreRootNode(const Node* /*node*/) {
   // Nothing to do!
 }
 
-void Wallet::RestoreChildNode(const Node* node) {
-  uint32_t start = 1;
-  uint32_t public_address_count = 8;
-  uint32_t change_address_count = 8;
-  for (uint32_t i = start; i < start + public_address_count; ++i) {
+void Wallet::GenerateAddressBunch(uint32_t start, uint32_t count,
+                                  bool is_public) {
+  const std::string& path_prefix = is_public ?
+    "m/0/" : // external path
+    "m/1/";  // internal path
+  Node* node = GetChildNode();
+  for (uint32_t i = start; i < start + count; ++i) {
     std::stringstream node_path;
-    node_path << "m/0/" << i;  // external path
+    node_path << path_prefix << i;
     std::auto_ptr<Node>
       address_node(NodeFactory::DeriveChildNodeWithPath(*node,
                                                         node_path.str()));
     if (address_node.get()) {
-      WatchAddress(Base58::toHash160(address_node->public_key()), i, true);
+      WatchAddress(Base58::toHash160(address_node->public_key()),
+                   i, is_public);
     }
   }
-  for (uint32_t i = start; i < start + change_address_count; ++i) {
-    std::stringstream node_path;
-    node_path << "m/1/" << i;  // internal path
-    std::auto_ptr<Node>
-      address_node(NodeFactory::DeriveChildNodeWithPath(*node,
-                                                        node_path.str()));
-    if (address_node.get()) {
-      WatchAddress(Base58::toHash160(address_node->public_key()), i, false);
+}
+
+void Wallet::CheckPublicAddressGap(uint32_t address_index_used) {
+  // Given the highest address we've used, should we allocate a new
+  // bunch of addresses?
+  uint32_t desired_count = address_index_used + public_address_gap_ -
+    public_address_start_ + 1;
+  if (desired_count > public_address_count_) {
+    // Yes, it's time to allocate.
+    GenerateAddressBunch(public_address_start_ + public_address_count_,
+                         public_address_gap_, true);
+    public_address_count_ += public_address_gap_;
+  }
+}
+
+void Wallet::CheckChangeAddressGap(uint32_t address_index_used) {
+  // Given the highest address we've used, should we allocate a new
+  // bunch of addresses?
+  uint32_t desired_count = address_index_used + change_address_gap_ -
+    change_address_start_ + 1;
+  if (desired_count > change_address_count_) {
+    // Yes, it's time to allocate.
+    GenerateAddressBunch(change_address_start_ + change_address_count_,
+                         change_address_gap_, false);
+    change_address_count_ += change_address_gap_;
+  }
+  if (address_index_used >= next_change_address_index_) {
+    next_change_address_index_ = address_index_used + 1;
+    if (next_change_address_index_ < change_address_start_) {
+      next_change_address_index_ = change_address_start_;
     }
   }
+}
+
+void Wallet::RestoreChildNode(const Node* /*node*/) {
+  CheckPublicAddressGap(0);
+  CheckChangeAddressGap(0);
 }
 
 bool Wallet::RestoreNode(const std::string& ext_pub_b58,
@@ -382,25 +429,20 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
   }
 }
 
-bool Wallet::IsAddressUsed(const bytes_t& /*hash160*/) {
-  return false;  // TODO(miket): implement
-}
-
 bytes_t Wallet::GetNextUnusedChangeAddress() {
-  uint32_t i = 1;  // Never use zeroth child
-  while (true) {
-    std::stringstream node_path;
-    node_path << "m/1/" << i++;  // internal path
-    std::auto_ptr<Node> address_node(NodeFactory::
-                                     DeriveChildNodeWithPath(*GetChildNode(),
-                                                             node_path.str()));
-    if (address_node.get()) {
-      const bytes_t hash160 = Base58::toHash160(address_node->public_key());
-      if (!IsAddressUsed(hash160)) {
-        return hash160;
-      }
-    }
+  // TODO(miket): we should probably increment
+  // next_change_address_index_ here, because a transaction might take
+  // a while to confirm, and if the user issues several transactions
+  // in a row, they'll all go to the same change address.
+  std::stringstream node_path;
+  node_path << "m/1/" << next_change_address_index_;  // internal path
+  std::auto_ptr<Node> address_node(NodeFactory::
+                                   DeriveChildNodeWithPath(*GetChildNode(),
+                                                           node_path.str()));
+  if (address_node.get()) {
+    return Base58::toHash160(address_node->public_key());
   }
+  return bytes_t();
 }
 
 bool Wallet::CreateTx(const tx_outs_t& recipients,
