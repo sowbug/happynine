@@ -350,7 +350,9 @@ var walletAppController = function($scope,
           message += "Meanwhile, here is a proof of concept text " +
             "QR code (NOT YOURS). \r\n\r\n";
           var qr = $('<div></div>');
-          qr.qrcode({'text': $scope.getWalletKeyPublic(), 'render': 'text'});
+          qr.qrcode({'text': $scope.getWalletKeyPublic(),
+                     'render': 'text',
+                     'correctLevel': QRErrorCorrectLevel.L});
           message += qr.text();
           var blob = new Blob([message], {type: 'text/plain; charset=utf-8'});
           writer.write(blob);
@@ -379,6 +381,7 @@ var walletAppController = function($scope,
     $('#qrcode').qrcode({
       'width': 128,
       'height': 128,
+      'correctLevel': QRErrorCorrectLevel.L,
       'text': a});
   };
 
