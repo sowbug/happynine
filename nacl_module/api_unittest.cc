@@ -78,6 +78,10 @@ static bool StatusContains(Json::Value& statuses,
                            const std::string& expected_addr_b58,
                            uint64_t expected_value) {
   for (int i = 0; i < statuses.size(); ++i) {
+    if (BE_LOUD) {
+      std::cerr << "Rec'd: " << statuses[i]["addr_b58"].asString()
+                << ": " << statuses[i]["value"].asUInt64() << std::endl;
+    }
     if (statuses[i]["addr_b58"].asString() == expected_addr_b58 &&
         statuses[i]["value"].asUInt64() == expected_value) {
       return true;
@@ -396,40 +400,36 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 29000));
 
-  // https://blockchain.info/tx/b447c55ee8b02d34727b2f8bd8c05ebdfb1cf19ea31fc0202afdc348f5aa3e3c
+  // https://blockchain.info/tx/100dc580584e9b709fd42be707b6eaf8205efebb9b5356affbc311799be1beaf
   // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00014 BTC (not in wallet)
   // 1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd - 0.00014 BTC (in wallet)
-  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - .000001 BTC (in wallet) oops
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
     "0100000001bd5f907b4779caa99f12422affd86aa1535f6f70bf2a0d43e4254b24b8f3cb"
-    "1b000000006a473044022042df6ab1964bb0e84b18a60f84b300c97d1bf10e0ebcb08d16"
-    "090f7ae27ff9a0022059cd04c622895a7043341e3cbb5d5c9afe4a843d648f8aafb226f0"
-    "e79743f235012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f"
-    "544621a2ffffffff03b0360000000000001976a914f33d441fd850487267ed7681b19550"
+    "1b000000006a47304402201ede3d04b7a6c22aec5421fc089e464ce3bafc012f40d24010"
+    "7bf1d19be1a410022027b157c524c3211528ed32f1ec3a971a0cffe173b0b91c2c801469"
+    "87a37ddbfe012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f"
+    "544621a2ffffffff02b0360000000000001976a914f33d441fd850487267ed7681b19550"
     "761bf1e4cd88acb0360000000000001976a914ae8d5613d9e7e7281451c0abf5424a3e42"
-    "95fc5088ace8030000000000001976a914595a67df1963dc16c5567abdd4a6443c82780d"
-    "1688ac00000000";
+    "95fc5088ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(2, response["address_statuses"].size());
   EXPECT_TRUE(StatusContains(response["address_statuses"],
-                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
+                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
   EXPECT_TRUE(StatusContains(response["address_statuses"],
-                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 1000));
+                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
 
   // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
   // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00013 BTC (not in wallet)
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "01000000023c3eaaf548c3fd2a20c01fa39ef11cfbbd5ec0d88b2f7b72342db0e85ec547b4020000006b483045022100ad1a7eff50f18cdd9a7a4e9663f8c63635c3a155ea3300a65d0b216f199f12f502204d58af27ec9a850140ce58625cc730d1817068e4991ecac14b8798836c062fe5012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f544621a2ffffffff3c3eaaf548c3fd2a20c01fa39ef11cfbbd5ec0d88b2f7b72342db0e85ec547b4010000006b483045022100c1b606b3fb0dd19535746a99bb0508ad1d85d606c1dc35f806194d692849f95502205741b0cc0035d9408d6d7bdfaeb9db4a79527c9fe34bb72ad57560b1abbdea0e012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01913a0000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
+    "0100000001afbee19b7911c3fbaf56539bbbfe5e20f8eab607e72bd49f709b4e5880c50d10010000006b48304502201743eb3b1385618a1c1d67dda780498a6bd4dbe586489049def22f0795491c5d022100b822a98051574c4a8d9670b548251c1c7a2d27f47eeb732f456775d84e2e04db012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ(2, response["address_statuses"].size());
+  EXPECT_EQ(1, response["address_statuses"].size());
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0));
-  EXPECT_TRUE(StatusContains(response["address_statuses"],
-                             "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
 }
