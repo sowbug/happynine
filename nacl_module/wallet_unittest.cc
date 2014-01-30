@@ -76,6 +76,10 @@ TEST(WalletTest, HappyPath) {
                                ext_prv_enc));
   EXPECT_EQ(0x3442193e, w.GetRootNode()->fingerprint());
 
+  EXPECT_EQ(0, w.public_address_count());
+  EXPECT_EQ(0, w.change_address_count());
   EXPECT_TRUE(w.DeriveChildNode("m/0'", false, ext_prv_enc));
   EXPECT_EQ(0x5c1bd648, w.GetChildNode()->fingerprint());
+  EXPECT_EQ(4, w.public_address_count());
+  EXPECT_EQ(4, w.change_address_count());
 }

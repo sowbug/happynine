@@ -95,6 +95,9 @@ class Wallet {
 
   Node* GetChildNode();   // We retain ownership! TODO: multiple children
 
+  uint32_t public_address_count() const { return public_address_count_; }
+  uint32_t change_address_count() const { return change_address_count_; }
+
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
   void set_child_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
@@ -103,7 +106,6 @@ class Wallet {
   bool IsChangeAddressInWallet(const bytes_t& hash160);
   bool IsAddressInWallet(const bytes_t& hash160);
 
-  bool IsAddressUsed(const bytes_t& hash160);
   bytes_t GetNextUnusedChangeAddress();
 
   void AddTx(Transaction* transaction);
@@ -112,6 +114,12 @@ class Wallet {
   tx_outs_t GetUnspentTxos();
 
   bool IsWalletLocked() const;
+
+  void GenerateAddressBunch(uint32_t start, uint32_t count,
+                            bool is_public);
+  void CheckPublicAddressGap(uint32_t address_index_used);
+  void CheckChangeAddressGap(uint32_t address_index_used);
+  void ResetGaps();
 
   void RestoreRootNode(const Node* node);
   void RestoreChildNode(const Node* node);
@@ -135,6 +143,20 @@ class Wallet {
   bytes_t child_ext_pub_;
   bytes_t child_ext_prv_enc_;
   std::auto_ptr<Node> child_node_;
+
+  // The size of a new bunch of contiguous addresses.
+  const uint32_t public_address_gap_;
+  const uint32_t change_address_gap_;
+
+  // The base for address indexes.
+  const uint32_t public_address_start_;
+  const uint32_t change_address_start_;
+
+  // The number of addresses we've allocated.
+  uint32_t public_address_count_;
+  uint32_t change_address_count_;
+
+  uint32_t next_change_address_index_;
 
   typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;
