@@ -10,27 +10,16 @@ Great Big Warning
 
 **This project is early and under heavy development! Do not use it for real transactions! Do not let real bitcoin anywhere near it! Even if/when this warning is removed, the applicable license still applies. Read it!**
 
-What Does Work
+Overall Status
 ===
 
-* Generating a new BIP 0032 HD wallet
-* Importing an external BIP 0032 xprv or xpub key
-* Sending funds (not well-tested, hot off the press)
-* Passphrase protection of wallet with 60-second unlock
-* Viewing wallet balances using the [Blockchain API](https://blockchain.info/api), but you must refresh manually if you expect
-* Multiple BIP 0032 accounts following the recommended wallet structure `m/i'/0`, where i is account number
-* [Robohash](http://robohash.org/) icons to help quickly confirm the right wallet is in use
-
-What Doesn't Work Yet
-===
-
-See the [issue list](https://github.com/sowbug/happynine/issues) for the current status
+As of 0.0.9.0, Happynine can send and receive bitcoin using Electrum servers. It is missing many features and UI affordances that users will expect from a complete wallet. See the [issue list](https://github.com/sowbug/happynine/issues) for detail on project status.
 
 User Requirements
 ===
 
-* Because this is still under development, an acceptance that it will probably lose all your bitcoin. Come back in a week or two if you're not happy with that risk.
 * A basic understanding of [Bitcoin](http://bitcoin.org/).
+* Because this is still under development, an acceptance that it will probably lose all your bitcoin.
 * [Chrome](https://www.google.com/chrome/). You don't actually have to use this as your browser, but it does need to be installed on your computer.
 * (Optional) a [Chromebook](http://www.google.com/intl/en/chrome/devices/), which is an excellent device if you're interested in avoiding Windows malware. [Buy one today!](http://www.amazon.com/gp/product/B00FNPD1VW?tag=sowbug-20)
 
