@@ -101,6 +101,7 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
 void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
                                const bytes_t& ext_prv_enc,
                                bool include_prv) {
+  dict["child_num"] = node->child_num();
   dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
   dict["pfp"] = "0x" + to_fingerprint(node->parent_fingerprint());
   dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());

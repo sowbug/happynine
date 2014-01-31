@@ -31,7 +31,7 @@ function Node() {
     this.extendedPublicBase58 = undefined;
     this.fingerprint = undefined;
     this.parentFingerprint = undefined;
-    this.path = undefined;
+    this.childNum = undefined;
 
     this.nextChangeAddressIndex = 8;
     this.nextPublicAddressIndex = 8;
@@ -55,12 +55,19 @@ function Node() {
     o.next_change_addr = this.nextChangeAddressIndex;
     o.next_pub_addr = this.nextPublicAddressIndex;
     o.pfp = this.parentFingerprint;
-    o.path = this.path;
+    o.childNum = this.childNum;
     return o;
   };
 
   this.isKeyAvailable = function() {
     return !!this.extendedPrivateBase58;
+  };
+
+  this.childNumPretty = function() {
+    if (this.childNum >= 0x80000000) {
+      return this.childNum - 0x80000000;
+    }
+    return this.childNum;
   };
 }
 
@@ -80,13 +87,13 @@ Node.fromGetNodeResponse = function(credentials,
                             'ext_prv_b58': response.ext_prv_b58,
                             'ext_prv_b58_enc': encryptedItem,
                             'ext_pub_b58': response.ext_pub_b58,
-                            'path': response.path,
+                            'child_num': response.child_num,
                           }));
                         }.bind(this));
   } else {
     callback.call(this, Node.fromStorableObject({
       'ext_pub_b58': response.ext_pub_b58,
-      'path': response.path
+      'child_num': response.child_num
     }));
   }
 
@@ -105,8 +112,8 @@ Node.fromStorableObject = function(o) {
     s.nextChangeAddressIndex = o.next_change_addr;
   if (o.next_pub_addr != undefined)
     s.nextPublicAddressIndex = o.next_pub_addr;
-  if (o.path != undefined)
-    s.path = o.path;
+  if (o.child_num != undefined)
+    s.childNum = o.child_num;
   if (o.pfp != undefined)
     s.parentFingerprint = o.pfp;
 

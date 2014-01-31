@@ -30,6 +30,11 @@ html, body {
   max-height: 458px;
 }
 
+#settings-accounts {
+  overflow-y: auto;
+  max-height: 458px;
+}
+
 .invisible {
   visibility: hidden;
 }

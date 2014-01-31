@@ -167,24 +167,24 @@ var walletAppController = function($scope,
     $scope.wallet.removeMasterKey();
   };
 
-  $scope.nextAccountName = function() {
-    return "Account " + $scope.wallet.getNextAccountNumber();
+  $scope.deriveChildNode = function(childNodeIndex) {
+    $scope.wallet.deriveChildNode(childNodeIndex, false)
+      .then(function() {
+        $("#derive-child-node-modal").modal('hide');
+        $scope.$apply();
+      });
   };
 
-  $scope.deriveNextAccount = function() {
-    $scope.wallet.deriveNextAccount(false, function(succeeded) {
-      if (succeeded) {
+  $scope.watchChildNode = function(childNodeIndex) {
+    $scope.wallet.deriveChildNode(childNodeIndex, true)
+      .then(function(succeeded) {
+        $("#derive-child-node-modal").modal('hide');
         $scope.$apply();
-      }
-    });
+      });
   };
 
-  $scope.watchNextAccount = function() {
-    $scope.wallet.deriveNextAccount(true, function(succeeded) {
-      if (succeeded) {
-        $scope.$apply();
-      }
-    });
+  $scope.suggestedChildNodeIndex = function() {
+    return $scope.wallet.suggestedChildNodeIndex();
   };
 
   $scope.unlockWallet = function() {
@@ -295,6 +295,14 @@ var walletAppController = function($scope,
 
   $scope.getAddressBalance = function(addr_b58) {
     return $scope.wallet.watchedAddresses[addr_b58].value;
+  }
+
+  $scope.getRootNodes = function() {
+    return $scope.wallet.rootNodes;
+  }
+
+  $scope.getChildNodes = function() {
+    return $scope.wallet.nodes;
   }
 
   $scope.getCurrentAccount = function() {

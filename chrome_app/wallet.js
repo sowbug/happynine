@@ -89,10 +89,6 @@ function Wallet(electrum) {
     return this.nodes;
   };
 
-  this.getNextAccountNumber = function() {
-    return 99;  // TODO
-  };
-
   this.getExtendedPrivateBase58 = function() {
     if (this.rootNodes.length > 0) {
       return this.rootNodes[0].extendedPrivateBase58;
@@ -147,16 +143,33 @@ function Wallet(electrum) {
     this.rootNodes = [];
   };
 
-  this.deriveNextAccount = function(isWatchOnly, callbackBool) {
-    var params = {
-      'path': "m/0'",
-      'is_watch_only': isWatchOnly,
-    };
-    postRPC('derive-child-node', params)
-      .then(function(response) {
-        var node = Node.fromStorableObject(response);
-        this.restoreNode(node).then(resolve);
-      }.bind(this));
+  this.deriveChildNode = function(childNodeIndex, isWatchOnly) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'path': "m/" + childNodeIndex + "'",
+        'is_watch_only': isWatchOnly,
+      };
+      postRPC('derive-child-node', params)
+        .then(function(response) {
+          var node = Node.fromStorableObject(response);
+          if (node) {
+            this.restoreNode(node).then(resolve);
+          } else {
+            reject();
+          }
+        }.bind(this));
+    }.bind(this));
+  }
+
+  this.suggestedChildNodeIndex = function() {
+    var max_index = 0;
+    for (var i in this.nodes) {
+      if (this.nodes[i].childNum > max_index) {
+        max_index = this.nodes[i].childNum;
+      }
+    }
+    // TODO(miket): someone wanting to break this could do so.
+    return (max_index + 1) & 0x7fffffff;
   };
 
   this.sendFunds = function(sendTo, sendValue, sendFee) {

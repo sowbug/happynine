@@ -138,6 +138,7 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
+  EXPECT_EQ(0 + 0x80000000, response["child_num"].asUInt());
   EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   // Save its serializable stuff

@@ -201,6 +201,7 @@
               <ul class="nav nav-pills" id="settings-tabs">
                 <li><a href="#settings-basic" data-toggle="tab">Basic</a></li>
                 <li ng-if="isWalletUnlocked() || isWalletKeySet()"><a href="#settings-master-key" data-toggle="tab">Master Key</a></li>
+                <li><a href="#settings-old-accounts" data-toggle="tab">OldAccounts</a></li>
                 <li><a href="#settings-accounts" data-toggle="tab">Accounts</a></li>
                 <li><a href="#settings-advanced" data-toggle="tab">Advanced</a></li>
               </ul>
@@ -325,6 +326,85 @@
 
               <!-- Settings - Accounts -->
               <div class="tab-pane fade" id="settings-accounts">
+
+                <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
+                  <div class="panel-heading">Management</div>
+                  <div class="panel-body">
+                    <form class="form-horizontal" role="form" ng-submit="importKey()">
+                      <div class="form-group">
+                        <div class="col-md-2">
+                          <label for="imported-key" class="control-label">Key</label>
+                        </div>
+                        <div class="col-md-10">
+                          <textarea rows="2" class="form-control" id="imported-key" placeholder="xprv/xpub-formatted key" ng-model="w.importKey"></textarea>
+                        </div>
+                      </div>
+                      <div class="col-md-offset-2">
+                        <button type="submit" class="btn btn-primary">Import</button>
+                      </div>
+                    </form>
+                  </div><!-- /panel-body -->
+                </div><!-- /panel-default -->
+
+                <div class="panel panel-default">
+                  <div class="panel-heading">Master Nodes</div>
+                  <div class="panel-body">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Fingerprint</th><th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr data-ng-repeat="node in getRootNodes() track by $index">
+                          <td>
+                            {{node.fingerprint}}
+                          </td>
+                          <td>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#derive-child-node-modal">Derive Child</button>
+                            <button class="btn btn-danger">Remove</button>
+
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div><!-- /panel-body -->
+                </div><!-- /panel-default -->
+
+                <div class="panel panel-default">
+                  <div class="panel-heading">Child Nodes</div>
+                  <div class="panel-body">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Fingerprint</th><th>Parent</th><th>Index</th><th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr data-ng-repeat="node in getChildNodes() track by $index">
+                          <td>
+                            {{node.fingerprint}}
+                          </td>
+                          <td>
+                            {{node.parentFingerprint}}
+                          </td>
+                          <td>
+                            {{node.childNumPretty()}}
+                          </td>
+                          <td>
+                            <button class="btn btn-primary">Use</button>
+                            <button class="btn btn-danger">Remove</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div><!-- /panel-body -->
+                </div><!-- /panel-default -->
+
+              </div><!-- account tab-pane -->
+
+              <!-- Settings - Old Accounts -->
+              <div class="tab-pane fade" id="settings-old-accounts">
 
                 <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
                   <div class="panel-heading">Management</div>
@@ -480,6 +560,32 @@
             <div class="modal-footer">
               <button class="btn btn-default" data-dismiss="modal">Cancel</button>
               <button type="submit" class="btn btn-primary">Import</button>
+            </div>
+          </div><!-- /.modal-content -->
+        </form>
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <!-- Derive Child Node modal -->
+    <div class="modal fade" id="derive-child-node-modal" tabindex="-1" role="dialog" aria-labelledby="derive-child-node-label" aria-hidden="true">
+      <div class="modal-dialog">
+        <form class="form-horizontal" role="form">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title">Derive Child Node</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="child-node-index" class="col-md-3 control-label">Child Node Index</label>
+                <div class="col-md-2">
+                  <input type="number" min="0" class="form-control" ng-model="w.childNodeIndex" ng-init="w.childNodeIndex=suggestedChildNodeIndex()">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary" ng-click="deriveChildNode(w.childNodeIndex)">Derive Child</button>
+              <button type="submit" class="btn btn-info" ng-click="watchChildNode(w.childNodeIndex)">Watch Only</button>
             </div>
           </div><!-- /.modal-content -->
         </form>
