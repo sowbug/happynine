@@ -428,12 +428,17 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
 
-  // https://blockchain.info/tx/TODO-REPLACE-WITH-ACTUAL
+  // https://blockchain.info/tx/bfb1902cde25217359f5f6ab4fc9d408001d92e07b9dc2c29c41d675599f5d51
   // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00013 BTC (not in wallet)
   request = Json::Value();
   response = Json::Value();
   request["txs"][0]["tx"] =
-    "0100000001afbee19b7911c3fbaf56539bbbfe5e20f8eab607e72bd49f709b4e5880c50d10010000006b48304502201743eb3b1385618a1c1d67dda780498a6bd4dbe586489049def22f0795491c5d022100b822a98051574c4a8d9670b548251c1c7a2d27f47eeb732f456775d84e2e04db012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550761bf1e4cd88ac00000000";
+    "0100000001afbee19b7911c3fbaf56539bbbfe5e20f8eab607e72bd49f709b4e5880c50d"
+    "10010000006a4730440220587d3b48f32794177b4252c2d03b10db7962934179e28eaea9"
+    "6edb3cff51290e022061c59b6bf2f11a69acab975b718696cddc71534c89425485a2ed3d"
+    "36312aeed3012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac"
+    "25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550"
+    "761bf1e4cd88ac00000000";
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
