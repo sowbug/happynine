@@ -179,7 +179,8 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
   const bytes_t left32(digest.begin(), digest.begin() + 32);
   const bytes_t right32(digest.begin() + 32, digest.begin() + 64);
   const BigInt iLeft(left32);
-  if (false && iLeft >= CURVE_ORDER) {
+  if (iLeft >= CURVE_ORDER) {
+    std::cerr << "iLeft >= CURVE_ORDER" << std::endl;
     // TODO: "and one should proceed with the next value for i."
     return NULL;
   }
@@ -190,6 +191,7 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
     k += iLeft;
     k %= CURVE_ORDER;
     if (k.isZero()) {
+      std::cerr << "k.isZero()" << std::endl;
       // TODO: "and one should proceed with the next value for i."
       return NULL;
     }
@@ -202,6 +204,7 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
     secp256k1_point K(parent_node.public_key());
     K.generator_mul(left32);
     if (K.is_at_infinity()) {
+      std::cerr << "K.is_at_infinity()" << std::endl;
       // TODO: "and one should proceed with the next value for i."
       return NULL;
     }

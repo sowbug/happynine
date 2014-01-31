@@ -325,6 +325,15 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_EQ("0x5c1bd648", response["fp"].asString());
   EXPECT_EQ("0x3442193e", response["pfp"].asString());
 
+  // Restore watch-only child node
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = "xpub6ASAVgeehLbnwdqV6UKMHVzgqAG8Gr6riv3Fxxpj8ksbH9ebxaEyBLZ85ySDhKiLDBrQSARLq1uNRts8RuJiHjaDMBU4Zn9h8LZNnBC5y4a";
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0xd8ab4937", response["fp"].asString());
+  EXPECT_EQ("0x5a61ff8e", response["pfp"].asString());
+
   // Now unlock wallet so we can derive children.
   request = Json::Value();
   response = Json::Value();
@@ -445,4 +454,122 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_EQ(1, response["address_statuses"].size());
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0));
+}
+
+TEST(ApiTest, DeriveOtherChildren) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
+  Json::Value request;
+  Json::Value response;
+
+  // Set up wallet.
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Import test root node.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_prv_b58"] = "xprv9s21ZrQH143K4EVCsxGjJncM1vLdwwi3CZ4ecGrV8X1ieEJpiDjYdE2PxTu4zvKVkR9e8RW9JRHGmNvbQMusmgFDayakzs68YXYvyJw3rSU";
+  EXPECT_TRUE(api.HandleImportRootNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
+
+  // Derive m/0'.
+  request = Json::Value();
+  response = Json::Value();
+  request["is_watch_only"] = true;
+  request["path"] = "m/0'";
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x5adb92c0", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 0, response["child_num"].asUInt());
+
+  // Save it to restore.
+  const std::string child_ext_pub_b58(response["ext_pub_b58"].asString());
+  const std::string child_ext_prv_enc(response["ext_prv_enc"].asString());
+  const std::string child_fp(response["fp"].asString());
+
+  // Derive m/1'.
+  request = Json::Value();
+  response = Json::Value();
+  request["is_watch_only"] = true;
+  request["path"] = "m/1'";
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x176385e7", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 1, response["child_num"].asUInt());
+
+  // Restore the saved child.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = child_ext_pub_b58;
+  request["ext_prv_enc"] = child_ext_prv_enc;
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x5adb92c0", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 0, response["child_num"].asUInt());
+
+  // Derive m/2'.
+  request = Json::Value();
+  response = Json::Value();
+  request["is_watch_only"] = true;
+  request["path"] = "m/2'";
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0xf41d36a6", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 2, response["child_num"].asUInt());
+
+  // Derive m/3'.
+  request = Json::Value();
+  response = Json::Value();
+  request["is_watch_only"] = true;
+  request["path"] = "m/3'";
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0xbd9a933b", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 3, response["child_num"].asUInt());
+}
+
+TEST(ApiTest, DeriveLaterChild) {
+  Credentials c;
+  Wallet w(c);
+  API api(c, w);
+  Json::Value request;
+  Json::Value response;
+
+  // Restore wallet
+  request["check"] = "c1c89ecb018a907c59926f0ff258dfe05984ee9d9778c9d64569d4b14143f97559ccf015fbc2437aceab2515af84f1ed1a914cdf8e5e42468a789de9876ee3fcd774160ad0318a0b06e47bf2ba92b993";
+  request["ekey_enc"] = "dbfcae7ee9756ae82dfef5375733dd29161c0368024ad17f2a60468cf0101904826147276f14cc7e9e4d6f3551d85ff286a04608c732f1188fbad3284a82fec850ac191ba57dc41325ce7229f1826e0c";
+  request["salt"] = "4ff991e1b756b4c34a11a435e0ca6a8da738001ad34c7df2327d237bffcb705e";
+  EXPECT_TRUE(api.HandleSetCredentials(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Restore root node
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8";
+  request["ext_prv_enc"] = "728f52c0144d0d48ae888b01ba9392b84e79c617291263e2c39c9369f7b4f9b0c3d856d6934efaba17b76582570f0719d642532c3cc668b511dff38cd089f098c4a87e3ea8de334c5348322f18844cfc4d81650f7c3b3f2301d81ac06f87b9ef9e99b3f5e9d60ea59dffb16fb8fcd3af";
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0x3442193e", response["fp"].asString());
+  EXPECT_EQ("0x00000000", response["pfp"].asString());
+
+  // Unlock wallet so we can derive children.
+  request = Json::Value();
+  response = Json::Value();
+  request["passphrase"] = "foo";
+  EXPECT_TRUE(api.HandleUnlock(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+
+  // Derive m/99'
+  request = Json::Value();
+  response = Json::Value();
+  request["is_watch_only"] = true;
+  request["path"] = "m/99'";
+  EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ("0xa99f2d70", response["fp"].asString());
+  EXPECT_EQ(0x80000000 + 99, response["child_num"].asUInt());
 }

@@ -86,7 +86,7 @@
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
-                  <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
+                  <li><strong>Create a master node or import a master key.</strong> Go to <span class="label label-primary">Accounts</span> under <span class="label label-primary">Settings</span> and create a new master node. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
                 </ul>
               </div>
             </div>
@@ -200,9 +200,7 @@
             <div class="btn-toolbar">
               <ul class="nav nav-pills" id="settings-tabs">
                 <li><a href="#settings-basic" data-toggle="tab">Basic</a></li>
-                <li ng-if="isWalletUnlocked() || isWalletKeySet()"><a href="#settings-master-key" data-toggle="tab">Master Key</a></li>
-                <li><a href="#settings-old-accounts" data-toggle="tab">OldAccounts</a></li>
-                <li><a href="#settings-accounts" data-toggle="tab">Accounts</a></li>
+                <li><a href="#settings-accounts" data-toggle="tab" ng-if="isWalletUnlocked() || isWalletKeySet()">Accounts</a></li>
                 <li><a href="#settings-advanced" data-toggle="tab">Advanced</a></li>
               </ul>
             </div>
@@ -258,95 +256,22 @@
                 </div><!-- panel-default -->
               </div>
 
-              <!-- Settings - Master Key -->
-              <div class="tab-pane active fade" id="settings-master-key">
+              <!-- Settings - Accounts -->
+              <div class="tab-pane fade" id="settings-accounts">
 
-                <!-- Management -->
-                <div class="panel panel-default" ng-if="isWalletUnlocked() && !isWalletKeySet()">
+                <div class="panel panel-default" ng-if="isWalletUnlocked()">
                   <div class="panel-heading">Management</div>
                   <div class="panel-body">
                     <div class="row">
                       <div class="col-md-6 col-md-offset-2">
-                        <button class="btn btn-success" ng-click="newMasterKey()">New Master Key</button>
-                        <button class="btn btn-primary" data-toggle="modal" data-target="#import-master-key-modal">Import Master Key &hellip;</button>
+                        <button class="btn btn-success" ng-click="newMasterNode()">New Master Node</button>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#import-key-modal">Import Master Key &hellip;</button>
                       </div>
                     </div>
-                  </div>
-                </div><!-- panel-default -->
-
-                <!-- Master Key -->
-                <div class="panel panel-default" ng-if="isWalletKeySet()">
-                  <div class="panel-heading">Installed Master Key</div>
-                  <div class="panel-body">
-                    <form class="form-horizontal" role="form">
-                      <div class="form-group">
-                        <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
-                        <div class="col-md-3">
-                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{getWalletKeyFingerprint()}}">
-                        </div>
-                        <div class="col-md-2">
-                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getWalletKeyFingerprint()}}"/>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
-                        <div class="col-md-10">
-                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="getWalletKeyPublic()"></textarea>
-                        </div>
-                      </div>
-                      <div ng-if="isWalletUnlocked()">
-                        <div class="form-group" ng-if="isWalletKeyPrivateSet()">
-                          <div class="col-md-4 col-md-offset-2">
-                            <div class="checkbox">
-                              <label>
-                                <input type="checkbox" ng-model="w.showPrivateKey">Show Private Key
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="form-group" ng-if="w.showPrivateKey && isWalletKeyPrivateSet()">
-                          <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
-                          <div class="col-md-10">
-                            <textarea class="form-control" id="xprv-readonly" readonly ng-bind="getWalletKeyPrivate()"></textarea>
-                          </div>
-                        </div>
-
-                        <div class="form-group">
-                          <div class="col-md-6 col-md-offset-2">
-                            <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
-                            <button class="btn btn-info" ng-click="exportMasterKey()">Export Master Key</button>
-                          </div>
-                        </div>
-                      </div><!-- isWalletUnlocked -->
-
-                    </form>
-                  </div>
-                </div><!-- panel-default -->
-              </div><!-- master key tab-pane -->
-
-              <!-- Settings - Accounts -->
-              <div class="tab-pane fade" id="settings-accounts">
-
-                <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
-                  <div class="panel-heading">Management</div>
-                  <div class="panel-body">
-                    <form class="form-horizontal" role="form" ng-submit="importKey()">
-                      <div class="form-group">
-                        <div class="col-md-2">
-                          <label for="imported-key" class="control-label">Key</label>
-                        </div>
-                        <div class="col-md-10">
-                          <textarea rows="2" class="form-control" id="imported-key" placeholder="xprv/xpub-formatted key" ng-model="w.importKey"></textarea>
-                        </div>
-                      </div>
-                      <div class="col-md-offset-2">
-                        <button type="submit" class="btn btn-primary">Import</button>
-                      </div>
-                    </form>
                   </div><!-- /panel-body -->
                 </div><!-- /panel-default -->
 
-                <div class="panel panel-default">
+                <div class="panel panel-default" ng-if="getRootNodes().length">
                   <div class="panel-heading">Master Nodes</div>
                   <div class="panel-body">
                     <table class="table table-striped">
@@ -361,9 +286,9 @@
                             {{node.fingerprint}}
                           </td>
                           <td>
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#derive-child-node-modal">Derive Child</button>
-                            <button class="btn btn-danger">Remove</button>
-
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#derive-child-node-modal" ng-if="isWalletUnlocked()">Derive Child</button>
+                            <button class="btn btn-info" ng-click="exportNode(node)">Export &hellip;</button>
+                            <button class="btn btn-danger" ng-click="removeNode(node)">Remove</button>
                           </td>
                         </tr>
                       </tbody>
@@ -371,7 +296,7 @@
                   </div><!-- /panel-body -->
                 </div><!-- /panel-default -->
 
-                <div class="panel panel-default">
+                <div class="panel panel-default" ng-if="getChildNodes().length">
                   <div class="panel-heading">Child Nodes</div>
                   <div class="panel-body">
                     <table class="table table-striped">
@@ -392,8 +317,8 @@
                             {{node.childNumPretty()}}
                           </td>
                           <td>
-                            <button class="btn btn-primary">Use</button>
-                            <button class="btn btn-danger">Remove</button>
+                            <button class="btn btn-primary" ng-click="setActiveChildNode(node)">Use</button>
+                            <button class="btn btn-danger" ng-click="removeNode(node)">Remove</button>
                           </td>
                         </tr>
                       </tbody>
@@ -401,57 +326,6 @@
                   </div><!-- /panel-body -->
                 </div><!-- /panel-default -->
 
-              </div><!-- account tab-pane -->
-
-              <!-- Settings - Old Accounts -->
-              <div class="tab-pane fade" id="settings-old-accounts">
-
-                <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
-                  <div class="panel-heading">Management</div>
-                  <div class="panel-body">
-                    <div class="row">
-                      <div class="col-md-10 col-md-offset-2">
-                        <button class="btn btn-success" ng-click="deriveNextAccount()">Generate {{nextAccountName()}}</button>
-                        <button class="btn btn-default" ng-click="watchNextAccount()">Watch {{nextAccountName()}}</button>
-                      </div>
-                    </div>
-                  </div><!-- /panel-body -->
-                </div><!-- /panel-default -->
-
-                <div class="panel panel-default">
-                  <div class="panel-heading">Installed Accounts</div>
-                  <div class="panel-body">
-                    <div ng-if="!getAccountCount()">
-                      <p id="no-accounts">None. To create an account:</p>
-                      <ul>
-                        <li ng-if="!isWalletUnlocked()">Unlock your wallet by clicking the lock icon <span class="glyphicon glyphicon-lock ok"></span> below.</li>
-                        <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
-                        <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Click the <span class="label label-success">Generate Account</span> button above.</li>
-                      </ul>
-                    </div>
-
-                    <table class="table table-striped" ng-if="wallet.getAccountCount()">
-                      <thead>
-                        <tr>
-                          <th>Parent</th><th>Index</th><th>Fingerprint</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr data-ng-repeat="account in getAccounts() track by $index">
-                          <td>
-                            {{account.parentFingerprint}}
-                          </td>
-                          <td>
-                            {{account.path}}
-                          </td>
-                          <td>
-                            {{account.fingerprint}}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div><!-- /panel-body -->
-                </div><!-- /panel-default -->
               </div><!-- account tab-pane -->
 
               <!-- Settings - Advanced -->
@@ -540,10 +414,10 @@
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 
-    <!-- Import master key modal -->
-    <div class="modal fade" id="import-master-key-modal" tabindex="-1" role="dialog" aria-labelledby="import-master-key-label" aria-hidden="true">
+    <!-- Import key modal -->
+    <div class="modal fade" id="import-key-modal" tabindex="-1" role="dialog" aria-labelledby="import-key-label" aria-hidden="true">
       <div class="modal-dialog">
-        <form class="form-horizontal" role="form" ng-submit="importMasterKey()">
+        <form class="form-horizontal" role="form" ng-submit="importKey()">
           <div class="modal-content">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -553,7 +427,7 @@
               <div class="form-group">
                 <label for="imported-master-key" class="col-md-3 control-label">Master Key</label>
                 <div class="col-md-9">
-                  <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xprv-formatted BIP0032 master key" ng-model="w.importMasterKey"></textarea>
+                  <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xprv-formatted BIP0032 master key" ng-model="w.importKey"></textarea>
                 </div>
               </div>
             </div>
@@ -579,7 +453,7 @@
               <div class="form-group">
                 <label for="child-node-index" class="col-md-3 control-label">Child Node Index</label>
                 <div class="col-md-2">
-                  <input type="number" min="0" class="form-control" ng-model="w.childNodeIndex" ng-init="w.childNodeIndex=suggestedChildNodeIndex()">
+                  <input type="number" min="0" class="form-control" id="child-node-index" ng-model="w.childNodeIndex">
                 </div>
               </div>
             </div>

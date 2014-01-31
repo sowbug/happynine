@@ -204,21 +204,17 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
 
-  if (!ext_prv_enc.empty()) {
-    bool is_root;
-    if (wallet_.RestoreNode(ext_pub_b58, ext_prv_enc, is_root)) {
-      GenerateNodeResponse(result,
-                           is_root ?
-                           wallet_.GetRootNode() :
-                           wallet_.GetChildNode(),
-                           ext_prv_enc,
-                           false);
-      PopulateResponses(result);
-    } else {
-      SetError(result, -1, "Extended key failed validation");
-    }
+  bool is_root;
+  if (wallet_.RestoreNode(ext_pub_b58, ext_prv_enc, is_root)) {
+    GenerateNodeResponse(result,
+                         is_root ?
+                         wallet_.GetRootNode() :
+                         wallet_.GetChildNode(),
+                         ext_prv_enc,
+                         false);
+    PopulateResponses(result);
   } else {
-    SetError(result, -1, "Missing required ext_prv_enc param");
+    SetError(result, -1, "Extended key failed validation");
   }
   return true;
 }

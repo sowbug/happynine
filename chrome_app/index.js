@@ -56,6 +56,9 @@ window.onload = function() {
   $('#import-master-key-modal').on('shown.bs.modal', function (e) {
     $('#imported-master-key').focus();
   })
+  $('#derive-child-node-modal').on('shown.bs.modal', function (e) {
+    $('#child-node-index').focus();
+  })
   if (chrome && chrome.runtime) {
     showLoading();
   } else {

@@ -175,6 +175,8 @@ bool Wallet::DeriveChildNode(const std::string& path,
       bool is_root;
       RestoreNode(ext_pub_b58, ext_prv_enc, is_root);
     }
+  } else {
+    result = false;
   }
   return result;
 }

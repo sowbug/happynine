@@ -112,7 +112,7 @@ function Wallet(electrum) {
     }
   };
 
-  this.addRandomMasterKey = function() {
+  this.addRandomRootNode = function() {
     return new Promise(function(resolve, reject) {
       postRPC('generate-root-node', {})
         .then(function(response) {
@@ -122,7 +122,7 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
-  this.importMasterKey = function(ext_prv_b58) {
+  this.importKey = function(ext_prv_b58) {
     return new Promise(function(resolve, reject) {
       var params = {
         'ext_prv_b58': ext_prv_b58
@@ -139,8 +139,33 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
-  this.removeMasterKey = function() {
-    this.rootNodes = [];
+  this.deriveChildNode = function(childNodeIndex, isWatchOnly) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'path': "m/" + childNodeIndex + "'",
+        'is_watch_only': isWatchOnly,
+      };
+      postRPC('derive-child-node', params)
+        .then(function(response) {
+          var node = Node.fromStorableObject(response);
+          if (node) {
+            this.restoreNode(node).then(resolve);
+          } else {
+            reject();
+          }
+        }.bind(this));
+    }.bind(this));
+  }
+
+  this.suggestedChildNodeIndex = function() {
+    var max_index = -1;
+    for (var i in this.nodes) {
+      if (this.nodes[i].childNum > max_index) {
+        max_index = this.nodes[i].childNum;
+      }
+    }
+    // TODO(miket): someone wanting to break this could do so.
+    return (max_index + 1) & 0x7fffffff;
   };
 
   this.deriveChildNode = function(childNodeIndex, isWatchOnly) {
@@ -170,6 +195,38 @@ function Wallet(electrum) {
     }
     // TODO(miket): someone wanting to break this could do so.
     return (max_index + 1) & 0x7fffffff;
+  };
+
+  this.removeNode = function(node) {
+    return new Promise(function(resolve, reject) {
+      console.log("looking to remove", node);
+      var newNodes = [];
+      var oldNodes;
+      if (node.childNum == 0) {
+        oldNodes = this.rootNodes;
+      } else {
+        oldNodes = this.nodes;
+      }
+      for (var i in oldNodes) {
+        var n = oldNodes[i];
+        if (!(n.fingerprint == node.fingerprint &&
+              n.childNum == node.childNum &&
+              n.parentFingerprint == node.parentFingerprint)) {
+          newNodes.push(n);
+        }
+      }
+      if (node.childNum == 0) {
+        this.rootNodes = newNodes;
+      } else {
+        this.nodes = newNodes;
+      }
+      resolve();
+      // TODO(miket): whoever's in charge of the current account needs
+      // to keep it up to date after this operation.
+      //
+      // TODO(miket): pretty sure this will have to be async, so
+      // setting it up that way now
+    }.bind(this));
   };
 
   this.sendFunds = function(sendTo, sendValue, sendFee) {

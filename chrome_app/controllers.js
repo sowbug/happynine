@@ -141,30 +141,22 @@ var walletAppController = function($scope,
       }
     });
 
-  $scope.newMasterKey = function() {
-    $scope.wallet.addRandomMasterKey()
+  $scope.newMasterNode = function() {
+    $scope.wallet.addRandomRootNode()
       .then(function() {
         $scope.$apply();
       });
   };
 
-  $scope.importMasterKey = function() {
-    $scope.wallet.importMasterKey($scope.w.importMasterKey)
+  // TODO(miket): make this work with child keys, too.
+  $scope.importKey = function() {
+    $scope.wallet.importKey($scope.w.importKey)
       .then(function() {
-        $scope.w.importMasterKey = null;
-        $("#import-master-key-modal").modal('hide');
+        $("#import-key-modal").modal('hide');
+        $scope.w.importKey = null;
         $scope.$apply();
       }.bind(this),
-            function() { console.log("nope"); }.bind(this));
-  };
-
-  $scope.removeMasterKey = function() {
-    // TODO(miket): ideally we'll track whether this key was backed
-    // up, and make this button available only if yes. Then we'll
-    // confirm up the wazoo before actually deleting.
-    //
-    // Less of a big deal if the master key is public.
-    $scope.wallet.removeMasterKey();
+            function() { console.log("import failed"); }.bind(this));
   };
 
   $scope.deriveChildNode = function(childNodeIndex) {
@@ -185,6 +177,18 @@ var walletAppController = function($scope,
 
   $scope.suggestedChildNodeIndex = function() {
     return $scope.wallet.suggestedChildNodeIndex();
+  };
+
+  $scope.removeNode = function(node) {
+    // TODO(miket): ideally we'll track whether this key was backed
+    // up, and make this button available only if yes. Then we'll
+    // confirm up the wazoo before actually deleting.
+    //
+    // Less of a big deal if the master key is public.
+    $scope.wallet.removeNode(node)
+      .then(function() {
+        $scope.$apply();
+      });
   };
 
   $scope.unlockWallet = function() {
@@ -334,11 +338,11 @@ var walletAppController = function($scope,
     }
   };
 
-  $scope.exportMasterKey = function() {
+  $scope.exportNode = function(node) {
     chrome.fileSystem.chooseEntry(
       {'type': 'saveFile',
        'suggestedName': 'Happynine-Export-' +
-       $scope.getWalletKeyFingerprint() + '.txt',
+       node.fingerprint + '.txt',
       },
       function(entry) {
         var errorHandler = function(e) {
@@ -351,14 +355,14 @@ var walletAppController = function($scope,
           };
           var message =
             "Happynine: BIP 0038 Master Key Export\r\n" +
-            $scope.getWalletKeyFingerprint() + ": " +
-            $scope.getWalletKeyPublic() + "\r\n" +
+            node.fingerprint + ": " +
+            node.extendedPublicBase58 + "\r\n" +
             "Private Key [NOT YET IMPLEMENTED]\r\n\r\n" +
             "THIS IS NOT A BACKUP OF YOUR KEY! THAT FEATURE IS COMING.\r\n";
           message += "Meanwhile, here is a proof of concept text " +
             "QR code (NOT YOURS). \r\n\r\n";
           var qr = $('<div></div>');
-          qr.qrcode({'text': $scope.getWalletKeyPublic(),
+          qr.qrcode({'text': node.extendedPublicBase58,
                      'render': 'text',
                      'correctLevel': QRErrorCorrectLevel.L});
           message += qr.text();
@@ -409,5 +413,8 @@ var walletAppController = function($scope,
   var listenerDiv = document.getElementById('listener');
   listenerDiv.addEventListener('load', function() {
     $scope.startLoading();
+    $('#derive-child-node-modal').on('show.bs.modal', function (e) {
+      $scope.w.childNodeIndex = $scope.suggestedChildNodeIndex();
+    });
   }, true);
 };
