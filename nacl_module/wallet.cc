@@ -42,7 +42,7 @@ Address::Address(const bytes_t& hash160, uint32_t child_num, bool is_public)
 Wallet::Wallet(Credentials& credentials)
   : credentials_(credentials), root_node_(NULL), child_node_(NULL),
     public_address_gap_(4), change_address_gap_(4),
-    public_address_start_(1), change_address_start_(1),
+    public_address_start_(0), change_address_start_(0),
     next_change_address_index_(change_address_start_) {
   ResetGaps();
 }
