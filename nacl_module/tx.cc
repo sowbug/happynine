@@ -285,6 +285,8 @@ uint64_t Transaction::AddRecipientValues(const tx_outs_t& txos) {
   return value;
 }
 
+// TODO(miket): this shouldn't be calling into NodeFactory. We should
+// hand in a list of signing keys.
 bool Transaction::
 GenerateKeysForUnspentTxos(KeyProvider* key_provider,
                            const tx_outs_t& txos,
