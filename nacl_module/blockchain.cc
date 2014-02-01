@@ -100,6 +100,19 @@ void Blockchain::UpdateTransactionCounts(const Transaction* tx) {
        ++i) {
     ++tx_counts_[i->GetSigningAddress()];
   }
+
+  // TODO(miket): because this method builds on existing state rather
+  // than recalculating all tx counts, it might miss some counts if
+  // the prior transaction wasn't here yet but arrives later.
+  for (tx_ins_t::const_iterator i = tx->inputs().begin();
+       i != tx->inputs().end();
+       ++i) {
+    if (GetTransaction(i->prev_txo_hash())) {
+      Transaction* affected_tx = GetTransaction(i->prev_txo_hash());
+      const TxOut *txo = &affected_tx->outputs()[i->prev_txo_index()];
+      ++tx_counts_[txo->GetSigningAddress()];
+    }
+  }
 }
 
 void Blockchain::AddTransaction(const tx_t& transaction) {

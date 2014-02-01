@@ -69,8 +69,17 @@ TEST(BlockchainTest, HappyPath) {
   blockchain.AddTransaction(TX_100D);
   blockchain.GetUnspentTxos(address_filter, unspent_txos);
   EXPECT_EQ(3, unspent_txos.size());
+  EXPECT_EQ(14000, blockchain.GetAddressBalance(ADDR_1Guw));
+  EXPECT_EQ(1, blockchain.GetAddressTxCount(ADDR_1Guw));
 
   blockchain.AddTransaction(TX_BFB1);
   blockchain.GetUnspentTxos(address_filter, unspent_txos);
   EXPECT_EQ(3, unspent_txos.size());
+
+  EXPECT_EQ(50 * SATOSHIS_IN_BTC, blockchain.GetAddressBalance(ADDR_12c6));
+  EXPECT_EQ(1, blockchain.GetAddressTxCount(ADDR_12c6));
+  EXPECT_EQ(27000, blockchain.GetAddressBalance(ADDR_1PB8));
+  EXPECT_EQ(2, blockchain.GetAddressTxCount(ADDR_1PB8));
+  EXPECT_EQ(0, blockchain.GetAddressBalance(ADDR_1Guw));
+  EXPECT_EQ(2, blockchain.GetAddressTxCount(ADDR_1Guw));
 }

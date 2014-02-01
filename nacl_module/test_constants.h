@@ -29,8 +29,10 @@
 #include "types.h"
 
 // Addresses
-const bytes_t ADDR_1A1z(Base58::fromAddress("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"));
 const bytes_t ADDR_12c6(Base58::fromAddress("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"));
+const bytes_t ADDR_1A1z(Base58::fromAddress("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"));
+const bytes_t ADDR_1Guw(Base58::fromAddress("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd"));
+const bytes_t ADDR_1PB8(Base58::fromAddress("1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1"));
 
 // Transactions
 
