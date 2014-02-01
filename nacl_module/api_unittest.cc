@@ -28,6 +28,7 @@
 #include "gtest/gtest.h"
 #include "jsoncpp/json/reader.h"
 #include "jsoncpp/json/writer.h"
+#include "test_constants.h"
 #include "types.h"
 
 const bool BE_LOUD = false;
@@ -178,9 +179,7 @@ TEST(ApiTest, HappyPath) {
   // and got back some stuff.
   request = Json::Value();
   response = Json::Value();
-  const std::string HASH_TX =
-    "1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd";
-  request["tx_statuses"][0]["tx_hash"] = HASH_TX;
+  request["tx_statuses"][0]["tx_hash"] = TX_1BCB_HASH;
   request["tx_statuses"][0]["height"] = 282172;
   EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
@@ -192,17 +191,8 @@ TEST(ApiTest, HappyPath) {
   request = Json::Value();
   response = Json::Value();
 
-  // https://blockchain.info/tx/1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd
-  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - 0.00029
   expected_balance += 29000;
-  request["txs"][0]["tx"] =
-    "01000000018498a6567575912c5b891afa51d028b250465c2423fafa121b7dfe8c9382de"
-    "d3000000008b48304502207a9e02fba54f78c220ef1d3c9c2e40f49b042a3e00c6073133"
-    "97d02109d9907d022100f87cbf506772763cf6a5b8cd63ec2d9c574bc956af892f0d87a9"
-    "3b339f115b03014104c3ff3d7202a81877b8537ed836529269b79ce245d69aaf52907514"
-    "cb412bbb93bf61e66a72dba22064757236063cd9ddd2094e9356bc62e955ea7752e7aa5b"
-    "7bffffffff0148710000000000001976a914595a67df1963dc16c5567abdd4a6443c8278"
-    "0d1688ac00000000";
+  request["txs"][0]["tx"] = to_hex(TX_1BCB);
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -390,18 +380,9 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
   EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
-  // https://blockchain.info/tx/1bcbf3b8244b25e4430d2abf706f5f53a16ad8ff2a42129fa9ca79477b905fbd
-  // 199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC - 0.00029
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] =
-    "01000000018498a6567575912c5b891afa51d028b250465c2423fafa121b7dfe8c9382de"
-    "d3000000008b48304502207a9e02fba54f78c220ef1d3c9c2e40f49b042a3e00c6073133"
-    "97d02109d9907d022100f87cbf506772763cf6a5b8cd63ec2d9c574bc956af892f0d87a9"
-    "3b339f115b03014104c3ff3d7202a81877b8537ed836529269b79ce245d69aaf52907514"
-    "cb412bbb93bf61e66a72dba22064757236063cd9ddd2094e9356bc62e955ea7752e7aa5b"
-    "7bffffffff0148710000000000001976a914595a67df1963dc16c5567abdd4a6443c8278"
-    "0d1688ac00000000";
+  request["txs"][0]["tx"] = to_hex(TX_1BCB);
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -409,19 +390,9 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 29000));
 
-  // https://blockchain.info/tx/100dc580584e9b709fd42be707b6eaf8205efebb9b5356affbc311799be1beaf
-  // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00014 BTC (not in wallet)
-  // 1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd - 0.00014 BTC (in wallet)
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] =
-    "0100000001bd5f907b4779caa99f12422affd86aa1535f6f70bf2a0d43e4254b24b8f3cb"
-    "1b000000006a47304402201ede3d04b7a6c22aec5421fc089e464ce3bafc012f40d24010"
-    "7bf1d19be1a410022027b157c524c3211528ed32f1ec3a971a0cffe173b0b91c2c801469"
-    "87a37ddbfe012103a434f5b4f9d99a4c786a44dd50d5b7832ec417ae7150f049904e3a0f"
-    "544621a2ffffffff02b0360000000000001976a914f33d441fd850487267ed7681b19550"
-    "761bf1e4cd88acb0360000000000001976a914ae8d5613d9e7e7281451c0abf5424a3e42"
-    "95fc5088ac00000000";
+  request["txs"][0]["tx"] = to_hex(TX_100D);
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -431,17 +402,9 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
 
-  // https://blockchain.info/tx/bfb1902cde25217359f5f6ab4fc9d408001d92e07b9dc2c29c41d675599f5d51
-  // 1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1 - 0.00013 BTC (not in wallet)
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] =
-    "0100000001afbee19b7911c3fbaf56539bbbfe5e20f8eab607e72bd49f709b4e5880c50d"
-    "10010000006a4730440220587d3b48f32794177b4252c2d03b10db7962934179e28eaea9"
-    "6edb3cff51290e022061c59b6bf2f11a69acab975b718696cddc71534c89425485a2ed3d"
-    "36312aeed3012102c372ba6e50d79c1fa02a32a22d0350b176935a78fd75c134e246c9ac"
-    "25c98a31ffffffff01c8320000000000001976a914f33d441fd850487267ed7681b19550"
-    "761bf1e4cd88ac00000000";
+  request["txs"][0]["tx"] = to_hex(TX_BFB1);
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());

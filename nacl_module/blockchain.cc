@@ -37,7 +37,7 @@ Blockchain::~Blockchain() {
   // DELETE transactions_
 }
 
-void Blockchain::AddBlock(uint64_t height, uint64_t timestamp) {
+void Blockchain::ConfirmBlock(uint64_t height, uint64_t timestamp) {
   block_timestamps_[height] = timestamp;
   if (height > max_block_height_) {
     max_block_height_ = height;

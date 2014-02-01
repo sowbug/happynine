@@ -39,19 +39,18 @@ class Blockchain {
   typedef bytes_t address_t;
   typedef std::set<address_t> address_set_t;
 
-  void AddBlock(uint64_t height, uint64_t timestamp);
-
-  void AddTransaction(const tx_t& transaction);
-  void ConfirmTransaction(const tx_hash_t& tx_hash, uint64_t height);
-
-  void GetUnspentTxos(const address_set_t& addresses,
-                      tx_outs_t& unspent_txos);
-
-  uint64_t GetTransactionHeight(const tx_hash_t& tx_hash);
+  // Blocks
+  uint64_t max_block_height() const { return max_block_height_; }
+  void ConfirmBlock(uint64_t height, uint64_t timestamp);
   uint64_t GetBlockTimestamp(uint64_t height);
 
-  uint64_t max_block_height() const { return max_block_height_; }
+  // Transactions
+  void AddTransaction(const tx_t& transaction);
+  void ConfirmTransaction(const tx_hash_t& tx_hash, uint64_t height);
+  void GetUnspentTxos(const address_set_t& addresses, tx_outs_t& unspent_txos);
+  uint64_t GetTransactionHeight(const tx_hash_t& tx_hash);
 
+  // Addresses
   uint64_t GetAddressBalance(const address_t& address);
   uint64_t GetAddressTxCount(const address_t& address);
 
