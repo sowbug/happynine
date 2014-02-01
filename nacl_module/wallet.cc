@@ -79,6 +79,7 @@ void Wallet::set_child_ext_keys(const bytes_t& ext_pub,
   ResetGaps();
   next_change_address_index_ = change_address_start_;
   addresses_to_report_.clear();
+  recent_txs_to_report_.clear();
 }
 
 bool Wallet::IsWalletLocked() const {
@@ -361,7 +362,8 @@ bool Wallet::GetTxRequestsToReport(tx_requests_t& requests) {
   return true;
 }
 
-void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t /*height*/) {
+void Wallet::HandleTxStatus(const bytes_t& hash, uint32_t height) {
+  tx_heights_[hash] = height;
   tx_requests_.push_back(hash);
 }
 
@@ -376,6 +378,11 @@ Transaction* Wallet::GetTx(const bytes_t& hash) {
 void Wallet::AddTx(Transaction* transaction) {
   // Stick it in the map.
   tx_hashes_to_txs_[transaction->hash()] = transaction;
+
+  // We'll assume that if we were told about the transaction, we care
+  // about it. TODO: this assumption will change if a single wallet
+  // manages multiple accounts.
+  recent_txs_to_report_.insert(transaction->hash());
 
   // Check every input to see which output it spends, and if we know
   // about that output, mark it spent.
@@ -400,6 +407,7 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
   Transaction* tx = new Transaction(is);
   AddTx(tx);
 
+  // Create a map of balances for all the addresses we're watching.
   std::map<bytes_t, uint64_t> balances;
   for (hash_to_address_t::const_iterator i = watched_addresses_.begin();
        i != watched_addresses_.end();
@@ -407,6 +415,9 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
     balances[i->first] = 0;
   }
 
+  // Run through all transactions we know about. If one of our
+  // addresses is the recipient of an unspent output, add that unspent
+  // output's value to its balance.
   for (tx_hashes_to_txs_t::const_iterator i = tx_hashes_to_txs_.begin();
        i != tx_hashes_to_txs_.end();
        ++i) {
@@ -422,11 +433,30 @@ void Wallet::HandleTx(const bytes_t& tx_bytes) {
     }
   }
 
+  // Now update all the running balances with the results. The
+  // UpdateAddressBalance method automatically ignores unchanged
+  // balances when deciding what to report.
   for (std::map<bytes_t, uint64_t>::const_iterator i = balances.begin();
        i != balances.end();
        ++i) {
     UpdateAddressBalance(i->first, i->second);
   }
+}
+
+void Wallet::HandleBlockHeader(const uint64_t height, uint64_t timestamp) {
+  if (block_timestamps_.count(height) == 1 &&
+      block_timestamps_[height] == timestamp) {
+    return;
+  }
+  block_timestamps_[height] = timestamp;
+  if (height > current_block_) {
+    SetCurrentBlock(height);
+  }
+}
+
+void Wallet::SetCurrentBlock(uint64_t height) {
+  current_block_ = height;
+  // send out a notification
 }
 
 bytes_t Wallet::GetNextUnusedChangeAddress() {
@@ -485,6 +515,76 @@ void Wallet::GenerateAllSigningKeys() {
       signing_keys_[hash160] = node->secret_key();
     }
   }
+}
+
+static bool SortRecentTransactions(const Wallet::recent_tx_t& a,
+                                   const Wallet::recent_tx_t& b) {
+  if (a.timestamp != b.timestamp) {
+    return a.timestamp > b.timestamp;
+  }
+  return a.value > b.value;
+}
+
+bool Wallet::GetRecentTransactionsToReport(recent_txs_t& recent_txs) {
+  for (std::set<bytes_t>::const_iterator i = recent_txs_to_report_.begin();
+       i != recent_txs_to_report_.end();
+       ++i) {
+    Transaction* tx = tx_hashes_to_txs_[*i];
+
+    // Check the inputs. If we recognize the sender, add it.
+    for (tx_ins_t::const_iterator j = tx->inputs().begin();
+         j != tx->inputs().end();
+         ++j) {
+      if (!DoesTxExist(j->prev_txo_hash())) {
+        continue;
+      }
+      Transaction* spent_tx = GetTx(j->prev_txo_hash());
+      if (!spent_tx) {
+        continue;
+      }
+      const TxOut* txo = &spent_tx->outputs()[j->prev_txo_index()];
+      const bytes_t& address = txo->GetSigningAddress();
+      if (IsAddressWatched(address)) {
+        recent_tx_t rtx;
+        rtx.hash = spent_tx->hash();
+        rtx.hash160 = address;
+        rtx.value = txo->value();
+        rtx.was_received = false;
+        rtx.timestamp = GetTxTimestamp(rtx.hash);
+        recent_txs.push_back(rtx);
+      }
+    }
+
+    // Check the outputs. If we recognize the recipient, add it.
+    for (tx_outs_t::const_iterator j = tx->outputs().begin();
+         j != tx->outputs().end();
+         ++j) {
+      const bytes_t& address = j->GetSigningAddress();
+      if (IsAddressWatched(address)) {
+        recent_tx_t rtx;
+        rtx.hash = tx->hash();
+        rtx.hash160 = address;
+        rtx.value = j->value();
+        rtx.was_received = true;
+        rtx.timestamp = GetTxTimestamp(rtx.hash);
+        recent_txs.push_back(rtx);
+      }
+    }
+  }
+  std::sort(recent_txs.begin(), recent_txs.end(), SortRecentTransactions);
+  recent_txs_to_report_.clear();
+  return true;
+}
+
+uint64_t Wallet::GetTxTimestamp(const bytes_t& hash) {
+  if (tx_heights_.count(hash) == 0) {
+    return 0;
+  }
+  uint64_t height = tx_heights_[hash];
+  if (block_timestamps_.count(height) == 0) {
+    return 0;
+  }
+  return block_timestamps_[height];
 }
 
 bool Wallet::CreateTx(const tx_outs_t& recipients,

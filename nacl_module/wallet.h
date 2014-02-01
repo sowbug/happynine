@@ -78,8 +78,21 @@ class Wallet : public KeyProvider {
                 bool should_sign,
                 bytes_t& tx);
 
+  // Blocks
+  void HandleBlockHeader(const uint64_t height, uint64_t timestamp);
+
   // Module-to-client
   bool GetAddressStatusesToReport(Address::addresses_t& statuses);
+
+  typedef struct {
+    bytes_t hash;
+    bytes_t hash160;
+    uint64_t value;
+    bool was_received;
+    uint64_t timestamp;
+  } recent_tx_t;
+  typedef std::vector<recent_tx_t> recent_txs_t;
+  bool GetRecentTransactionsToReport(recent_txs_t& recent_txs);
 
   typedef bytes_t tx_request_t;
   typedef std::vector<tx_request_t> tx_requests_t;
@@ -137,9 +150,15 @@ class Wallet : public KeyProvider {
 
   void GenerateAllSigningKeys();
 
+  void SetCurrentBlock(uint64_t height);
+
+  uint64_t GetTxTimestamp(const bytes_t& hash);
+
   typedef std::map<bytes_t, Address*> hash_to_address_t;
   hash_to_address_t watched_addresses_;
   std::set<bytes_t> addresses_to_report_;
+
+  std::set<bytes_t> recent_txs_to_report_;
 
   Credentials& credentials_;
   bytes_t root_ext_pub_;
@@ -167,6 +186,10 @@ class Wallet : public KeyProvider {
 
   std::map<bytes_t, bytes_t> signing_public_keys_;
   std::map<bytes_t, bytes_t> signing_keys_;
+
+  std::map<bytes_t, uint64_t> tx_heights_;
+  std::map<uint64_t, uint64_t> block_timestamps_;
+  uint64_t current_block_;
 
   typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;

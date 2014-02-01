@@ -209,6 +209,9 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(1 + 4, response["address_statuses"].size());
   EXPECT_EQ(expected_balance,
             response["address_statuses"][0]["value"].asUInt64());
+  EXPECT_EQ(1, response["recent_txs"].size());
+  EXPECT_EQ(29000,
+            response["recent_txs"][0]["value"].asUInt64());
 
   // Spend some of the funds in the wallet.
   uint64_t amount_to_spend = 888;

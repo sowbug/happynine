@@ -174,9 +174,26 @@ void API::PopulateTxRequests(Json::Value& json_value) {
   }
 }
 
+void API::PopulateRecentTransactions(Json::Value& json_value) {
+  Wallet::recent_txs_t items;
+  wallet_.GetRecentTransactionsToReport(items);
+  for (Wallet::recent_txs_t::const_iterator i = items.begin();
+       i != items.end();
+       ++i) {
+    Json::Value rtx;
+    rtx["hash"] = to_hex(i->hash);
+    rtx["hash160"] = to_hex(i->hash160);
+    rtx["value"] = (Json::Value::UInt64)i->value;
+    rtx["was_received"] = i->was_received;
+    rtx["timestamp"] = (Json::Value::UInt64)i->timestamp;
+    json_value.append(rtx);
+  }
+}
+
 void API::PopulateResponses(Json::Value& root) {
   PopulateAddressStatuses(root["address_statuses"]);
   PopulateTxRequests(root["tx_requests"]);
+  PopulateRecentTransactions(root["recent_txs"]);
 }
 
 bool API::HandleDeriveChildNode(const Json::Value& args,
