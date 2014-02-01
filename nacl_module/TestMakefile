@@ -102,3 +102,14 @@ OUT = out/x86
 all_unittest : $(OBJS) gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
 	$(USER_DIR)/$@
+
+blockchain_unittest : gtest_main.a blockchain_unittest.cc \
+                      base58.cc \
+                      blockchain.cc \
+                      crypto.cc \
+                      secp256k1.cc \
+                      tx.cc \
+                      types.cc \
+                      #
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@ $(LIBS)
+	$(USER_DIR)/$@

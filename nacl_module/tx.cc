@@ -479,6 +479,15 @@ bytes_t TxOut::GetSigningAddress() const {
     return bytes_t(script_.begin() + 2, script_.begin() + 2 + 20);
   }
 
+  uint32_t overall_size = script_.size();
+  if (overall_size == 65 + 2 &&
+      script_[0] == 65 &&
+      script_[overall_size - 1] == 0xac) {
+    // Coinbase
+    bytes_t public_key(&script_[1], &script_[overall_size - 1]);
+    return Base58::toHash160(public_key);
+  }
+
   return bytes_t();
 }
 

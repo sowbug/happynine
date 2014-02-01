@@ -28,6 +28,8 @@
 #include <string>
 #include <vector>
 
+const uint64_t SATOSHIS_IN_BTC = 100000000;
+
 typedef std::vector<unsigned char> bytes_t;
 
 std::string to_hex(const bytes_t& bytes);
