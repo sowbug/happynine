@@ -301,6 +301,18 @@ var walletAppController = function($scope,
     return $scope.w.currentAccount;
   };
 
+  $scope.getRecentTransactions = function() {
+    return $scope.wallet.recentTransactions;
+  };
+
+  $scope.friendlyTimestamp = function(t) {
+    if (t) {
+      var d = new Date(t * 1000);
+      return d.toLocaleString();
+    }
+    return "unconfirmed";
+  };
+
   $scope.getCurrentAccountFingerprint = function() {
     if (!$scope.getCurrentAccount()) {
       return null;

@@ -94,16 +94,16 @@
             <div class="panel panel-default" ng-if="isWalletKeySet()">
               <div class="panel-heading">Recent Transactions</div>
               <div class="panel-body">
-                <p id="no-transactions" ng-if="!(getCurrentAccount() && getCurrentAccount().hasTransactions())">None.</p>
-                <table id="transaction-table" class="table table-striped"  ng-if="getCurrentAccount() && getCurrentAccount().hasTransactions()">
+                <p id="no-transactions" ng-if="getRecentTransactions().length == 0">None.</p>
+                <table id="transaction-table" class="table table-striped" ng-if="getRecentTransactions().length != 0">
                   <thead>
                     <tr>
                       <th>Date</th><th>Address</th><th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in getCurrentAccount().transactions track by $index">
-                      <td>{{tx.date}}</td><td>{{tx.address}}</td><td>{{satoshiToUnit(tx.amount)}}</td>
+                    <tr data-ng-repeat="tx in getRecentTransactions() track by $index">
+                      <td>{{friendlyTimestamp(tx.timestamp)}}</td><td>{{tx.addr_b58}}</td><td>{{satoshiToUnit(tx.value)}}</td>
                     </tr>
                   </tbody>
                 </table>

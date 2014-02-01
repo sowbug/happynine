@@ -66,6 +66,18 @@ var checkForNotifications = function(response) {
       time: new Date(),
     });
   }
+  if (response.recent_txs) {
+    console.log("noticed recent_txs");
+    var items = response.recent_txs;
+    for (var i in items) {
+      console.log(items[i]);
+    }
+    $.event.trigger({
+      'type': 'recent_txs',
+      'message': items,
+      time: new Date(),
+    });
+  }
 };
 
 function handleMessage(message) {

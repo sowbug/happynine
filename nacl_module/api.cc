@@ -181,11 +181,11 @@ void API::PopulateRecentTransactions(Json::Value& json_value) {
        i != items.end();
        ++i) {
     Json::Value rtx;
+    rtx["addr_b58"] = Base58::hash160toAddress(i->hash160);
     rtx["hash"] = to_hex(i->hash);
-    rtx["hash160"] = to_hex(i->hash160);
+    rtx["timestamp"] = (Json::Value::UInt64)i->timestamp;
     rtx["value"] = (Json::Value::UInt64)i->value;
     rtx["was_received"] = i->was_received;
-    rtx["timestamp"] = (Json::Value::UInt64)i->timestamp;
     json_value.append(rtx);
   }
 }

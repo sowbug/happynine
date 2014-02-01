@@ -30,6 +30,7 @@ function Wallet(electrum) {
     this.watchedAddresses = {};
     this.publicAddresses = [];
     this.changeAddresses = [];
+    this.recentTransactions = [];
   };
   this.init();
 
@@ -252,6 +253,14 @@ function Wallet(electrum) {
       electrum.enqueueRpc("blockchain.transaction.get",
                           [tx_requests[t]])
         .then(this.handleTransactionGet.bind(this));
+    }
+  }.bind(this));
+
+  $(document).on("recent_txs", function(evt) {
+    var items = evt.message;
+    for (var i in items) {
+      console.log("rtx", items[i]);
+      this.recentTransactions.push(items[i]);
     }
   }.bind(this));
 
