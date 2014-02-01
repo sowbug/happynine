@@ -24,12 +24,17 @@
 
 // A Wallet is a collection of Nodes with a bunch of helper functions.
 function Wallet(electrum) {
-  this.init = function() {
-    this.rootNodes = [];
-    this.nodes = [];
+  this.clearAddresses = function() {
     this.watchedAddresses = {};
     this.publicAddresses = [];
     this.changeAddresses = [];
+  };
+
+  this.init = function() {
+    this.rootNodes = [];
+    this.nodes = [];
+    this.currentAccount = undefined;
+    this.clearAddresses();
   };
   this.init();
 
@@ -58,6 +63,24 @@ function Wallet(electrum) {
     return Promise.all(nodes.map(this.restoreNode.bind(this)));
   };
 
+  // If current node is same as requested node, do nothing.
+  // If requested node is null, set to first node.
+  this.setCurrentAccount = function(node) {
+    if (this.currentAccount && this.currentAccount == node) {
+      return;
+    }
+    if (!node) {
+      if (this.nodes.length && !node) {
+        this.setCurrentAccount(this.nodes[0]);
+        return;
+      } else {
+        // Fall through; we'll set the account to null and handle it.
+      }
+    }
+    this.currentAccount = node;
+    this.clearAddresses();
+  };
+
   this.restoreNode = function(node) {
     return new Promise(function(resolve, reject) {
       var params = {
@@ -83,33 +106,6 @@ function Wallet(electrum) {
 
   this.isKeySet = function() {
     return this.rootNodes.length > 0;
-  };
-
-  this.getAccounts = function() {
-    return this.nodes;
-  };
-
-  this.getExtendedPrivateBase58 = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].extendedPrivateBase58;
-    }
-  };
-
-  this.isExtendedPrivateSet = function() {
-    return this.rootNodes.length > 0 &&
-      !!this.rootNodes[0].extendedPrivateEncrypted;
-  };
-
-  this.getExtendedPublicBase58 = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].extendedPublicBase58;
-    }
-  };
-
-  this.getFingerprint = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].fingerprint;
-    }
   };
 
   this.addRandomRootNode = function() {

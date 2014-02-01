@@ -261,28 +261,8 @@ var walletAppController = function($scope,
     return $scope.isPassphraseSet() && !$scope.credentials.isWalletLocked();
   };
 
-  $scope.isWalletKeySet = function() {
-    return $scope.wallet.isKeySet();
-  };
-
-  $scope.isWalletKeyPrivateSet = function() {
-    return $scope.wallet.isExtendedPrivateSet();
-  };
-
-  $scope.getWalletKeyPrivate = function() {
-    return $scope.wallet.getExtendedPrivateBase58();
-  };
-
-  $scope.getWalletKeyPublic = function() {
-    return $scope.wallet.getExtendedPublicBase58();
-  };
-
-  $scope.getWalletKeyFingerprint = function() {
-    return $scope.wallet.getFingerprint();
-  };
-
   $scope.getAccountCount = function() {
-    return $scope.wallet.getAccountCount();
+    return $scope.getChildNodes().length;
   };
 
   $scope.getAccounts = function() {
@@ -310,7 +290,7 @@ var walletAppController = function($scope,
   }
 
   $scope.getCurrentAccount = function() {
-    return $scope.w.currentAccount;
+    return $scope.wallet.currentAccount;
   };
 
   $scope.getCurrentAccountFingerprint = function() {
@@ -324,18 +304,8 @@ var walletAppController = function($scope,
     return $scope.electrum.areRequestsPending();
   };
 
-  $scope.setCurrentAccountByIndex = function(index) {
-    if ($scope.w.currentAccount == $scope.getAccounts()[index]) {
-      return;
-    }
-    $scope.w.currentAccount = $scope.getAccounts()[index];
-   // $scope.refreshAccount();
-  };
-
   $scope.selectFirstAccount = function() {
-    if ($scope.getAccountCount() > 0) {
-      $scope.setCurrentAccountByIndex(0);
-    }
+    $scope.wallet.setCurrentAccount();
   };
 
   $scope.exportNode = function(node) {

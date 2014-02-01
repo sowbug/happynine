@@ -28,52 +28,57 @@
 #include <string>
 #include <set>
 
+#include "address_watcher.h"
 #include "tx.h"
 #include "types.h"
 
+class Address;
+class ChildNode;
 class Credentials;
 class Node;
 
-class Address {
- public:
-  Address(const bytes_t& hash160, uint32_t child_num, bool is_public);
-  const bytes_t& hash160() const { return hash160_; }
-  uint32_t child_num() const { return child_num_; }
-  bool is_public() const { return is_public_; }
-  uint64_t balance() const { return balance_; }
-  void set_balance(uint64_t balance) { balance_ = balance; }
-
-  typedef std::vector<const Address*> addresses_t;
- private:
-  const bytes_t hash160_;
-  const uint32_t child_num_;
-  const bool is_public_;
-  uint64_t balance_;
-};
-
-class Wallet : public KeyProvider {
+class Wallet : public KeyProvider, AddressWatcher {
  public:
   Wallet(Credentials& credentials);
   virtual ~Wallet();
 
-  // Root nodes
-  bool DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc);
-  bool GenerateRootNode(bytes_t& ext_prv_enc);
-  bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
+  // OVERVIEW OF NODES
+  //
+  // A master node generates child nodes. A child node generates
+  // addresses.
+  //
+  // When creating, deriving, or importing a node, the result is
+  // always an extended, encrypted private key (ext_prv_enc).
+  //
+  // When restoring a node, the input is either an ext_pub_b58, which
+  // is a Base58-encoded BIP 0032 extended public key, or else the
+  // ext_prv_enc returned from any of the create/derive/import
+  // methods.
 
-  // Child nodes
-  bool DeriveChildNode(const std::string& path,
-                       bool is_watch_only,
-                       bytes_t& ext_prv_enc);
+  // Create, derive, or import a node. The caller should serialize the
+  // result somewhere safe, and then add the result to the wallet.
+  bool DeriveMasterNode(const bytes_t& seed, bytes_t& ext_prv_enc);
+  bool GenerateMasterNode(bytes_t& ext_prv_enc);
+  bool ImportMasterNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
+  bool DeriveChildNode(uint32_t id, uint32_t index, bytes_t& ext_prv_enc);
+  bool DeriveWatchOnlyChildNode(uint32_t id,
+                                const std::string& path,
+                                std::string& ext_pub_b58);
 
-  // All nodes
-  bool RestoreNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc,
-                   bool& is_root);
+  // Add a node to the wallet. Result is zero if failure, or
+  // else a temporary ID that is used to refer to the node in the
+  // future.
+  uint32_t AddNode(const bytes_t& ext_prv_enc);
+  uint32_t AddNode(const std::string& ext_pub_b58);
+
+  // Blocks
+  void HandleBlockHeader();
 
   // Transactions
   void HandleTxStatus(const bytes_t& hash, uint32_t height);
   void HandleTx(const bytes_t& tx_bytes);
-  bool CreateTx(const tx_outs_t& recipients,
+  bool CreateTx(ChildNode* node,
+                const tx_outs_t& recipients,
                 uint64_t fee,
                 bool should_sign,
                 bytes_t& tx);
@@ -85,18 +90,9 @@ class Wallet : public KeyProvider {
   typedef std::vector<tx_request_t> tx_requests_t;
   bool GetTxRequestsToReport(tx_requests_t& requests);
 
-  // Utilities
-  bool hasRootNode() { return !root_ext_prv_enc_.empty(); }
-  bool hasChildNode() { return !child_ext_pub_.empty(); }
-
-  // TODO: can these be private?
-  Node* GetRootNode();   // We retain ownership!
-  void ClearRootNode();  // TODO(miket): implement and use
-
-  Node* GetChildNode();   // We retain ownership! TODO: multiple children
-
-  uint32_t public_address_count() const { return public_address_count_; }
-  uint32_t change_address_count() const { return change_address_count_; }
+  // AddressWatcher overrides
+  virtual void WatchPublicAddress(const bytes_t& hash160, uint32_t child_num);
+  virtual void WatchChangeAddress(const bytes_t& hash160, uint32_t child_num);
 
   // KeyProvider overrides
   bool GetKeysForAddress(const bytes_t& hash160,
@@ -104,35 +100,23 @@ class Wallet : public KeyProvider {
                          bytes_t& key);
 
  private:
-  void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
+  void set_master_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
   void set_child_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
 
   bool IsPublicAddressInWallet(const bytes_t& hash160);
   bool IsChangeAddressInWallet(const bytes_t& hash160);
   bool IsAddressInWallet(const bytes_t& hash160);
 
-  bytes_t GetNextUnusedChangeAddress();
-
   void AddTx(Transaction* transaction);
   bool DoesTxExist(const bytes_t& hash);
   Transaction* GetTx(const bytes_t& hash);
-  tx_outs_t GetUnspentTxos();
+  tx_outs_t GetUnspentTxos(const ChildNode* node);
 
   bool IsWalletLocked() const;
 
-  void GenerateAddressBunch(uint32_t start, uint32_t count,
-                            bool is_public);
-  void CheckPublicAddressGap(uint32_t address_index_used);
-  void CheckChangeAddressGap(uint32_t address_index_used);
-  void ResetGaps();
-
-  void RestoreRootNode(const Node* node);
+  void RestoreMasterNode(const Node* node);
   void RestoreChildNode(const Node* node);
 
-  void WatchAddress(const bytes_t& hash160,
-                    uint32_t child_num,
-                    bool is_public);
-  bool IsAddressWatched(const bytes_t& hash160);
   void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
 
   void GenerateAllSigningKeys();
@@ -141,29 +125,22 @@ class Wallet : public KeyProvider {
   hash_to_address_t watched_addresses_;
   std::set<bytes_t> addresses_to_report_;
 
+  Node* GetMasterNode(uint32_t id);
+  ChildNode* GetChildNode(uint32_t id);
+
   Credentials& credentials_;
-  bytes_t root_ext_pub_;
-  bytes_t root_ext_prv_enc_;
-  std::auto_ptr<Node> root_node_;
+
+  uint32_t next_node_id_;
+  typedef std::map<uint32_t, bytes_t> ext_prv_enc_map_t;
+  ext_prv_enc_map_t ids_to_ext_prv_encs_;
+  typedef std::map<uint32_t, std::string> ext_pub_b58_map_t;
+  ext_pub_b58_map_t ids_to_ext_pub_b58s_;
+
+  typedef std::map<bytes_t, Address*> hash_to_address_t;
+  hash_to_address_t watched_addresses_;
+  std::set<bytes_t> addresses_to_report_;
+
   tx_requests_t tx_requests_;
-
-  bytes_t child_ext_pub_;
-  bytes_t child_ext_prv_enc_;
-  std::auto_ptr<Node> child_node_;
-
-  // The size of a new bunch of contiguous addresses.
-  const uint32_t public_address_gap_;
-  const uint32_t change_address_gap_;
-
-  // The base for address indexes.
-  const uint32_t public_address_start_;
-  const uint32_t change_address_start_;
-
-  // The number of addresses we've allocated.
-  uint32_t public_address_count_;
-  uint32_t change_address_count_;
-
-  uint32_t next_change_address_index_;
 
   std::map<bytes_t, bytes_t> signing_public_keys_;
   std::map<bytes_t, bytes_t> signing_keys_;

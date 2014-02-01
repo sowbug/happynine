@@ -16,10 +16,7 @@ class NodeFactory {
   // Given a parent node and using a path string like "m/0'/1/2",
   // returns the appropriate child node (which, in the case of m, is a copy
   // of the parent). Caller obtains ownership of the result.
-  static Node* DeriveChildNodeWithPath(const Node& parent_node,
+  static Node* DeriveChildNodeWithPath(const Node* parent_node,
                                        const std::string& path);
-
-  // TODO
-  static Node* DeriveChildNode(const Node& parent_node,
-                               uint32_t i);
+  static Node* DeriveChildNode(const Node* parent_node, uint32_t i);
 };

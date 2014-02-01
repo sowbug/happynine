@@ -99,7 +99,7 @@ Node* NodeFactory::CreateNodeFromExtended(const bytes_t& bytes) {
                   child_num);
 }
 
-Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
+Node* NodeFactory::DeriveChildNodeWithPath(const Node* parent_node,
                                            const std::string& path) {
     std::istringstream iss(path);
     std::string token;
@@ -107,7 +107,7 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
     while (std::getline(iss, token, '/')) {
       node_path_parts.push_back(token);
     }
-    std::auto_ptr<Node> child_node(new Node(parent_node));
+    std::auto_ptr<Node> child_node(new Node(*parent_node));
     for (size_t i = 1; i < node_path_parts.size(); ++i) {
       std::string part = node_path_parts[i];
       if (part.empty()) {
@@ -117,7 +117,7 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
       if (part.rfind('\'') != std::string::npos) {
         n += 0x80000000;
       }
-      Node* temp_node = NodeFactory::DeriveChildNode(*child_node, n);
+      Node* temp_node = NodeFactory::DeriveChildNode(child_node.get(), n);
       if (!temp_node) {
         return NULL;
       }
@@ -135,11 +135,11 @@ Node* NodeFactory::DeriveChildNodeWithPath(const Node& parent_node,
     return child_node.release();
 }
 
-Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
+Node* NodeFactory::DeriveChildNode(const Node* parent_node, uint32_t i) {
   // If the caller is asking for a private derivation but we don't
   // have the private key, exit with error.
   bool wants_private = (i & 0x80000000) != 0;
-  if (wants_private && !parent_node.is_private()) {
+  if (wants_private && !parent_node->is_private()) {
     return NULL;
   }
 
@@ -150,13 +150,13 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
     // Push the parent's private key
     child_data.push_back(0x00);
     child_data.insert(child_data.end(),
-                      parent_node.secret_key().begin(),
-                      parent_node.secret_key().end());
+                      parent_node->secret_key().begin(),
+                      parent_node->secret_key().end());
   } else {
     // Push just the parent's public key
     child_data.insert(child_data.end(),
-                      parent_node.public_key().begin(),
-                      parent_node.public_key().end());
+                      parent_node->public_key().begin(),
+                      parent_node->public_key().end());
   }
   // Push i
   child_data.push_back(i >> 24);
@@ -168,8 +168,8 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
   bytes_t digest;
   digest.resize(EVP_MAX_MD_SIZE);
   HMAC(EVP_sha512(),
-       &parent_node.chain_code()[0],
-       parent_node.chain_code().size(),
+       &parent_node->chain_code()[0],
+       parent_node->chain_code().size(),
        &child_data[0],
        child_data.size(),
        &digest[0],
@@ -186,8 +186,8 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
   }
 
   bytes_t new_child_key;
-  if (parent_node.is_private()) {
-    BigInt k(parent_node.secret_key());
+  if (parent_node->is_private()) {
+    BigInt k(parent_node->secret_key());
     k += iLeft;
     k %= CURVE_ORDER;
     if (k.isZero()) {
@@ -201,7 +201,7 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
     padded_key.insert(padded_key.end(), child_key.begin(), child_key.end());
     new_child_key = padded_key;
   } else {
-    secp256k1_point K(parent_node.public_key());
+    secp256k1_point K(parent_node->public_key());
     K.generator_mul(left32);
     if (K.is_at_infinity()) {
       std::cerr << "K.is_at_infinity()" << std::endl;
@@ -214,8 +214,8 @@ Node* NodeFactory::DeriveChildNode(const Node& parent_node, uint32_t i) {
   // Chain code is right half of HMAC output
   return new Node(new_child_key,
                   right32,
-                  parent_node.version(),  // TODO(miket): ?
-                  parent_node.depth() + 1,
-                  parent_node.fingerprint(),
+                  parent_node->version(),  // TODO(miket): ?
+                  parent_node->depth() + 1,
+                  parent_node->fingerprint(),
                   i);
 }

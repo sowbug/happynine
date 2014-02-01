@@ -59,9 +59,9 @@ TEST(NodeTest, BIP0032TestVectors) {
     for (size_t j = 0; j < chains.size(); ++j) {
       const Json::Value chain(chains[(int)j]);
       const std::string path(chain["chain"].asString());
-      std::auto_ptr<Node> child_node(NodeFactory::
-                                     DeriveChildNodeWithPath(*parent_node,
-                                                             path));
+      std::auto_ptr<Node>
+        child_node(NodeFactory::DeriveChildNodeWithPath(parent_node.get(),
+                                                        path));
 
       EXPECT_EQ(unhexlify(chain["hex_id"].asString()),
                 child_node->hex_id());
@@ -122,9 +122,9 @@ TEST(NodeTest, BIP0032TestVectorsPublicOnly) {
     for (size_t j = 0; j < chains.size(); ++j) {
       const Json::Value chain(chains[(int)j]);
       const std::string path(chain["chain"].asString());
-      std::auto_ptr<Node> child_node(NodeFactory::
-                                     DeriveChildNodeWithPath(*parent_node,
-                                                             path));
+      std::auto_ptr<Node>
+        child_node(NodeFactory::DeriveChildNodeWithPath(parent_node.get(),
+                                                        path));
 
       if (path.find('\'') != std::string::npos) {
         EXPECT_EQ(NULL, child_node.get());

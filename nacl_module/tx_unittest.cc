@@ -55,7 +55,8 @@ TEST(TxTest, BasicTransaction) {
 
   std::auto_ptr<Node>
     change_node(NodeFactory::
-                DeriveChildNodeWithPath(*sending_node, std::string("m/0/1")));
+                DeriveChildNodeWithPath(sending_node.get(),
+                                        std::string("m/0/1")));
   TxOut change_txo(0, Base58::toHash160(change_node->public_key()));
 
   class TestKeyProvider : public KeyProvider {
