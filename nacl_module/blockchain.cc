@@ -22,12 +22,10 @@
 
 #include "blockchain.h"
 
-#include <iostream>  // cerr
-
 #include <istream>
 #include <sstream>
 
-#include "base58.h"  // debug only
+#include "debug.h"
 
 Blockchain::Blockchain()
   : max_block_height_(0) {
