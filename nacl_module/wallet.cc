@@ -445,6 +445,48 @@ bytes_t Wallet::GetNextUnusedChangeAddress() {
   return bytes_t();
 }
 
+bool Wallet::GetKeysForAddress(const bytes_t& hash160,
+                               bytes_t& public_key,
+                               bytes_t& key) {
+  if (signing_keys_.count(hash160) == 0) {
+    return false;
+  }
+  public_key = signing_public_keys_[hash160];
+  key = signing_keys_[hash160];
+  return true;
+}
+
+void Wallet::GenerateAllSigningKeys() {
+  for (uint32_t i = public_address_start_;
+       i < public_address_start_ + public_address_count_;
+       ++i) {
+    std::stringstream node_path;
+    node_path << "m/0/" << i;  // external path
+    std::auto_ptr<Node> node(NodeFactory::
+                             DeriveChildNodeWithPath(*GetChildNode(),
+                                                     node_path.str()));
+    if (node.get()) {
+      bytes_t hash160(Base58::toHash160(node->public_key()));
+      signing_public_keys_[hash160] = node->public_key();
+      signing_keys_[hash160] = node->secret_key();
+    }
+  }
+  for (uint32_t i = change_address_start_;
+       i < change_address_start_ + change_address_count_;
+       ++i) {
+    std::stringstream node_path;
+    node_path << "m/1/" << i;  // internal path
+    std::auto_ptr<Node> node(NodeFactory::
+                             DeriveChildNodeWithPath(*GetChildNode(),
+                                                     node_path.str()));
+    if (node.get()) {
+      bytes_t hash160(Base58::toHash160(node->public_key()));
+      signing_public_keys_[hash160] = node->public_key();
+      signing_keys_[hash160] = node->secret_key();
+    }
+  }
+}
+
 bool Wallet::CreateTx(const tx_outs_t& recipients,
                       uint64_t fee,
                       bool should_sign,
@@ -454,9 +496,12 @@ bool Wallet::CreateTx(const tx_outs_t& recipients,
   }
   TxOut change_txo(0, GetNextUnusedChangeAddress());
 
+  GenerateAllSigningKeys();
+
   Transaction transaction;
   int error_code = 0;
-  tx = transaction.Sign(*GetChildNode(),  // TODO: should_sign
+  // TODO: should_sign
+  tx = transaction.Sign(this,
                         GetUnspentTxos(),
                         recipients,
                         change_txo,
@@ -465,6 +510,10 @@ bool Wallet::CreateTx(const tx_outs_t& recipients,
   if (error_code != ERROR_NONE) {
     std::cerr << "CreateTx failed: " << error_code << std::endl;
   }
+
+  signing_public_keys_.clear();
+  signing_keys_.clear();
+
   return error_code == ERROR_NONE;
 }
 

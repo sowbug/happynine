@@ -286,7 +286,7 @@ uint64_t Transaction::AddRecipientValues(const tx_outs_t& txos) {
 }
 
 bool Transaction::
-GenerateKeysForUnspentTxos(const Node& signing_node,
+GenerateKeysForUnspentTxos(KeyProvider* key_provider,
                            const tx_outs_t& txos,
                            std::map<bytes_t, bytes_t>& signing_keys,
                            std::map<bytes_t, bytes_t>& signing_public_keys,
@@ -300,48 +300,18 @@ GenerateKeysForUnspentTxos(const Node& signing_node,
        ++i) {
     signing_addresses.insert(i->GetSigningAddress());
   }
-
-  // Do we have all the keys for the required addresses? Generate
-  // them. For now we're going to assume no account has more than 16
-  // addresses, so that's the farthest we'll walk down the chain.
-  uint32_t start = 0;
-  uint32_t count = 16;
-  for (uint32_t i = 0; i < count; ++i) {
-    std::stringstream node_path;
-    node_path << "m/0/" << (start + i);  // external path
-    std::auto_ptr<Node> node(NodeFactory::
-                             DeriveChildNodeWithPath(signing_node,
-                                                     node_path.str()));
-    bytes_t hash160 = Base58::toHash160(node->public_key());
-    if (signing_addresses.find(hash160) !=
-        signing_addresses.end()) {
-      signing_keys[hash160] = node->secret_key();
-      signing_public_keys[hash160] = node->public_key();
+  for (std::set<bytes_t>::const_iterator i = signing_addresses.begin();
+       i != signing_addresses.end();
+       ++i) {
+    bytes_t public_key;
+    bytes_t key;
+    if (!key_provider->GetKeysForAddress(*i, public_key, key)) {
+      // We don't have all the keys we need to spend these funds.
+      error_code = ERROR_KEY_NOT_FOUND;
+      return false;
     }
-    if (signing_keys.size() == signing_addresses.size()) {
-      break;
-    }
-  }
-  for (uint32_t i = 0; i < count; ++i) {
-    std::stringstream node_path;
-    node_path << "m/1/" << (start + i);  // internal path; TODO refactor
-    std::auto_ptr<Node> node(NodeFactory::
-                             DeriveChildNodeWithPath(signing_node,
-                                                     node_path.str()));
-    bytes_t hash160 = Base58::toHash160(node->public_key());
-    if (signing_addresses.find(hash160) !=
-        signing_addresses.end()) {
-      signing_keys[hash160] = node->secret_key();
-      signing_public_keys[hash160] = node->public_key();
-    }
-    if (signing_keys.size() == signing_addresses.size()) {
-      break;
-    }
-  }
-  if (signing_keys.size() != signing_addresses.size()) {
-    // We don't have all the keys we need to spend these funds.
-    error_code = ERROR_KEY_NOT_FOUND;
-    return false;
+    signing_public_keys[*i] = public_key;
+    signing_keys[*i] = key;
   }
   return true;
 }
@@ -411,7 +381,7 @@ GenerateScriptSigs(std::map<bytes_t, bytes_t>& signing_keys,
   return true;
 }
 
-bytes_t Transaction::Sign(const Node& node,
+bytes_t Transaction::Sign(KeyProvider* key_provider,
                           const tx_outs_t& unspent_txos,
                           const tx_outs_t& desired_txos,
                           const TxOut& change_address,
@@ -440,7 +410,7 @@ bytes_t Transaction::Sign(const Node& node,
 
   std::map<bytes_t, bytes_t> signing_keys;
   std::map<bytes_t, bytes_t> signing_public_keys;
-  if (!GenerateKeysForUnspentTxos(node,
+  if (!GenerateKeysForUnspentTxos(key_provider,
                                   required_txos,
                                   signing_keys,
                                   signing_public_keys,

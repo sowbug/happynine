@@ -51,7 +51,7 @@ class Address {
   uint64_t balance_;
 };
 
-class Wallet {
+class Wallet : public KeyProvider {
  public:
   Wallet(Credentials& credentials);
   virtual ~Wallet();
@@ -98,6 +98,11 @@ class Wallet {
   uint32_t public_address_count() const { return public_address_count_; }
   uint32_t change_address_count() const { return change_address_count_; }
 
+  // KeyProvider overrides
+  bool GetKeysForAddress(const bytes_t& hash160,
+                         bytes_t& public_key,
+                         bytes_t& key);
+
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
   void set_child_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
@@ -130,6 +135,8 @@ class Wallet {
   bool IsAddressWatched(const bytes_t& hash160);
   void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
 
+  void GenerateAllSigningKeys();
+
   typedef std::map<bytes_t, Address*> hash_to_address_t;
   hash_to_address_t watched_addresses_;
   std::set<bytes_t> addresses_to_report_;
@@ -157,6 +164,9 @@ class Wallet {
   uint32_t change_address_count_;
 
   uint32_t next_change_address_index_;
+
+  std::map<bytes_t, bytes_t> signing_public_keys_;
+  std::map<bytes_t, bytes_t> signing_keys_;
 
   typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;

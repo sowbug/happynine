@@ -29,7 +29,6 @@
 
 #include "types.h"
 
-class Node;
 class Transaction;
 
 // https://en.bitcoin.it/wiki/Transactions
@@ -110,13 +109,21 @@ class TxOut {
 };
 typedef std::vector<TxOut> tx_outs_t;
 
+class KeyProvider {
+ public:
+  virtual bool GetKeysForAddress(const bytes_t& hash160,
+                                 bytes_t& public_key,
+                                 bytes_t& key) = 0;
+};
+
 class Transaction {
  public:
   Transaction();
   Transaction(std::istream& is);
 
   bytes_t Serialize() const;
-  bytes_t Sign(const Node& node,
+
+  bytes_t Sign(KeyProvider* key_provider,
                const tx_outs_t& unspent_txos,
                const tx_outs_t& desired_txos,
                const TxOut& change_address,
@@ -143,7 +150,7 @@ class Transaction {
                            tx_outs_t& required_txos,
                            uint64_t& change_value,
                            int& error_code);
-  bool GenerateKeysForUnspentTxos(const Node& node,
+  bool GenerateKeysForUnspentTxos(KeyProvider* key_provider,
                                   const tx_outs_t& txos,
                                   std::map<bytes_t, bytes_t>& signing_keys,
                                   std::map<bytes_t, bytes_t>&

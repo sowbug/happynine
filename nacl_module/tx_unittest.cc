@@ -58,9 +58,20 @@ TEST(TxTest, BasicTransaction) {
                 DeriveChildNodeWithPath(*sending_node, std::string("m/0/1")));
   TxOut change_txo(0, Base58::toHash160(change_node->public_key()));
 
+  class TestKeyProvider : public KeyProvider {
+  public:
+    virtual bool GetKeysForAddress(const bytes_t& hash160,
+                                   bytes_t& public_key,
+                                   bytes_t& key) {
+      //      std::cerr << to_hex(hash160) << std::endl;
+      return false;
+    }
+  };
+  TestKeyProvider tkp;
+
   Transaction transaction;
   int error_code = 0;
-  bytes_t signed_tx = transaction.Sign(*sending_node,
+  bytes_t signed_tx = transaction.Sign(&tkp,
                                        unspent_txos,
                                        recipient_txos,
                                        change_txo,
