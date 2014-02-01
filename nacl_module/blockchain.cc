@@ -120,9 +120,17 @@ void Blockchain::ConfirmTransaction(const tx_hash_t& tx_hash,
   tx_heights_[tx_hash] = height;
 }
 
-void Blockchain::GetUnspentTxos(const address_set_t& /*addresses*/,
-                                tx_outs_t& // unspent_txos
-                                ) {
+void Blockchain::GetUnspentTxos(const address_set_t& addresses,
+                                tx_outs_t& unspent_txos) {
+  unspent_txos.clear();
+  for (tx_outs_t::const_iterator i = unspent_txos_.begin();
+       i != unspent_txos_.end();
+       ++i) {
+    if (addresses.empty() ||
+        addresses.count(i->GetSigningAddress()) != 0) {
+      unspent_txos.push_back(*i);
+    }
+  }
 }
 
 uint64_t Blockchain::GetTransactionHeight(const tx_hash_t& tx_hash) {
