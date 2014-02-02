@@ -179,12 +179,12 @@ TEST(ApiTest, HappyPath) {
   // and got back some stuff.
   request = Json::Value();
   response = Json::Value();
-  request["tx_statuses"][0]["tx_hash"] = TX_1BCB_HASH;
+  request["tx_statuses"][0]["tx_hash"] = to_hex(TX_1BCB_HASH);
   request["tx_statuses"][0]["height"] = 282172;
   EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["tx_requests"].size());
-  EXPECT_EQ(HASH_TX, response["tx_requests"][0].asString());
+  EXPECT_EQ(to_hex(TX_1BCB_HASH), response["tx_requests"][0].asString());
 
   // Pretend we did a blockchain.transaction.get for the requested
   // transaction. We should get back an update to an address balance.

@@ -32,7 +32,11 @@ Blockchain::Blockchain()
 }
 
 Blockchain::~Blockchain() {
-  // DELETE transactions_
+  for (transaction_map_t::const_iterator i = transactions_.begin();
+       i != transactions_.end();
+       ++i) {
+    delete i->second;
+  }
 }
 
 void Blockchain::ConfirmBlock(uint64_t height, uint64_t timestamp) {
