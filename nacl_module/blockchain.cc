@@ -70,7 +70,7 @@ void Blockchain::MarkSpentTxos() {
   }
 }
 
-void Blockchain::RebuildUnspentTxos() {
+void Blockchain::CalculateUnspentTxos() {
   unspent_txos_.clear();
 
   for (transaction_map_t::const_iterator i = transactions_.begin();
@@ -87,8 +87,9 @@ void Blockchain::RebuildUnspentTxos() {
   }
 }
 
-void Blockchain::UpdateBalancesFromUnspentTxos() {
+void Blockchain::CalculateBalances() {
   balances_.clear();
+
   for (tx_outs_t::const_iterator i = unspent_txos_.begin();
        i != unspent_txos_.end();
        ++i) {
@@ -96,23 +97,30 @@ void Blockchain::UpdateBalancesFromUnspentTxos() {
   }
 }
 
-void Blockchain::UpdateTransactionCounts(const Transaction* tx) {
-  for (tx_outs_t::const_iterator i = tx->outputs().begin();
-       i != tx->outputs().end();
-       ++i) {
-    ++tx_counts_[i->GetSigningAddress()];
-  }
+void Blockchain::CalculateTransactionCounts() {
+  tx_counts_.clear();
 
-  // TODO(miket): because this method builds on existing state rather
-  // than recalculating all tx counts, it might miss some counts if
-  // the prior transaction wasn't here yet but arrives later.
-  for (tx_ins_t::const_iterator i = tx->inputs().begin();
-       i != tx->inputs().end();
-       ++i) {
-    if (GetTransaction(i->prev_txo_hash())) {
-      Transaction* affected_tx = GetTransaction(i->prev_txo_hash());
-      const TxOut *txo = &affected_tx->outputs()[i->prev_txo_index()];
-      ++tx_counts_[txo->GetSigningAddress()];
+  for (transaction_map_t::const_iterator txh = transactions_.begin();
+       txh != transactions_.end();
+       ++txh) {
+    const Transaction* tx = txh->second;
+
+    // Check the inputs.
+    for (tx_ins_t::const_iterator i = tx->inputs().begin();
+         i != tx->inputs().end();
+         ++i) {
+      if (GetTransaction(i->prev_txo_hash())) {
+        Transaction* affected_tx = GetTransaction(i->prev_txo_hash());
+        const TxOut *txo = &affected_tx->outputs()[i->prev_txo_index()];
+        ++tx_counts_[txo->GetSigningAddress()];
+      }
+    }
+
+    // Check the outputs.
+    for (tx_outs_t::const_iterator i = tx->outputs().begin();
+         i != tx->outputs().end();
+         ++i) {
+      ++tx_counts_[i->GetSigningAddress()];
     }
   }
 }
@@ -125,9 +133,9 @@ void Blockchain::AddTransaction(const tx_t& transaction) {
   transactions_[tx->hash()] = tx;
 
   MarkSpentTxos();
-  RebuildUnspentTxos();
-  UpdateBalancesFromUnspentTxos();
-  UpdateTransactionCounts(tx);
+  CalculateUnspentTxos();
+  CalculateBalances();
+  CalculateTransactionCounts();
 }
 
 void Blockchain::ConfirmTransaction(const tx_hash_t& tx_hash,

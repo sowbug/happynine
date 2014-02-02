@@ -83,3 +83,16 @@ TEST(BlockchainTest, HappyPath) {
   EXPECT_EQ(0, blockchain.GetAddressBalance(ADDR_1Guw));
   EXPECT_EQ(2, blockchain.GetAddressTxCount(ADDR_1Guw));
 }
+
+TEST(BlockchainTest, OutOfOrder) {
+  Blockchain blockchain;
+
+  blockchain.AddTransaction(TX_BFB1);
+  blockchain.AddTransaction(TX_100D);
+  blockchain.AddTransaction(TX_1BCB);
+
+  EXPECT_EQ(27000, blockchain.GetAddressBalance(ADDR_1PB8));
+  EXPECT_EQ(2, blockchain.GetAddressTxCount(ADDR_1PB8));
+  EXPECT_EQ(0, blockchain.GetAddressBalance(ADDR_1Guw));
+  EXPECT_EQ(2, blockchain.GetAddressTxCount(ADDR_1Guw));
+}

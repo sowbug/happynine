@@ -29,6 +29,7 @@
 #include "tx.h"
 #include "types.h"
 
+// An in-memory, small-scale blockchain.
 class Blockchain {
  public:
   Blockchain();
@@ -49,6 +50,7 @@ class Blockchain {
   void ConfirmTransaction(const tx_hash_t& tx_hash, uint64_t height);
   void GetUnspentTxos(const address_set_t& addresses, tx_outs_t& unspent_txos);
   uint64_t GetTransactionHeight(const tx_hash_t& tx_hash);
+  // TODO: GetTransactions(const address_set_t& addresses, _______);
 
   // Addresses
   uint64_t GetAddressBalance(const address_t& address);
@@ -57,14 +59,15 @@ class Blockchain {
  private:
   Transaction* GetTransaction(const tx_hash_t& tx_hash);
   void MarkSpentTxos();
-  void RebuildUnspentTxos();
-  void UpdateBalancesFromUnspentTxos();
-  void UpdateTransactionCounts(const Transaction* tx);
+  void CalculateUnspentTxos();
+  void CalculateBalances();
+  void CalculateTransactionCounts();
+
+  typedef std::map<tx_hash_t, Transaction*> transaction_map_t;
 
   uint64_t max_block_height_;
   std::map<uint64_t, uint64_t> block_timestamps_;
   std::map<tx_hash_t, uint64_t> tx_heights_;
-  typedef std::map<tx_hash_t, Transaction*> transaction_map_t;
   transaction_map_t transactions_;
 
   std::map<address_t, uint64_t> balances_;
