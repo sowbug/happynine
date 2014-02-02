@@ -11,6 +11,7 @@ CFLAGS = -Wall -Wextra
 SOURCES = \
   api.cc \
   base58.cc \
+  blockchain.cc \
   credentials.cc \
   crypto.cc \
   node.cc \

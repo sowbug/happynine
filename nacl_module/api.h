@@ -20,21 +20,24 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <memory>
 #include <set>
 #include <string>
 
-#include "credentials.h"
 #include "types.h"
-#include "wallet.h"
 
 namespace Json {
   class Value;
 }
+
+class Blockchain;
+class Credentials;
 class Node;
+class Wallet;
 
 class API {
  public:
-  API(Credentials& credentials, Wallet& wallet);
+  API(Blockchain& blockchain, Credentials& credentials);
 
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
@@ -92,8 +95,19 @@ class API {
                          std::string& error_message);
   void SetError(Json::Value& obj, int code, const std::string& message);
 
+  void GenerateMasterNode();
+
+  Blockchain& blockchain_;
   Credentials& credentials_;
-  Wallet& wallet_;
+  std::auto_ptr<Wallet> wallet_;
+
+  std::auto_ptr<Node> master_node_;
+
+  // Master node
+  std::string ext_pub_b58_;
+  bytes_t ext_prv_enc_;
+  std::string child_ext_pub_b58_;
+  bytes_t child_ext_prv_enc_;
 
   DISALLOW_EVIL_CONSTRUCTORS(API);
 };

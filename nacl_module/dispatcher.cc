@@ -27,14 +27,14 @@
 #include <ppapi/cpp/var.h>
 
 #include "api.h"
+#include "blockchain.h"
 #include "credentials.h"
 #include "node.h"
-#include "wallet.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
-  : pp::Instance(instance), credentials_(), wallet_(credentials_) {
+  : pp::Instance(instance), credentials_() {
   }
 
   virtual ~HDWalletDispatcherInstance() {}
@@ -60,7 +60,7 @@ public:
     const Json::Value params = root.get("params", "{}");
     Json::Value result;
     bool handled = false;
-    API api(credentials_, wallet_);
+    API api(blockchain_, credentials_);
 
     if (method == "set-passphrase") {
       handled = api.HandleSetPassphrase(params, result);
@@ -115,8 +115,8 @@ public:
   }
 
 private:
+  Blockchain blockchain_;
   Credentials credentials_;
-  Wallet wallet_;
 };
 
 /// The Module class.  The browser calls the CreateInstance() method

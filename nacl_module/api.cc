@@ -35,18 +35,20 @@
 #endif
 
 #include "base58.h"
+#include "credentials.h"
 #include "crypto.h"
 #include "node.h"
 #include "node_factory.h"
 #include "tx.h"
 #include "types.h"
+#include "wallet.h"
 
 // echo -n "Happynine Copyright 2014 Mike Tsao." | sha256sum
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
-API::API(Credentials& credentials, Wallet& wallet)
-  : credentials_(credentials), wallet_(wallet) {
+API::API(Blockchain& blockchain, Credentials& credentials)
+  : blockchain_(blockchain), credentials_(credentials) {
 }
 
 bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
@@ -85,6 +87,7 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
 
 bool API::HandleLock(const Json::Value& /*args*/, Json::Value& result) {
   result["success"] = credentials_.Lock();
+  GenerateMasterNode();
   return true;
 }
 
@@ -92,6 +95,7 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
   const std::string passphrase = args["passphrase"].asString();
   if (passphrase.size() != 0) {
     result["success"] = credentials_.Unlock(passphrase);
+    GenerateMasterNode();
   } else {
     SetError(result, -1, "missing valid passphrase param");
   }
@@ -104,7 +108,9 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
   dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
   dict["pfp"] = "0x" + to_fingerprint(node->parent_fingerprint());
   dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
-  dict["ext_prv_enc"] = to_hex(ext_prv_enc);
+  if (!ext_prv_enc.empty()) {
+    dict["ext_prv_enc"] = to_hex(ext_prv_enc);
+  }
   if (node->is_private() && include_prv) {
     dict["ext_prv_b58"] = Base58::toBase58Check(node->toSerialized());
   }
@@ -114,10 +120,11 @@ bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
   const bytes_t seed(unhexlify(args["seed_hex"].asString()));
 
   bytes_t ext_prv_enc;
-  if (wallet_.DeriveRootNode(seed, ext_prv_enc)) {
-    GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, true);
+  if (Wallet::DeriveRootNode(credentials_, seed, ext_prv_enc)) {
+    std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+    GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
-    SetError(result, -1, "Root node generation failed");
+    SetError(result, -1, "Root node derivation failed");
   }
   return true;
 }
@@ -125,8 +132,9 @@ bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
 bool API::HandleGenerateRootNode(const Json::Value& /*args*/,
                                  Json::Value& result) {
   bytes_t ext_prv_enc;
-  if (wallet_.GenerateRootNode(ext_prv_enc)) {
-    GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, true);
+  if (Wallet::GenerateRootNode(credentials_, ext_prv_enc)) {
+    std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+    GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
     SetError(result, -1, "Root node generation failed");
   }
@@ -138,8 +146,9 @@ bool API::HandleImportRootNode(const Json::Value& args,
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
-    if (wallet_.ImportRootNode(ext_prv_b58, ext_prv_enc)) {
-      GenerateNodeResponse(result, wallet_.GetRootNode(), ext_prv_enc, false);
+    if (Wallet::ImportRootNode(credentials_, ext_prv_b58, ext_prv_enc)) {
+      std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+      GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
     } else {
       SetError(result, -1, "Extended key failed validation");
     }
@@ -151,7 +160,7 @@ bool API::HandleImportRootNode(const Json::Value& args,
 
 void API::PopulateAddressStatuses(Json::Value& json_value) {
   Address::addresses_t items;
-  wallet_.GetAddressStatusesToReport(items);
+  wallet_->GetAddressStatusesToReport(items);
   for (Address::addresses_t::const_iterator i = items.begin();
        i != items.end();
        ++i) {
@@ -166,7 +175,7 @@ void API::PopulateAddressStatuses(Json::Value& json_value) {
 
 void API::PopulateTxRequests(Json::Value& json_value) {
   Wallet::tx_requests_t items;
-  wallet_.GetTxRequestsToReport(items);
+  wallet_->GetTxRequestsToReport(items);
   for (Wallet::tx_requests_t::const_iterator i = items.begin();
        i != items.end();
        ++i) {
@@ -176,7 +185,7 @@ void API::PopulateTxRequests(Json::Value& json_value) {
 
 void API::PopulateRecentTransactions(Json::Value& json_value) {
   Wallet::recent_txs_t items;
-  wallet_.GetRecentTransactionsToReport(items);
+  wallet_->GetRecentTransactionsToReport(items);
   for (Wallet::recent_txs_t::const_iterator i = items.begin();
        i != items.end();
        ++i) {
@@ -191,9 +200,11 @@ void API::PopulateRecentTransactions(Json::Value& json_value) {
 }
 
 void API::PopulateResponses(Json::Value& root) {
-  PopulateAddressStatuses(root["address_statuses"]);
-  PopulateTxRequests(root["tx_requests"]);
-  PopulateRecentTransactions(root["recent_txs"]);
+  if (wallet_.get()) {
+    PopulateAddressStatuses(root["address_statuses"]);
+    PopulateTxRequests(root["tx_requests"]);
+    PopulateRecentTransactions(root["recent_txs"]);
+  }
 }
 
 bool API::HandleDeriveChildNode(const Json::Value& args,
@@ -201,41 +212,72 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   const std::string path(args["path"].asString());
   const bool is_watch_only(args["is_watch_only"].asBool());
 
+  std::auto_ptr<Node> node;
   bytes_t ext_prv_enc;
-  if (wallet_.DeriveChildNode(path, is_watch_only, ext_prv_enc)) {
-    GenerateNodeResponse(result, wallet_.GetChildNode(), ext_prv_enc, false);
+  if (is_watch_only) {
+    std::string ext_pub_b58;
+    if (Wallet::DeriveChildNode(master_node_.get(), path, ext_pub_b58)) {
+      node.reset(Wallet::RestoreNode(ext_pub_b58));
+    }
+  } else {
+    if (Wallet::DeriveChildNode(credentials_, master_node_.get(), path,
+                                ext_prv_enc)) {
+      node.reset(Wallet::RestoreNode(credentials_, ext_prv_enc));
+    }
+  }
+  if (node.get()) {
+    GenerateNodeResponse(result, node.get(), ext_prv_enc, is_watch_only);
     PopulateResponses(result);
     result["path"] = path;
   } else {
-    std::stringstream s;
-    s << "Failed to derive child node @ "<< path << " from " <<
-      std::hex << wallet_.GetRootNode()->fingerprint();
-    SetError(result, -1, s.str());
+    SetError(result, -1, "Failed to derive child node");
   }
-
   return true;
+}
+
+void API::GenerateMasterNode() {
+  if (ext_prv_enc_.empty()) {
+    return;
+  }
+  if (credentials_.isLocked()) {
+    master_node_.reset(Wallet::RestoreNode(ext_pub_b58_));
+  } else {
+    master_node_.reset(Wallet::RestoreNode(credentials_, ext_prv_enc_));
+  }
 }
 
 bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
-  const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
-
-  if (!ext_prv_enc.empty()) {
-    bool is_root;
-    if (wallet_.RestoreNode(ext_pub_b58, ext_prv_enc, is_root)) {
-      GenerateNodeResponse(result,
-                           is_root ?
-                           wallet_.GetRootNode() :
-                           wallet_.GetChildNode(),
-                           ext_prv_enc,
-                           false);
-      PopulateResponses(result);
-    } else {
-      SetError(result, -1, "Extended key failed validation");
-    }
-  } else {
-    SetError(result, -1, "Missing required ext_prv_enc param");
+  if (ext_pub_b58.empty()) {
+    SetError(result, -1, "Missing ext_pub_b58 param");
+    return false;
   }
+  std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
+  if (!node.get()) {
+    SetError(result, -1, "ext_pub_b58 validation failed");
+    return false;
+  }
+
+  const bool is_master = (node->parent_fingerprint() == 0x00000000 &&
+                          node->child_num() == 0);
+
+  const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
+  if (is_master && ext_prv_enc.empty()) {
+    SetError(result, -1, "Missing ext_prv_enc param for master node");
+    return false;
+  }
+
+  if (is_master) {
+    ext_pub_b58_ = ext_pub_b58;
+    ext_prv_enc_ = ext_prv_enc;
+    GenerateMasterNode();
+  } else {
+    wallet_.reset(new Wallet(blockchain_, credentials_,
+                             ext_pub_b58, ext_prv_enc));
+  }
+  GenerateNodeResponse(result, node.get(), ext_prv_enc, false);
+  PopulateResponses(result);
+
   return true;
 }
 
@@ -245,8 +287,8 @@ bool API::HandleReportTxStatuses(const Json::Value& args,
   for (Json::Value::iterator i = tx_statuses.begin();
        i != tx_statuses.end();
        ++i) {
-    wallet_.HandleTxStatus(unhexlify((*i)["tx_hash"].asString()),
-                           (*i)["height"].asUInt());
+    wallet_->HandleTxStatus(unhexlify((*i)["tx_hash"].asString()),
+                            (*i)["height"].asUInt());
   }
   PopulateResponses(result);
   return true;
@@ -255,7 +297,7 @@ bool API::HandleReportTxStatuses(const Json::Value& args,
 bool API::HandleReportTxs(const Json::Value& args, Json::Value& result) {
   Json::Value txs(args["txs"]);
   for (Json::Value::iterator i = txs.begin(); i != txs.end(); ++i) {
-    wallet_.HandleTx(unhexlify((*i)["tx"].asString()));
+    wallet_->HandleTx(unhexlify((*i)["tx"].asString()));
   }
   PopulateResponses(result);
   return true;
@@ -276,7 +318,7 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   }
 
   bytes_t tx;
-  if (wallet_.CreateTx(recipient_txos, fee, should_sign, tx)) {
+  if (wallet_->CreateTx(recipient_txos, fee, should_sign, tx)) {
     result["tx"] = to_hex(tx);
     PopulateResponses(result);
   } else {

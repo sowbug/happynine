@@ -25,6 +25,8 @@
 #include <string>
 
 #include "api.h"
+#include "blockchain.h"
+#include "credentials.h"
 #include "gtest/gtest.h"
 #include "jsoncpp/json/reader.h"
 #include "jsoncpp/json/writer.h"
@@ -92,9 +94,9 @@ static bool StatusContains(Json::Value& statuses,
 }
 
 TEST(ApiTest, HappyPath) {
+  Blockchain b;
   Credentials c;
-  Wallet w(c);
-  API api(c, w);
+  API api(b, c);
   Json::Value request;
   Json::Value response;
 
@@ -138,8 +140,6 @@ TEST(ApiTest, HappyPath) {
   request["is_watch_only"] = false;
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ("0x5adb92c0", response["fp"].asString());
-  EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   // Save its serializable stuff
   const std::string child_ext_pub_b58(response["ext_pub_b58"].asString());
@@ -238,9 +238,9 @@ TEST(ApiTest, HappyPath) {
 }
 
 TEST(ApiTest, BadExtPrvB58) {
+  Blockchain b;
   Credentials c;
-  Wallet w(c);
-  API api(c, w);
+  API api(b, c);
   Json::Value request;
   Json::Value response;
 
@@ -258,9 +258,9 @@ TEST(ApiTest, BadExtPrvB58) {
 }
 
 TEST(ApiTest, BadSeedWhenDeriving) {
+  Blockchain b;
   Credentials c;
-  Wallet w(c);
-  API api(c, w);
+  API api(b, c);
   Json::Value request;
   Json::Value response;
 
@@ -276,9 +276,9 @@ TEST(ApiTest, BadSeedWhenDeriving) {
 }
 
 TEST(ApiTest, RestoreWithLockedWallet) {
+  Blockchain b;
   Credentials c;
-  Wallet w(c);
-  API api(c, w);
+  API api(b, c);
   Json::Value request;
   Json::Value response;
 
@@ -289,18 +289,27 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api.HandleSetCredentials(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
-  // Import root node with just extended private. This should fail
+  // Restore root node with just public. This should always fail.
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = EXT_3442193E_PUB_B58;
+  EXPECT_FALSE(api.HandleRestoreNode(request, response));
+  EXPECT_FALSE(api.DidResponseSucceed(response));
+
+  // Restore root node with just extended private. This should fail
   // with a locked wallet.
   request = Json::Value();
   response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
-  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  request["ext_prv_b58"] = EXT_3442193E_PRV_B58;
+  EXPECT_FALSE(api.HandleRestoreNode(request, response));
   EXPECT_FALSE(api.DidResponseSucceed(response));
 
-  // Restore root node with both
+  // Restore root node with both public/private. This should succeed,
+  // though it will be impossible to derive children while the wallet
+  // is locked.
   request = Json::Value();
   response = Json::Value();
-  request["ext_pub_b58"] = "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8";
+  request["ext_pub_b58"] = EXT_3442193E_PUB_B58;
   request["ext_prv_enc"] = "728f52c0144d0d48ae888b01ba9392b84e79c617291263e2c39c9369f7b4f9b0c3d856d6934efaba17b76582570f0719d642532c3cc668b511dff38cd089f098c4a87e3ea8de334c5348322f18844cfc4d81650f7c3b3f2301d81ac06f87b9ef9e99b3f5e9d60ea59dffb16fb8fcd3af";
   EXPECT_TRUE(api.HandleRestoreNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
@@ -333,29 +342,12 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0xbef5a2f9", response["fp"].asString());
-
-  // Import root node with just extended private. This is possible
-  // with an unlocked wallet.
-  request = Json::Value();
-  response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi";
-  EXPECT_TRUE(api.HandleRestoreNode(request, response));
-  EXPECT_FALSE(api.DidResponseSucceed(response));
-
-  // Import root node with just extended private. This should succeed
-  // with an unlocked wallet.
-  request = Json::Value();
-  response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K4EVCsxGjJncM1vLdwwi3CZ4ecGrV8X1ieEJpiDjYdE2PxTu4zvKVkR9e8RW9JRHGmNvbQMusmgFDayakzs68YXYvyJw3rSU";
-  EXPECT_TRUE(api.HandleImportRootNode(request, response));
-  EXPECT_TRUE(api.DidResponseSucceed(response));
-  EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 }
 
 TEST(ApiTest, ReportActualTransactions) {
+  Blockchain b;
   Credentials c;
-  Wallet w(c);
-  API api(c, w);
+  API api(b, c);
   Json::Value request;
   Json::Value response;
 
@@ -370,6 +362,20 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api.HandleDeriveRootNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
 
+  const std::string ext_pub_b58(response["ext_pub_b58"].asString());
+  const std::string ext_prv_enc(response["ext_prv_enc"].asString());
+  const std::string fp(response["fp"].asString());
+  EXPECT_EQ("0x8bb9cbc0", fp);
+
+  // Load what we imported
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = ext_pub_b58;
+  request["ext_prv_enc"] = ext_prv_enc;
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(fp, response["fp"].asString());
+
   // Derive a child
   request = Json::Value();
   response = Json::Value();
@@ -378,6 +384,21 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api.HandleDeriveChildNode(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ("0x5adb92c0", response["fp"].asString());
+
+  const std::string child_ext_pub_b58(response["ext_pub_b58"].asString());
+  const std::string child_ext_prv_enc(response["ext_prv_enc"].asString());
+  const std::string child_fp(response["fp"].asString());
+
+  // Load the derived child
+  request = Json::Value();
+  response = Json::Value();
+  request["ext_pub_b58"] = child_ext_pub_b58;
+  request["ext_prv_enc"] = child_ext_prv_enc;
+  EXPECT_TRUE(api.HandleRestoreNode(request, response));
+  EXPECT_TRUE(api.DidResponseSucceed(response));
+  EXPECT_EQ(child_fp, response["fp"].asString());
+
+  // The wallet should now be watching addresses.
   EXPECT_EQ(4 + 4, response["address_statuses"].size());
 
   request = Json::Value();

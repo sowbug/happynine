@@ -25,6 +25,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
+#include "test_constants.h"
 
 #include "base58.h"
 #include "credentials.h"
@@ -35,7 +36,6 @@ const std::string PP1 = "secret";
 
 TEST(WalletTest, HappyPath) {
   Credentials c;
-  Wallet w(c);
 
   // Get credentials set up and unlocked.
   {
@@ -49,37 +49,22 @@ TEST(WalletTest, HappyPath) {
 
   // Generate a new node.
   bytes_t ext_prv_enc;
-  EXPECT_TRUE(w.GenerateRootNode(ext_prv_enc));
-  Node* root_node = w.GetRootNode();
-  uint32_t fp = root_node->fingerprint();
+  EXPECT_TRUE(Wallet::GenerateRootNode(c, ext_prv_enc));
+  std::auto_ptr<Node> master_node(Wallet::RestoreNode(c, ext_prv_enc));
+  uint32_t fp = master_node->fingerprint();
   EXPECT_NE(0, fp);  // This will fail one out of every 2^32 times.
-  std::string
-    ext_pub_b58(Base58::toBase58Check(root_node->toSerializedPublic()));
-
-  // Set to the new node and confirm we got it back.
-  bool is_root;
-  EXPECT_TRUE(w.RestoreNode(ext_pub_b58, ext_prv_enc, is_root));
-  EXPECT_TRUE(is_root);
-  EXPECT_EQ(fp, w.GetRootNode()->fingerprint());
 
   // Does importing a bad xprv fail?
-  EXPECT_FALSE(w.ImportRootNode("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4"
-                                "stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNN"
-                                "U3TGtRBeJgk33yuGBxrMPHi"
-                                "z",
-                                ext_prv_enc));
+  EXPECT_FALSE(Wallet::ImportRootNode(c, EXT_3442193E_PRV_B58 + "z",
+                                      ext_prv_enc));
 
   // Can we import an xprv?
-  EXPECT_TRUE(w.ImportRootNode("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4"
-                               "stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNN"
-                               "U3TGtRBeJgk33yuGBxrMPHi",
-                               ext_prv_enc));
-  EXPECT_EQ(0x3442193e, w.GetRootNode()->fingerprint());
+  EXPECT_TRUE(Wallet::ImportRootNode(c, EXT_3442193E_PRV_B58, ext_prv_enc));
+  master_node.reset(Wallet::RestoreNode(c, ext_prv_enc));
+  EXPECT_EQ(0x3442193e, master_node->fingerprint());
 
-  EXPECT_EQ(0, w.public_address_count());
-  EXPECT_EQ(0, w.change_address_count());
-  EXPECT_TRUE(w.DeriveChildNode("m/0'", false, ext_prv_enc));
-  EXPECT_EQ(0x5c1bd648, w.GetChildNode()->fingerprint());
-  EXPECT_EQ(4, w.public_address_count());
-  EXPECT_EQ(4, w.change_address_count());
+  EXPECT_TRUE(Wallet::DeriveChildNode(c, master_node.get(), "m/0'",
+                                      ext_prv_enc));
+  std::auto_ptr<Node> node(Wallet::RestoreNode(c, ext_prv_enc));
+  EXPECT_EQ(0x5c1bd648, node->fingerprint());
 }

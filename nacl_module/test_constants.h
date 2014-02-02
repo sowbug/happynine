@@ -28,6 +28,10 @@
 #include "base58.h"
 #include "types.h"
 
+// Extended keys
+const std::string EXT_3442193E_PUB_B58("xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8");
+const std::string EXT_3442193E_PRV_B58("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi");
+
 // Addresses
 const std::string ADDR_12c6_B58("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX");
 const bytes_t ADDR_12c6(Base58::fromAddress(ADDR_12c6_B58));

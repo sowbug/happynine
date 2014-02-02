@@ -31,6 +31,7 @@
 #include "tx.h"
 #include "types.h"
 
+class Blockchain;
 class Credentials;
 class Node;
 
@@ -53,30 +54,37 @@ class Address {
 
 class Wallet : public KeyProvider {
  public:
-  Wallet(Credentials& credentials);
+  Wallet(Blockchain& blockchain, Credentials& credentials,
+         const std::string& ext_pub_b58,
+         const bytes_t& ext_prv_enc);
   virtual ~Wallet();
 
   // Root nodes
-  bool DeriveRootNode(const bytes_t& seed, bytes_t& ext_prv_enc);
-  bool GenerateRootNode(bytes_t& ext_prv_enc);
-  bool ImportRootNode(const std::string& ext_prv_b58, bytes_t& ext_prv_enc);
+  static bool DeriveRootNode(Credentials& credentials,
+                             const bytes_t& seed, bytes_t& ext_prv_enc);
+  static bool GenerateRootNode(Credentials& credentials,
+                               bytes_t& ext_prv_enc);
+  static bool ImportRootNode(Credentials& credentials,
+                             const std::string& ext_prv_b58,
+                             bytes_t& ext_prv_enc);
 
   // Child nodes
-  bool DeriveChildNode(const std::string& path,
-                       bool is_watch_only,
-                       bytes_t& ext_prv_enc);
+  static bool DeriveChildNode(Credentials& credentials,
+                              const Node* master_node,
+                              const std::string& path,
+                              bytes_t& ext_prv_enc);
+  static bool DeriveChildNode(const Node* master_node,
+                              const std::string& path,
+                              std::string& ext_pub_b58);
 
   // All nodes
-  bool RestoreNode(const std::string& ext_pub_b58, const bytes_t& ext_prv_enc,
-                   bool& is_root);
+  static Node* RestoreNode(Credentials& credentials,
+                           const bytes_t& ext_prv_enc);
+  static Node* RestoreNode(const std::string& ext_pub_b58);
 
   // Transactions
   void HandleTxStatus(const bytes_t& hash, uint32_t height);
   void HandleTx(const bytes_t& tx_bytes);
-  bool CreateTx(const tx_outs_t& recipients,
-                uint64_t fee,
-                bool should_sign,
-                bytes_t& tx);
 
   // Blocks
   void HandleBlockHeader(const uint64_t height, uint64_t timestamp);
@@ -103,10 +111,10 @@ class Wallet : public KeyProvider {
   bool hasChildNode() { return !child_ext_pub_.empty(); }
 
   // TODO: can these be private?
-  Node* GetRootNode();   // We retain ownership!
+  Node* GetRootNode(Credentials& credentials);   // We retain ownership!
   void ClearRootNode();  // TODO(miket): implement and use
 
-  Node* GetChildNode();   // We retain ownership! TODO: multiple children
+  Node* GetChildNode(Credentials& credentials);   // We retain ownership! TODO: multiple children
 
   uint32_t public_address_count() const { return public_address_count_; }
   uint32_t change_address_count() const { return change_address_count_; }
@@ -116,6 +124,13 @@ class Wallet : public KeyProvider {
                          bytes_t& public_key,
                          bytes_t& key);
 
+  bool CreateTx(const tx_outs_t& recipients,
+                uint64_t fee,
+                bool should_sign,
+                bytes_t& tx);
+
+  bytes_t GetNextUnusedChangeAddress();
+
  private:
   void set_root_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
   void set_child_ext_keys(const bytes_t& ext_pub, const bytes_t& ext_prv_enc);
@@ -123,8 +138,6 @@ class Wallet : public KeyProvider {
   bool IsPublicAddressInWallet(const bytes_t& hash160);
   bool IsChangeAddressInWallet(const bytes_t& hash160);
   bool IsAddressInWallet(const bytes_t& hash160);
-
-  bytes_t GetNextUnusedChangeAddress();
 
   void AddTx(Transaction* transaction);
   bool DoesTxExist(const bytes_t& hash);
@@ -148,11 +161,12 @@ class Wallet : public KeyProvider {
   bool IsAddressWatched(const bytes_t& hash160);
   void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
 
-  void GenerateAllSigningKeys();
+  void GenerateAllSigningKeys(Node* signing_node);
 
   void SetCurrentBlock(uint64_t height);
 
   uint64_t GetTxTimestamp(const bytes_t& hash);
+
 
   typedef std::map<bytes_t, Address*> hash_to_address_t;
   hash_to_address_t watched_addresses_;
@@ -160,7 +174,12 @@ class Wallet : public KeyProvider {
 
   std::set<bytes_t> recent_txs_to_report_;
 
+  Blockchain& blockchain_;
   Credentials& credentials_;
+  const std::string ext_pub_b58_;
+  const bytes_t ext_prv_enc_;
+  std::auto_ptr<Node> watch_only_node_;
+
   bytes_t root_ext_pub_;
   bytes_t root_ext_prv_enc_;
   std::auto_ptr<Node> root_node_;
@@ -184,15 +203,15 @@ class Wallet : public KeyProvider {
 
   uint32_t next_change_address_index_;
 
-  std::map<bytes_t, bytes_t> signing_public_keys_;
-  std::map<bytes_t, bytes_t> signing_keys_;
-
   std::map<bytes_t, uint64_t> tx_heights_;
   std::map<uint64_t, uint64_t> block_timestamps_;
   uint64_t current_block_;
 
   typedef std::map<bytes_t, Transaction*> tx_hashes_to_txs_t;
   tx_hashes_to_txs_t tx_hashes_to_txs_;
+
+  std::map<bytes_t, bytes_t> signing_public_keys_;
+  std::map<bytes_t, bytes_t> signing_keys_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Wallet);
 };

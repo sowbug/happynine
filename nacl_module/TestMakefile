@@ -23,10 +23,10 @@ USER_DIR = .
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
 #  -ffunction-sections -fdata-sections
-CPPFLAGS += -isystem $(GTEST_DIR)/include -DBUILDING_FOR_TEST=1
+CPPFLAGS += -ggdb -isystem $(GTEST_DIR)/include -DBUILDING_FOR_TEST=1
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread
+CXXFLAGS += -ggdb -Wall -Wextra -pthread
 
 TESTS = all_unittest
 
