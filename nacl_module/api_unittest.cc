@@ -179,12 +179,12 @@ TEST(ApiTest, HappyPath) {
   // and got back some stuff.
   request = Json::Value();
   response = Json::Value();
-  request["tx_statuses"][0]["tx_hash"] = to_hex(TX_1BCB_HASH);
+  request["tx_statuses"][0]["tx_hash"] = TX_1BCB_HASH_HEX;
   request["tx_statuses"][0]["height"] = 282172;
   EXPECT_TRUE(api.HandleReportTxStatuses(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["tx_requests"].size());
-  EXPECT_EQ(to_hex(TX_1BCB_HASH), response["tx_requests"][0].asString());
+  EXPECT_EQ(TX_1BCB_HASH_HEX, response["tx_requests"][0].asString());
 
   // Pretend we did a blockchain.transaction.get for the requested
   // transaction. We should get back an update to an address balance.
@@ -192,7 +192,7 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
 
   expected_balance += 29000;
-  request["txs"][0]["tx"] = to_hex(TX_1BCB);
+  request["txs"][0]["tx"] = TX_1BCB_HEX;
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -233,7 +233,7 @@ TEST(ApiTest, HappyPath) {
         actual_new_balance);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  EXPECT_EQ("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", actual_sender);
+  EXPECT_EQ(ADDR_1Guw_B58, actual_sender);
   EXPECT_EQ(expected_balance, actual_new_balance);
 }
 
@@ -382,7 +382,7 @@ TEST(ApiTest, ReportActualTransactions) {
 
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] = to_hex(TX_1BCB);
+  request["txs"][0]["tx"] = TX_1BCB_HEX;
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -392,7 +392,7 @@ TEST(ApiTest, ReportActualTransactions) {
 
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] = to_hex(TX_100D);
+  request["txs"][0]["tx"] = TX_100D_HEX;
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   // + 4 because using addresses generates another block
@@ -400,14 +400,13 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(StatusContains(response["address_statuses"],
                              "199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC", 0));
   EXPECT_TRUE(StatusContains(response["address_statuses"],
-                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 14000));
+                             ADDR_1Guw_B58, 14000));
 
   request = Json::Value();
   response = Json::Value();
-  request["txs"][0]["tx"] = to_hex(TX_BFB1);
+  request["txs"][0]["tx"] = TX_BFB1_HEX;
   EXPECT_TRUE(api.HandleReportTxs(request, response));
   EXPECT_TRUE(api.DidResponseSucceed(response));
   EXPECT_EQ(1, response["address_statuses"].size());
-  EXPECT_TRUE(StatusContains(response["address_statuses"],
-                             "1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd", 0));
+  EXPECT_TRUE(StatusContains(response["address_statuses"], ADDR_1Guw_B58, 0));
 }
