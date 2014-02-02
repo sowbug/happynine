@@ -34,12 +34,15 @@ const std::string EXT_3442193E_PRV_B58("xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2
 
 // Addresses
 const std::string ADDR_12c6_B58("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX");
-const bytes_t ADDR_12c6(Base58::fromAddress(ADDR_12c6_B58));
+const std::string ADDR_199T_B58("199TSaKH54KeWDm5cs7r43oe1ccaxVrBgC");
 const std::string ADDR_1A1z_B58("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
-const bytes_t ADDR_1A1z(Base58::fromAddress(ADDR_1A1z_B58));
 const std::string ADDR_1Guw_B58("1GuwtbNdTBeXL8ZdjHSV69MeERtwQsgLZd");
-const bytes_t ADDR_1Guw(Base58::fromAddress(ADDR_1Guw_B58));
 const std::string ADDR_1PB8_B58("1PB8bTcRXz1u84Yxn5JpRXDUhXwc7DxUt1");
+
+const bytes_t ADDR_12c6(Base58::fromAddress(ADDR_12c6_B58));
+const bytes_t ADDR_199T(Base58::fromAddress(ADDR_199T_B58));  // m/0'/0/1
+const bytes_t ADDR_1A1z(Base58::fromAddress(ADDR_1A1z_B58));
+const bytes_t ADDR_1Guw(Base58::fromAddress(ADDR_1Guw_B58));  // m/0'/1/1
 const bytes_t ADDR_1PB8(Base58::fromAddress(ADDR_1PB8_B58));
 
 // Transactions

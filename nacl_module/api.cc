@@ -35,6 +35,7 @@
 #endif
 
 #include "base58.h"
+#include "blockchain.h"
 #include "credentials.h"
 #include "crypto.h"
 #include "node.h"
@@ -47,17 +48,17 @@
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
-API::API(Blockchain& blockchain, Credentials& credentials)
+API::API(Blockchain* blockchain, Credentials* credentials)
   : blockchain_(blockchain), credentials_(credentials) {
 }
 
 bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
   const std::string new_passphrase = args["new_passphrase"].asString();
   bytes_t salt, check, encrypted_ephemeral_key;
-  if (credentials_.SetPassphrase(new_passphrase,
-                                 salt,
-                                 check,
-                                 encrypted_ephemeral_key)) {
+  if (credentials_->SetPassphrase(new_passphrase,
+                                  salt,
+                                  check,
+                                  encrypted_ephemeral_key)) {
     result["salt"] = to_hex(salt);
     result["check"] = to_hex(check);
     result["ekey_enc"] = to_hex(encrypted_ephemeral_key);
@@ -75,9 +76,9 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
   if (salt.size() >= 32 &&
       check.size() >= 32 &&
       encrypted_ephemeral_key.size() >= 32) {
-    credentials_.Load(salt,
-                      check,
-                      encrypted_ephemeral_key);
+    credentials_->Load(salt,
+                       check,
+                       encrypted_ephemeral_key);
     result["success"] = true;
   } else {
     SetError(result, -1, "missing valid salt/check/ekey_enc params");
@@ -86,7 +87,7 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
 }
 
 bool API::HandleLock(const Json::Value& /*args*/, Json::Value& result) {
-  result["success"] = credentials_.Lock();
+  result["success"] = credentials_->Lock();
   GenerateMasterNode();
   return true;
 }
@@ -94,7 +95,7 @@ bool API::HandleLock(const Json::Value& /*args*/, Json::Value& result) {
 bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
   const std::string passphrase = args["passphrase"].asString();
   if (passphrase.size() != 0) {
-    result["success"] = credentials_.Unlock(passphrase);
+    result["success"] = credentials_->Unlock(passphrase);
     GenerateMasterNode();
   } else {
     SetError(result, -1, "missing valid passphrase param");
@@ -158,55 +159,6 @@ bool API::HandleImportRootNode(const Json::Value& args,
   return true;
 }
 
-void API::PopulateAddressStatuses(Json::Value& json_value) {
-  Address::addresses_t items;
-  wallet_->GetAddressStatusesToReport(items);
-  for (Address::addresses_t::const_iterator i = items.begin();
-       i != items.end();
-       ++i) {
-    Json::Value as;
-    as["addr_b58"] = Base58::hash160toAddress((*i)->hash160());
-    as["child_num"] = (*i)->child_num();
-    as["is_public"] = (*i)->is_public();
-    as["value"] = (Json::Value::UInt64)(*i)->balance();
-    json_value.append(as);
-  }
-}
-
-void API::PopulateTxRequests(Json::Value& json_value) {
-  Wallet::tx_requests_t items;
-  wallet_->GetTxRequestsToReport(items);
-  for (Wallet::tx_requests_t::const_iterator i = items.begin();
-       i != items.end();
-       ++i) {
-    json_value.append(to_hex(*i));
-  }
-}
-
-void API::PopulateRecentTransactions(Json::Value& json_value) {
-  Wallet::recent_txs_t items;
-  wallet_->GetRecentTransactionsToReport(items);
-  for (Wallet::recent_txs_t::const_iterator i = items.begin();
-       i != items.end();
-       ++i) {
-    Json::Value rtx;
-    rtx["addr_b58"] = Base58::hash160toAddress(i->hash160);
-    rtx["hash"] = to_hex(i->hash);
-    rtx["timestamp"] = (Json::Value::UInt64)i->timestamp;
-    rtx["value"] = (Json::Value::UInt64)i->value;
-    rtx["was_received"] = i->was_received;
-    json_value.append(rtx);
-  }
-}
-
-void API::PopulateResponses(Json::Value& root) {
-  if (wallet_.get()) {
-    PopulateAddressStatuses(root["address_statuses"]);
-    PopulateTxRequests(root["tx_requests"]);
-    PopulateRecentTransactions(root["recent_txs"]);
-  }
-}
-
 bool API::HandleDeriveChildNode(const Json::Value& args,
                                 Json::Value& result) {
   const std::string path(args["path"].asString());
@@ -227,7 +179,6 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   }
   if (node.get()) {
     GenerateNodeResponse(result, node.get(), ext_prv_enc, is_watch_only);
-    PopulateResponses(result);
     result["path"] = path;
   } else {
     SetError(result, -1, "Failed to derive child node");
@@ -239,7 +190,7 @@ void API::GenerateMasterNode() {
   if (ext_prv_enc_.empty()) {
     return;
   }
-  if (credentials_.isLocked()) {
+  if (credentials_->isLocked()) {
     master_node_.reset(Wallet::RestoreNode(ext_pub_b58_));
   } else {
     master_node_.reset(Wallet::RestoreNode(credentials_, ext_prv_enc_));
@@ -276,7 +227,6 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
                              ext_pub_b58, ext_prv_enc));
   }
   GenerateNodeResponse(result, node.get(), ext_prv_enc, false);
-  PopulateResponses(result);
 
   return true;
 }
@@ -287,19 +237,17 @@ bool API::HandleReportTxStatuses(const Json::Value& args,
   for (Json::Value::iterator i = tx_statuses.begin();
        i != tx_statuses.end();
        ++i) {
-    wallet_->HandleTxStatus(unhexlify((*i)["tx_hash"].asString()),
-                            (*i)["height"].asUInt());
+    blockchain_->ConfirmTransaction(unhexlify((*i)["tx_hash"].asString()),
+                                    (*i)["height"].asUInt64());
   }
-  PopulateResponses(result);
   return true;
 }
 
 bool API::HandleReportTxs(const Json::Value& args, Json::Value& result) {
   Json::Value txs(args["txs"]);
   for (Json::Value::iterator i = txs.begin(); i != txs.end(); ++i) {
-    wallet_->HandleTx(unhexlify((*i)["tx"].asString()));
+    blockchain_->AddTransaction(unhexlify((*i)["tx"].asString()));
   }
-  PopulateResponses(result);
   return true;
 }
 
@@ -320,7 +268,6 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   bytes_t tx;
   if (wallet_->CreateTx(recipient_txos, fee, should_sign, tx)) {
     result["tx"] = to_hex(tx);
-    PopulateResponses(result);
   } else {
     SetError(result, -1, "Transaction creation failed.");
   }

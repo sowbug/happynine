@@ -37,7 +37,7 @@ class Wallet;
 
 class API {
  public:
-  API(Blockchain& blockchain, Credentials& credentials);
+  API(Blockchain* blockchain, Credentials* credentials);
 
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
@@ -77,6 +77,8 @@ class API {
 
   bool DidResponseSucceed(const Json::Value& obj);
 
+  Wallet* get_wallet() const { return wallet_.get(); }
+
  private:
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
@@ -97,8 +99,8 @@ class API {
 
   void GenerateMasterNode();
 
-  Blockchain& blockchain_;
-  Credentials& credentials_;
+  Blockchain* blockchain_;
+  Credentials* credentials_;
   std::auto_ptr<Wallet> wallet_;
 
   std::auto_ptr<Node> master_node_;
