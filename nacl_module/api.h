@@ -30,6 +30,7 @@ namespace Json {
   class Value;
 }
 
+class Address;
 class Blockchain;
 class Credentials;
 class Node;
@@ -63,6 +64,9 @@ class API {
   // All Nodes
   bool HandleRestoreNode(const Json::Value& args, Json::Value& result);
 
+  // Addresses
+  bool HandleGetAddresses(const Json::Value& args, Json::Value& result);
+
   // Transactions
   bool HandleReportTxStatuses(const Json::Value& args, Json::Value& result);
 
@@ -80,6 +84,7 @@ class API {
   Wallet* get_wallet() const { return wallet_.get(); }
 
  private:
+  void PopulateAddress(const Address* address, Json::Value& root);
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
   void PopulateRecentTransactions(Json::Value& json_value);

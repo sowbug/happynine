@@ -34,8 +34,6 @@
 #include "types.h"
 #include "wallet.h"
 
-const bool BE_LOUD = false;
-
 static void Spend(API* api,
                   const std::string& recipient,
                   uint64_t value,
@@ -57,9 +55,9 @@ static void Spend(API* api,
   const bytes_t tx(unhexlify(response["tx"].asString()));
 
   // Broadcast the transaction (no code, pretend).
-  if (BE_LOUD) {
-    std::cerr << response["tx"].asString() << std::endl;
-  }
+#if defined(BE_LOUD)
+  std::cerr << response["tx"].asString() << std::endl;
+#endif
 
   // Report that we got the transaction. Expect new balance.
   request = Json::Value();
@@ -69,40 +67,21 @@ static void Spend(API* api,
   EXPECT_TRUE(api->DidResponseSucceed(response));
 }
 
-static bool StatusContains(Json::Value& statuses,
-                           const std::string& expected_addr_b58,
-                           uint64_t expected_value) {
-  for (int i = 0; i < statuses.size(); ++i) {
-    if (BE_LOUD) {
-      std::cerr << "Rec'd: " << statuses[i]["addr_b58"].asString()
-                << ": " << statuses[i]["value"].asUInt64() << std::endl;
-    }
-    if (statuses[i]["addr_b58"].asString() == expected_addr_b58 &&
-        statuses[i]["value"].asUInt64() == expected_value) {
-      return true;
-    }
-  }
-  return false;
-}
+static bool GetAddressResponseContains(const Json::Value& response,
+                                       const std::string& expected_addr_b58,
+                                       uint64_t expected_value) {
+  const Json::Value& r = response["addresses"];
 
-static bool AddressesContain(Address::addresses_t& addresses,
-                             const std::string& expected_addr_b58,
-                             uint64_t expected_value) {
-  if (BE_LOUD) {
-    for (Address::addresses_t::const_iterator i = addresses.begin();
-         i != addresses.end();
-         ++i) {
-      const Address* a = *i;
-      std::cerr << "Rec'd: " << Base58::hash160toAddress(a->hash160())
-                << ": " << a->balance() << std::endl;
-    }
+#if defined(BE_LOUD)
+  for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
+    std::cerr << "Rec'd: " << (*i)["addr_b58"].asString()
+              << ": " << (*i)["value"].asUInt64() << std::endl;
   }
-  bytes_t hash160(Base58::fromAddress(expected_addr_b58));
-  for (Address::addresses_t::const_iterator i = addresses.begin();
-       i != addresses.end();
-       ++i) {
-    const Address* a = *i;
-    if (a->hash160() == hash160 && a->balance() == expected_value) {
+#endif
+
+  for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
+    if ((*i)["addr_b58"].asString() == expected_addr_b58 &&
+        (*i)["value"].asUInt64() == expected_value) {
       return true;
     }
   }
@@ -115,8 +94,6 @@ TEST(ApiTest, HappyPath) {
   std::auto_ptr<API> api(new API(b.get(), c.get()));
   Json::Value request;
   Json::Value response;
-  Address::addresses_t public_addresses;
-  Address::addresses_t change_addresses;
 
   uint64_t expected_balance = 0;
 
@@ -182,15 +159,16 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
   EXPECT_EQ(child_fp, response["fp"].asString());
 
-  // CHEAT: no API yet for this
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
-  EXPECT_EQ(4, public_addresses.size());
-  EXPECT_EQ(4, change_addresses.size());
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
 
   // m/0'/0/1
-  EXPECT_TRUE(AddressesContain(public_addresses, ADDR_199T_B58, 0));
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58, 0));
   // m/0'/1/1
-  EXPECT_TRUE(AddressesContain(change_addresses, ADDR_1Guw_B58, 0));
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58, 0));
 
   // Pretend we sent blockchain.address.get_history for each address
   // and got back some stuff.
@@ -212,11 +190,13 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api->HandleReportTxs(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
-  EXPECT_EQ(4, public_addresses.size());
-  EXPECT_EQ(4, change_addresses.size());
-  EXPECT_TRUE(AddressesContain(public_addresses, ADDR_199T_B58,
-                               expected_balance));
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58,
+                                         expected_balance));
 
   // Spend some of the funds in the wallet.
   uint64_t amount_to_spend = 888;
@@ -228,8 +208,14 @@ TEST(ApiTest, HappyPath) {
         fee);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  //  EXPECT_EQ(expected_balance, actual_new_balance);
-  //EXPECT_EQ(ADDR_199T_B58, actual_sender);
+
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
+                                         expected_balance));
 
   // Now spend the rest of the funds in the wallet. This is different
   // because it requires the wallet to report a zero balance without
@@ -242,8 +228,14 @@ TEST(ApiTest, HappyPath) {
         fee);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
-  //  EXPECT_EQ(ADDR_1Guw_B58, actual_sender);
-  //  EXPECT_EQ(expected_balance, actual_new_balance);
+
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
+                                         expected_balance));
 }
 
 TEST(ApiTest, BadExtPrvB58) {
@@ -421,10 +413,14 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   // + 4 because using addresses generates another block
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
   //  EXPECT_EQ(4 + 4, public_addresses.size());
-  EXPECT_EQ(4, change_addresses.size());
-  EXPECT_TRUE(AddressesContain(public_addresses, ADDR_199T_B58, 29000));
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58,
+                                         29000));
 
   request = Json::Value();
   response = Json::Value();
@@ -434,9 +430,12 @@ TEST(ApiTest, ReportActualTransactions) {
   // + 4 because using addresses generates another block
   //  EXPECT_EQ(2 + 4, response["address_statuses"].size());
 
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
-  EXPECT_TRUE(AddressesContain(public_addresses, ADDR_199T_B58, 0));
-  EXPECT_TRUE(AddressesContain(change_addresses, ADDR_1Guw_B58, 14000));
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58, 0));
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58, 14000));
 
   request = Json::Value();
   response = Json::Value();
@@ -444,6 +443,9 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api->HandleReportTxs(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
-  EXPECT_TRUE(AddressesContain(change_addresses, ADDR_1Guw_B58, 0));
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58, 0));
 }

@@ -231,8 +231,41 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
+void API::PopulateAddress(const Address* address,
+                          Json::Value& root) {
+  root["addr_b58"] = Base58::hash160toAddress(address->hash160());
+  root["child_num"] = address->child_num();
+  root["is_public"] = address->is_public();
+  root["value"] = (Json::Value::UInt64)address->balance();
+}
+
+bool API::HandleGetAddresses(const Json::Value& /*args*/,
+                             Json::Value& result) {
+  Address::addresses_t public_addresses;
+  Address::addresses_t change_addresses;
+
+  wallet_->GetAddresses(public_addresses, change_addresses);
+
+  result["addresses"] = Json::Value();
+  for (Address::addresses_t::const_iterator i = public_addresses.begin();
+       i != public_addresses.end();
+       ++i) {
+    Json::Value root;
+    PopulateAddress(*i, root);
+    result["addresses"].append(root);
+  }
+  for (Address::addresses_t::const_iterator i = change_addresses.begin();
+       i != change_addresses.end();
+       ++i) {
+    Json::Value root;
+    PopulateAddress(*i, root);
+    result["addresses"].append(root);
+  }
+  return true;
+}
+
 bool API::HandleReportTxStatuses(const Json::Value& args,
-                                 Json::Value& result) {
+                                 Json::Value& /*result*/) {
   Json::Value tx_statuses(args["tx_statuses"]);
   for (Json::Value::iterator i = tx_statuses.begin();
        i != tx_statuses.end();
@@ -243,7 +276,7 @@ bool API::HandleReportTxStatuses(const Json::Value& args,
   return true;
 }
 
-bool API::HandleReportTxs(const Json::Value& args, Json::Value& result) {
+bool API::HandleReportTxs(const Json::Value& args, Json::Value& /*result*/) {
   Json::Value txs(args["txs"]);
   for (Json::Value::iterator i = txs.begin(); i != txs.end(); ++i) {
     blockchain_->AddTransaction(unhexlify((*i)["tx"].asString()));

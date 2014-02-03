@@ -34,7 +34,8 @@
 class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
-  : pp::Instance(instance), credentials_() {
+  : pp::Instance(instance), blockchain_(new Blockchain),
+    credentials_(new Credentials) {
   }
 
   virtual ~HDWalletDispatcherInstance() {}
@@ -60,7 +61,7 @@ public:
     const Json::Value params = root.get("params", "{}");
     Json::Value result;
     bool handled = false;
-    API api(blockchain_, credentials_);
+    API api(blockchain_.get(), credentials_.get());
 
     if (method == "set-passphrase") {
       handled = api.HandleSetPassphrase(params, result);
@@ -89,6 +90,9 @@ public:
     if (method == "restore-node") {
       handled = api.HandleRestoreNode(params, result);
     }
+    if (method == "get-addresses") {
+      handled = api.HandleGetAddresses(params, result);
+    }
     if (method == "report-tx-statuses") {
       handled = api.HandleReportTxStatuses(params, result);
     }
@@ -115,8 +119,8 @@ public:
   }
 
 private:
-  Blockchain blockchain_;
-  Credentials credentials_;
+  std::auto_ptr<Blockchain> blockchain_;
+  std::auto_ptr<Credentials> credentials_;
 };
 
 /// The Module class.  The browser calls the CreateInstance() method
