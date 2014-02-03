@@ -35,6 +35,7 @@ class Blockchain;
 class Credentials;
 class Node;
 class Wallet;
+struct HistoryItem;
 
 class API {
  public:
@@ -68,6 +69,8 @@ class API {
   bool HandleGetAddresses(const Json::Value& args, Json::Value& result);
 
   // Transactions
+  bool HandleGetHistory(const Json::Value& args, Json::Value& result);
+
   bool HandleReportTxStatuses(const Json::Value& args, Json::Value& result);
 
   bool HandleReportTxs(const Json::Value& args, Json::Value& result);
@@ -83,6 +86,8 @@ class API {
 
  private:
   void PopulateAddress(const Address* address, Json::Value& root);
+  void PopulateHistoryItem(const HistoryItem* item, Json::Value& root);
+
   void PopulateAddressStatuses(Json::Value& json_value);
   void PopulateTxRequests(Json::Value& json_value);
   void PopulateRecentTransactions(Json::Value& json_value);

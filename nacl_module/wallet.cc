@@ -70,7 +70,7 @@ Wallet::~Wallet() {
 
 bool Wallet::DeriveRootNode(Credentials* credentials,
                             const bytes_t& seed,
-                            bytes_t& ext_prv_enc) { 
+                            bytes_t& ext_prv_enc) {
   if (credentials->isLocked()) {
     return false;
   }
@@ -416,20 +416,17 @@ static bool SortAddresses(const Address* a, const Address* b) {
   return a->child_num() < b->child_num();
 }
 
-void Wallet::GetAddresses(Address::addresses_t& public_addresses,
-                          Address::addresses_t& change_addresses) {
-  public_addresses.clear();
-  change_addresses.clear();
+void Wallet::GetAddresses(Address::addresses_t& addresses) {
+  addresses.clear();
   for (hash_to_address_t::const_iterator i = watched_addresses_.begin();
        i != watched_addresses_.end();
        ++i) {
     i->second->set_balance(blockchain_->GetAddressBalance(i->first));
-    if (i->second->is_public()) {
-      public_addresses.push_back(i->second);
-    } else {
-      change_addresses.push_back(i->second);
-    }
+    addresses.push_back(i->second);
   }
-  std::sort(public_addresses.begin(), public_addresses.end(), SortAddresses);
-  std::sort(change_addresses.begin(), change_addresses.end(), SortAddresses);
+  std::sort(addresses.begin(), addresses.end(), SortAddresses);
+}
+
+void Wallet::GetHistory(HistoryItem::history_t& history) {
+  history.clear();
 }

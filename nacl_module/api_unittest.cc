@@ -88,6 +88,28 @@ static bool GetAddressResponseContains(const Json::Value& response,
   return false;
 }
 
+static bool
+GetHistoryResponseContains(const Json::Value& response,
+                           const std::string& expected_addr_b58,
+                           uint64_t expected_value) {
+  const Json::Value& r = response["history"];
+
+#if defined(BE_LOUD)
+  for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
+    std::cerr << "Rec'd: " << (*i)["addr_b58"].asString()
+              << ": " << (*i)["value"].asUInt64() << std::endl;
+  }
+#endif
+
+  for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
+    if ((*i)["addr_b58"].asString() == expected_addr_b58 &&
+        (*i)["value"].asUInt64() == expected_value) {
+      return true;
+    }
+  }
+  return false;
+}
+
 TEST(ApiTest, HappyPath) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
@@ -180,8 +202,7 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   // Pretend we did a blockchain.transaction.get for the transaction
-  // we got from Electrum. We should get back an update to an address
-  // balance.
+  // we got from Electrum.
   request = Json::Value();
   response = Json::Value();
 
@@ -190,6 +211,8 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(api->HandleReportTxs(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
+  // Now when we ask for a snapshot of addresses, the balanace should
+  // be correct.
   request = Json::Value();
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
@@ -206,6 +229,7 @@ TEST(ApiTest, HappyPath) {
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
 
+  // Balance should reflect the spending.
   request = Json::Value();
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
@@ -214,9 +238,7 @@ TEST(ApiTest, HappyPath) {
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
                                          expected_balance));
 
-  // Now spend the rest of the funds in the wallet. This is different
-  // because it requires the wallet to report a zero balance without
-  // reporting *all* zero balances.
+  // Now spend the rest of the funds in the wallet.
   fee = 2;
   amount_to_spend = expected_balance - fee;
   Spend(api.get(), ADDR_1H97_B58, amount_to_spend, fee);
@@ -230,6 +252,15 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(4 + 4, response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
                                          expected_balance));
+
+  // We should see all our transactions in the history.
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetHistory(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(0, response["history"].size());
+  EXPECT_FALSE(GetHistoryResponseContains(response, ADDR_1Guw_B58,
+                                          expected_balance));
 }
 
 TEST(ApiTest, BadExtPrvB58) {
