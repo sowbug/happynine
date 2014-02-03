@@ -81,8 +81,6 @@ class API {
 
   bool DidResponseSucceed(const Json::Value& obj);
 
-  Wallet* get_wallet() const { return wallet_.get(); }
-
  private:
   void PopulateAddress(const Address* address, Json::Value& root);
   void PopulateAddressStatuses(Json::Value& json_value);
@@ -108,9 +106,8 @@ class API {
   Credentials* credentials_;
   std::auto_ptr<Wallet> wallet_;
 
-  std::auto_ptr<Node> master_node_;
-
   // Master node
+  std::auto_ptr<Node> master_node_;
   std::string ext_pub_b58_;
   bytes_t ext_prv_enc_;
   std::string child_ext_pub_b58_;

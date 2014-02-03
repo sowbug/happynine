@@ -35,7 +35,8 @@ class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance), blockchain_(new Blockchain),
-    credentials_(new Credentials) {
+    credentials_(new Credentials),
+    api_(new API(blockchain_.get(), credentials_.get())) {
   }
 
   virtual ~HDWalletDispatcherInstance() {}
@@ -61,46 +62,45 @@ public:
     const Json::Value params = root.get("params", "{}");
     Json::Value result;
     bool handled = false;
-    API api(blockchain_.get(), credentials_.get());
 
     if (method == "set-passphrase") {
-      handled = api.HandleSetPassphrase(params, result);
+      handled = api_->HandleSetPassphrase(params, result);
     }
     if (method == "set-credentials") {
-      handled = api.HandleSetCredentials(params, result);
+      handled = api_->HandleSetCredentials(params, result);
     }
     if (method == "lock") {
-      handled = api.HandleLock(params, result);
+      handled = api_->HandleLock(params, result);
     }
     if (method == "unlock") {
-      handled = api.HandleUnlock(params, result);
+      handled = api_->HandleUnlock(params, result);
     }
     if (method == "derive-root-node") {
-      handled = api.HandleDeriveRootNode(params, result);
+      handled = api_->HandleDeriveRootNode(params, result);
     }
     if (method == "generate-root-node") {
-      handled = api.HandleGenerateRootNode(params, result);
+      handled = api_->HandleGenerateRootNode(params, result);
     }
     if (method == "import-root-node") {
-      handled = api.HandleImportRootNode(params, result);
+      handled = api_->HandleImportRootNode(params, result);
     }
     if (method == "derive-child-node") {
-      handled = api.HandleDeriveChildNode(params, result);
+      handled = api_->HandleDeriveChildNode(params, result);
     }
     if (method == "restore-node") {
-      handled = api.HandleRestoreNode(params, result);
+      handled = api_->HandleRestoreNode(params, result);
     }
     if (method == "get-addresses") {
-      handled = api.HandleGetAddresses(params, result);
+      handled = api_->HandleGetAddresses(params, result);
     }
     if (method == "report-tx-statuses") {
-      handled = api.HandleReportTxStatuses(params, result);
+      handled = api_->HandleReportTxStatuses(params, result);
     }
     if (method == "report-txs") {
-      handled = api.HandleReportTxs(params, result);
+      handled = api_->HandleReportTxs(params, result);
     }
     if (method == "create-tx") {
-      handled = api.HandleCreateTx(params, result);
+      handled = api_->HandleCreateTx(params, result);
     }
     if (!handled) {
       result["error"]["code"] = -999;
@@ -121,6 +121,7 @@ public:
 private:
   std::auto_ptr<Blockchain> blockchain_;
   std::auto_ptr<Credentials> credentials_;
+  std::auto_ptr<API> api_;
 };
 
 /// The Module class.  The browser calls the CreateInstance() method

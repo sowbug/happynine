@@ -38,6 +38,7 @@
 #include "blockchain.h"
 #include "credentials.h"
 #include "crypto.h"
+#include "errors.h"
 #include "node.h"
 #include "node_factory.h"
 #include "tx.h"
@@ -200,7 +201,7 @@ void API::GenerateMasterNode() {
 bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   if (ext_pub_b58.empty()) {
-    SetError(result, -1, "Missing ext_pub_b58 param");
+    SetError(result, ERROR_MISSING_PARAM, "Missing ext_pub_b58 param");
     return false;
   }
   std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
@@ -214,17 +215,22 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
 
   const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
   if (is_master && ext_prv_enc.empty()) {
-    SetError(result, -1, "Missing ext_prv_enc param for master node");
+    SetError(result, ERROR_MISSING_PARAM,
+             "Missing ext_prv_enc param for master node");
     return false;
   }
 
+  result["foo"] = 1;
   if (is_master) {
     ext_pub_b58_ = ext_pub_b58;
     ext_prv_enc_ = ext_prv_enc;
     GenerateMasterNode();
+    result["bar"] = 1;
   } else {
     wallet_.reset(new Wallet(blockchain_, credentials_,
                              ext_pub_b58, ext_prv_enc));
+    result["baz"] = 1;
+    result["wallet"] = wallet_.get();
   }
   GenerateNodeResponse(result, node.get(), ext_prv_enc, false);
 
@@ -241,6 +247,11 @@ void API::PopulateAddress(const Address* address,
 
 bool API::HandleGetAddresses(const Json::Value& /*args*/,
                              Json::Value& result) {
+  if (!wallet_.get()) {
+    SetError(result, ERROR_MISSING_CHILD_NODE, "No child node set");
+    return true;
+  }
+
   Address::addresses_t public_addresses;
   Address::addresses_t change_addresses;
 

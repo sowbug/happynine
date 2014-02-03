@@ -69,12 +69,13 @@ function Wallet(electrum) {
         .then(function(response) {
           if (response.fp) {
             var node = Node.fromStorableObject(response);
-            if (response.pfp == "0x00000000") {
+            if (response.pfp == "0x00000000") {  // TODO: use explicit test
               this.rootNodes.push(node);
+              resolve();
             } else {
               this.nodes.push(node);
+              this.getAddresses().then(resolve);
             }
-            resolve();
           } else {
             reject(response);
           }
@@ -237,14 +238,19 @@ function Wallet(electrum) {
     this.watchedAddresses[addr_status.addr_b58] = addr_status;
   };
 
-  $(document).on("address_statuses", function(evt) {
-    var addrs = evt.message;
-    for (var a in addrs) {
-      var addr = addrs[a];
-      this.watchAddress(addr.addr_b58, addr.is_public);
-      this.updateAddress(addr);
-    }
-  }.bind(this));
+  this.getAddresses = function() {
+    return new Promise(function(resolve, reject) {
+      postRPC('get-addresses', {})
+        .then(function(response) {
+          for (var i in response.addresses) {
+            var addr = response.addresses[i];
+            this.watchAddress(addr.addr_b58, addr.is_public);
+            this.updateAddress(addr);
+          }
+          resolve();
+        }.bind(this));
+    }.bind(this));
+  };
 
   $(document).on("tx_requests", function(evt) {
     var tx_requests = evt.message;

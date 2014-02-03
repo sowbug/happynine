@@ -42,17 +42,8 @@ var postRPC = function(method, params) {
 };
 
 var checkForNotifications = function(response) {
-  if (response.address_statuses) {
-    console.log("noticed address_statuses");
-    var as = response.address_statuses;
-    for (var i in as) {
-      console.log(as[i].addr_b58);
-    }
-    $.event.trigger({
-      'type': 'address_statuses',
-      'message': as,
-      time: new Date(),
-    });
+  if (!response) {
+    return;
   }
   if (response.tx_requests) {
     console.log("noticed tx_requests");
