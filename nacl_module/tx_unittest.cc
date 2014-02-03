@@ -25,8 +25,10 @@
 #include <memory>
 #include <string>
 
-#include "base58.h"
 #include "gtest/gtest.h"
+
+#include "base58.h"
+#include "errors.h"
 #include "node.h"
 #include "node_factory.h"
 #include "tx.h"
@@ -85,21 +87,29 @@ TEST(TxTest, BasicTransaction) {
     virtual bool GetKeysForAddress(const bytes_t& hash160,
                                    bytes_t& public_key,
                                    bytes_t& key) {
-      //      std::cerr << to_hex(hash160) << std::endl;
+#if defined(BE_LOUD)
+      std::cerr << "Need key for " << Base58::hash160toAddress(hash160)
+                << std::endl;
+#endif
+      if (hash160 == unhexlify("77d896b0f85f72ae0f3d0487c432b23c28b71493")) {
+        public_key = unhexlify("027B6A7DD645507D775215A9035BE06700E1ED8C541DA9351B4BD14BD50AB61428");
+        key = unhexlify("BF847390268D072B420406809EC0C9097779E38754E071FB51942FF30DD32F8C");
+        return true;
+      }
       return false;
     }
   };
   TestKeyProvider tkp;
 
   Transaction transaction;
-  int error_code = 0;
+  int error_code = ERROR_NONE;
   bytes_t signed_tx = transaction.Sign(&tkp,
                                        unspent_txos,
                                        recipient_txos,
                                        change_txo,
                                        255,
                                        error_code);
-  EXPECT_EQ(0, error_code);
+  EXPECT_EQ(ERROR_NONE, error_code);
 
   // // Not sure how to verify this. It's different every time by design.
   // std::cerr << to_hex(signed_tx) << std::endl;

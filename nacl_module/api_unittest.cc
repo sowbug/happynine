@@ -202,10 +202,7 @@ TEST(ApiTest, HappyPath) {
   uint64_t amount_to_spend = 888;
   uint64_t fee = 42;
 
-  Spend(api.get(),
-        "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4",
-        amount_to_spend,
-        fee);
+  Spend(api.get(), ADDR_1H97_B58, amount_to_spend, fee);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
 
@@ -222,10 +219,7 @@ TEST(ApiTest, HappyPath) {
   // reporting *all* zero balances.
   fee = 2;
   amount_to_spend = expected_balance - fee;
-  Spend(api.get(),
-        "1CUBwHRHD4D4ckRBu81n8cboGVUP9Ve7m4",
-        amount_to_spend,
-        fee);
+  Spend(api.get(), ADDR_1H97_B58, amount_to_spend, fee);
   expected_balance -= amount_to_spend;
   expected_balance -= fee;
 
@@ -402,9 +396,11 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_EQ(child_fp, response["fp"].asString());
 
   // The wallet should now be watching addresses.
-  api->get_wallet()->GetAddresses(public_addresses, change_addresses);
-  EXPECT_EQ(4, public_addresses.size());
-  EXPECT_EQ(4, change_addresses.size());
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetAddresses(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(4 + 4, response["addresses"].size());
 
   request = Json::Value();
   response = Json::Value();
