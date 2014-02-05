@@ -101,6 +101,8 @@ OUT = out/x86
 
 -include $(OBJS:.o=.d)
 
+.PRECIOUS: $(TESTS)
+
 %.o : %.cc
 	$(CC) -MM $(CFLAGS) $(CPPFLAGS) $*.cc > $*.d
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@

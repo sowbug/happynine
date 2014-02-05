@@ -132,3 +132,31 @@ TEST(BlockchainTest, OutOfOrder) {
   EXPECT_EQ(0, blockchain->GetAddressBalance(ADDR_1Guw));
   EXPECT_EQ(2, blockchain->GetAddressTxCount(ADDR_1Guw));
 }
+
+TEST(BlockchainTest, History) {
+  std::auto_ptr<Blockchain> blockchain(new Blockchain);
+  Blockchain::address_set_t address_set;
+  std::vector<const Transaction*> transactions;
+
+  blockchain->AddTransaction(TX_100D);
+
+  address_set.clear();
+  address_set.insert(ADDR_1Guw);
+  blockchain->GetTransactionsForAddresses(address_set, transactions);
+  HistoryItem history_item =
+    blockchain->TransactionToHistoryItem(address_set,
+                                         transactions[0]);
+  EXPECT_EQ(ADDR_1Guw, history_item.hash160());
+  EXPECT_EQ(14000, history_item.value());
+  EXPECT_FALSE(history_item.inputs_are_known());
+
+  blockchain->AddTransaction(TX_1BCB);
+
+  blockchain->GetTransactionsForAddresses(address_set, transactions);
+  history_item = blockchain->TransactionToHistoryItem(address_set,
+                                                      transactions[0]);
+  EXPECT_EQ(ADDR_1Guw, history_item.hash160());
+  EXPECT_EQ(14000, history_item.value());
+  EXPECT_TRUE(history_item.inputs_are_known());
+  EXPECT_EQ(1000, history_item.fee());
+}

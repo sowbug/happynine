@@ -33,9 +33,10 @@ HistoryItem::HistoryItem(const bytes_t& tx_hash,
                          const bytes_t& hash160,
                          uint64_t timestamp,
                          int64_t value,
-                         uint64_t fee)
+                         uint64_t fee,
+                         bool inputs_are_known)
   : tx_hash_(tx_hash), hash160_(hash160), timestamp_(timestamp),
-    value_(value), fee_(fee) {
+    value_(value), fee_(fee), inputs_are_known_(inputs_are_known) {
   }
 
 Blockchain::Blockchain()
@@ -236,6 +237,7 @@ TransactionToHistoryItem(const address_set_t& addresses,
   std::map<address_t, int64_t> balances;
   int64_t all_txin = 0;
   int64_t all_txo = 0;
+  bool inputs_are_known = true;
 
   // Tally up all inputs, mapped to addresses we care about.
   for (tx_ins_t::const_iterator i = transaction->inputs().begin();
@@ -248,6 +250,8 @@ TransactionToHistoryItem(const address_set_t& addresses,
       if (addresses.count(txo->GetSigningAddress()) != 0) {
         balances[txo->GetSigningAddress()] -= txo->value();
       }
+    } else {
+      inputs_are_known = false;
     }
   }
 
@@ -263,7 +267,7 @@ TransactionToHistoryItem(const address_set_t& addresses,
 
   // Now build the transaction description.
   uint64_t fee = 0;
-  if (all_txin != 0) {
+  if (all_txin != 0 && inputs_are_known) {
     fee = -(all_txin + all_txo);
   }
   int64_t net_to_wallet = 0;
@@ -278,10 +282,10 @@ TransactionToHistoryItem(const address_set_t& addresses,
     }
     net_to_wallet += i->second;
   }
-  HistoryItem history_item(transaction->hash(),
-                           most_affected_address,
-                           GetTransactionTimestamp(transaction->hash()),
-                           net_to_wallet,
-                           fee);
-  return history_item;
+  return HistoryItem(transaction->hash(),
+                     most_affected_address,
+                     GetTransactionTimestamp(transaction->hash()),
+                     net_to_wallet,
+                     fee,
+                     inputs_are_known);
 }

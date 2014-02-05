@@ -35,13 +35,15 @@ class HistoryItem {
               const bytes_t& hash160,
               uint64_t timestamp,
               int64_t value,
-              uint64_t fee);
+              uint64_t fee,
+              bool inputs_are_known);
 
   const bytes_t& tx_hash() const { return tx_hash_; };
   const bytes_t& hash160() const { return hash160_; };
   uint64_t timestamp() const { return timestamp_; };
   int64_t value() const { return value_; };
   uint64_t fee() const { return fee_; };
+  bool inputs_are_known() const { return inputs_are_known_; }
 
  private:
   bytes_t tx_hash_;
@@ -49,6 +51,10 @@ class HistoryItem {
   uint64_t timestamp_;
   int64_t value_;
   uint64_t fee_;
+
+  // Whether all the input transactions were available to us. If this
+  // is false, then fee will be zero, because the actual value is unknown.
+  bool inputs_are_known_;
 };
 typedef std::vector<HistoryItem> history_t;
 
