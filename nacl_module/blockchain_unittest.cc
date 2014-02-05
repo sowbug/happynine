@@ -159,4 +159,15 @@ TEST(BlockchainTest, History) {
   EXPECT_EQ(14000, history_item.value());
   EXPECT_TRUE(history_item.inputs_are_known());
   EXPECT_EQ(1000, history_item.fee());
+
+  blockchain->AddTransaction(TX_76D8);
+
+  address_set.clear();
+  address_set.insert(ADDR_1CMX);
+  blockchain->GetTransactionsForAddresses(address_set, transactions);
+  history_item = blockchain->TransactionToHistoryItem(address_set,
+                                                      transactions[0]);
+  EXPECT_EQ(ADDR_1CMX, history_item.hash160());
+  EXPECT_EQ(54754, history_item.value());
+  EXPECT_FALSE(history_item.inputs_are_known());
 }
