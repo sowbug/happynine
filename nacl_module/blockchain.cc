@@ -22,10 +22,21 @@
 
 #include "blockchain.h"
 
+#include <cstdlib>
 #include <istream>
+#include <memory>
 #include <sstream>
 
 #include "debug.h"
+
+HistoryItem::HistoryItem(const bytes_t& tx_hash,
+                         const bytes_t& hash160,
+                         uint64_t timestamp,
+                         int64_t value,
+                         uint64_t fee)
+  : tx_hash_(tx_hash), hash160_(hash160), timestamp_(timestamp),
+    value_(value), fee_(fee) {
+  }
 
 Blockchain::Blockchain()
   : max_block_height_(0) {
@@ -160,6 +171,13 @@ uint64_t Blockchain::GetTransactionHeight(const tx_hash_t& tx_hash) {
   return tx_heights_[tx_hash];
 }
 
+uint64_t Blockchain::GetTransactionTimestamp(const tx_hash_t& tx_hash) {
+  if (tx_heights_.count(tx_hash) == 0) {
+    return 0;
+  }
+  return GetBlockTimestamp(tx_heights_[tx_hash]);
+}
+
 uint64_t Blockchain::GetBlockTimestamp(uint64_t height) {
   return block_timestamps_[height];
 }
@@ -170,4 +188,100 @@ uint64_t Blockchain::GetAddressBalance(const Blockchain::address_t& address) {
 
 uint64_t Blockchain::GetAddressTxCount(const Blockchain::address_t& address) {
   return tx_counts_[address];
+}
+
+void Blockchain::
+GetTransactionsForAddresses(const address_set_t& addresses,
+                            std::vector<const Transaction*>& transactions) {
+  transactions.clear();
+  for (transaction_map_t::const_iterator txh = transactions_.begin();
+       txh != transactions_.end();
+       ++txh) {
+    const Transaction* tx = txh->second;
+    bool is_in_address_set = false;
+
+    for (tx_ins_t::const_iterator i = tx->inputs().begin();
+         i != tx->inputs().end();
+         ++i) {
+      if (GetTransaction(i->prev_txo_hash())) {
+        Transaction* source_tx = GetTransaction(i->prev_txo_hash());
+        const TxOut *txo = &source_tx->outputs()[i->prev_txo_index()];
+        if (addresses.count(txo->GetSigningAddress()) != 0) {
+          is_in_address_set = true;
+          break;
+        }
+      }
+    }
+
+    if (!is_in_address_set) {
+      for (tx_outs_t::const_iterator i = tx->outputs().begin();
+           i != tx->outputs().end();
+           ++i) {
+        if (addresses.count(i->GetSigningAddress()) != 0) {
+          is_in_address_set = true;
+          break;
+        }
+      }
+    }
+
+    if (is_in_address_set) {
+      transactions.push_back(tx);
+    }
+  }
+}
+
+HistoryItem Blockchain::
+TransactionToHistoryItem(const address_set_t& addresses,
+                         const Transaction* transaction) {
+  std::map<address_t, int64_t> balances;
+  int64_t all_txin = 0;
+  int64_t all_txo = 0;
+
+  // Tally up all inputs, mapped to addresses we care about.
+  for (tx_ins_t::const_iterator i = transaction->inputs().begin();
+       i != transaction->inputs().end();
+       ++i) {
+    if (GetTransaction(i->prev_txo_hash())) {
+      Transaction* source_tx = GetTransaction(i->prev_txo_hash());
+      const TxOut *txo = &source_tx->outputs()[i->prev_txo_index()];
+      all_txin -= txo->value();
+      if (addresses.count(txo->GetSigningAddress()) != 0) {
+        balances[txo->GetSigningAddress()] -= txo->value();
+      }
+    }
+  }
+
+  // Same with outputs.
+  for (tx_outs_t::const_iterator i = transaction->outputs().begin();
+       i != transaction->outputs().end();
+       ++i) {
+    all_txo += i->value();
+    if (addresses.count(i->GetSigningAddress()) != 0) {
+      balances[i->GetSigningAddress()] += i->value();
+    }
+  }
+
+  // Now build the transaction description.
+  uint64_t fee = 0;
+  if (all_txin != 0) {
+    fee = -(all_txin + all_txo);
+  }
+  int64_t net_to_wallet = 0;
+  address_t most_affected_address;
+  int64_t biggest_effect = 0;
+  for (std::map<address_t, int64_t>::const_iterator i = balances.begin();
+       i != balances.end();
+       ++i) {
+    if (abs(i->second) > biggest_effect) {
+      biggest_effect = abs(i->second);
+      most_affected_address = i->first;
+    }
+    net_to_wallet += i->second;
+  }
+  HistoryItem history_item(transaction->hash(),
+                           most_affected_address,
+                           GetTransactionTimestamp(transaction->hash()),
+                           net_to_wallet,
+                           fee);
+  return history_item;
 }

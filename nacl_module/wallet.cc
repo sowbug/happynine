@@ -426,7 +426,3 @@ void Wallet::GetAddresses(Address::addresses_t& addresses) {
   }
   std::sort(addresses.begin(), addresses.end(), SortAddresses);
 }
-
-void Wallet::GetHistory(HistoryItem::history_t& history) {
-  history.clear();
-}

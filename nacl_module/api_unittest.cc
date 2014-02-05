@@ -72,7 +72,7 @@ static bool GetAddressResponseContains(const Json::Value& response,
                                        uint64_t expected_value) {
   const Json::Value& r = response["addresses"];
 
-#if defined(BE_LOUD)
+#if defined(BE_LOUDER)
   for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
     std::cerr << "Rec'd: " << (*i)["addr_b58"].asString()
               << ": " << (*i)["value"].asUInt64() << std::endl;
@@ -91,19 +91,23 @@ static bool GetAddressResponseContains(const Json::Value& response,
 static bool
 GetHistoryResponseContains(const Json::Value& response,
                            const std::string& expected_addr_b58,
-                           uint64_t expected_value) {
+                           int64_t expected_value) {
   const Json::Value& r = response["history"];
 
 #if defined(BE_LOUD)
+  std::cerr << "START HIST" << std::endl;
   for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
-    std::cerr << "Rec'd: " << (*i)["addr_b58"].asString()
-              << ": " << (*i)["value"].asUInt64() << std::endl;
+    std::cerr << "Hist: "
+              << (*i)["tx_hash"].asString()
+              << ": " << (*i)["addr_b58"].asString()
+              << ": " << (*i)["value"].asInt64() << std::endl;
   }
+  std::cerr << "END HIST" << std::endl;
 #endif
 
   for (Json::Value::const_iterator i = r.begin(); i != r.end(); ++i) {
     if ((*i)["addr_b58"].asString() == expected_addr_b58 &&
-        (*i)["value"].asUInt64() == expected_value) {
+        (*i)["value"].asInt64() == expected_value) {
       return true;
     }
   }
@@ -205,13 +209,12 @@ TEST(ApiTest, HappyPath) {
   // we got from Electrum.
   request = Json::Value();
   response = Json::Value();
-
   expected_balance += 29000;
   request["txs"][0]["tx"] = TX_1BCB_HEX;
   EXPECT_TRUE(api->HandleReportTxs(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
-  // Now when we ask for a snapshot of addresses, the balanace should
+  // Now when we ask for a snapshot of addresses, the balance should
   // be correct.
   request = Json::Value();
   response = Json::Value();
@@ -220,6 +223,14 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(4 + 4, response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58,
                                          expected_balance));
+
+  // We should see the transaction in the history.
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetHistory(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(1, response["history"].size());
+  EXPECT_TRUE(GetHistoryResponseContains(response, ADDR_199T_B58, 29000));
 
   // Spend some of the funds in the wallet.
   uint64_t amount_to_spend = 888;
@@ -237,6 +248,15 @@ TEST(ApiTest, HappyPath) {
   EXPECT_EQ(4 + 4, response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
                                          expected_balance));
+
+  // We should see the transaction in the history.
+  request = Json::Value();
+  response = Json::Value();
+  EXPECT_TRUE(api->HandleGetHistory(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+  EXPECT_EQ(2, response["history"].size());
+  EXPECT_TRUE(GetHistoryResponseContains(response, ADDR_199T_B58, 29000));
+  EXPECT_TRUE(GetHistoryResponseContains(response, ADDR_199T_B58, -930));
 
   // Now spend the rest of the funds in the wallet.
   fee = 2;
@@ -258,9 +278,9 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetHistory(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  EXPECT_EQ(0, response["history"].size());
-  EXPECT_FALSE(GetHistoryResponseContains(response, ADDR_1Guw_B58,
-                                          expected_balance));
+  EXPECT_EQ(3, response["history"].size());
+  EXPECT_TRUE(GetHistoryResponseContains(response, ADDR_199T_B58, 29000));
+  EXPECT_TRUE(GetHistoryResponseContains(response, ADDR_1Guw_B58, -28070));
 }
 
 TEST(ApiTest, BadExtPrvB58) {

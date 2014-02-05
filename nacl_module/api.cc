@@ -245,11 +245,11 @@ void API::PopulateAddress(const Address* address, Json::Value& root) {
 }
 
 void API::PopulateHistoryItem(const HistoryItem* item, Json::Value& root) {
-  root["tx_hash"] = Base58::hash160toAddress(item->tx_hash);
-  root["addr_b58"] = Base58::hash160toAddress(item->hash160);
-  root["timestamp"] = (Json::Value::UInt64)item->timestamp;
-  root["value"] = (Json::Value::UInt64)item->value;
-  root["was_received"] = item->was_received;
+  root["tx_hash"] = to_hex(item->tx_hash());
+  root["addr_b58"] = Base58::hash160toAddress(item->hash160());
+  root["timestamp"] = (Json::Value::UInt64)item->timestamp();
+  root["value"] = (Json::Value::Int64)item->value();
+  root["fee"] = (Json::Value::UInt64)item->fee();
 }
 
 bool API::HandleGetAddresses(const Json::Value& /*args*/,
@@ -280,12 +280,31 @@ bool API::HandleGetHistory(const Json::Value& /*args*/,
     SetError(result, ERROR_MISSING_CHILD_NODE, "No child node set");
     return true;
   }
-  HistoryItem::history_t history;
 
-  wallet_->GetHistory(history);
+  Address::addresses_t addresses;
+  wallet_->GetAddresses(addresses);
+
+  Blockchain::address_set_t address_set;
+  for (Address::addresses_t::const_iterator i = addresses.begin();
+       i != addresses.end();
+       ++i) {
+    address_set.insert((*i)->hash160());
+  }
+
+  std::vector<const Transaction*> transactions;
+  blockchain_->GetTransactionsForAddresses(address_set, transactions);
+
+  history_t history;
+  for (std::vector<const Transaction*>::const_iterator i =
+         transactions.begin();
+       i != transactions.end();
+       ++i) {
+    HistoryItem item = blockchain_->TransactionToHistoryItem(address_set, *i);
+    history.push_back(item);
+  }
 
   result["history"] = Json::Value();
-  for (HistoryItem::history_t::const_iterator i = history.begin();
+  for (history_t::const_iterator i = history.begin();
        i != history.end();
        ++i) {
     Json::Value root;

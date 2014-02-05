@@ -29,6 +29,29 @@
 #include "tx.h"
 #include "types.h"
 
+class HistoryItem {
+ public:
+  HistoryItem(const bytes_t& tx_hash,
+              const bytes_t& hash160,
+              uint64_t timestamp,
+              int64_t value,
+              uint64_t fee);
+
+  const bytes_t& tx_hash() const { return tx_hash_; };
+  const bytes_t& hash160() const { return hash160_; };
+  uint64_t timestamp() const { return timestamp_; };
+  int64_t value() const { return value_; };
+  uint64_t fee() const { return fee_; };
+
+ private:
+  bytes_t tx_hash_;
+  bytes_t hash160_;
+  uint64_t timestamp_;
+  int64_t value_;
+  uint64_t fee_;
+};
+typedef std::vector<HistoryItem> history_t;
+
 // An in-memory, small-scale blockchain.
 class Blockchain {
  public:
@@ -50,7 +73,12 @@ class Blockchain {
   void ConfirmTransaction(const tx_hash_t& tx_hash, uint64_t height);
   void GetUnspentTxos(const address_set_t& addresses, tx_outs_t& unspent_txos);
   uint64_t GetTransactionHeight(const tx_hash_t& tx_hash);
-  // TODO: GetTransactions(const address_set_t& addresses, _______);
+  uint64_t GetTransactionTimestamp(const tx_hash_t& tx_hash);
+  void GetTransactionsForAddresses(const address_set_t& addresses,
+                                   std::vector<const Transaction*>&
+                                   transactions);
+  HistoryItem TransactionToHistoryItem(const address_set_t& addresses,
+                                       const Transaction* transaction);
 
   // Addresses
   uint64_t GetAddressBalance(const address_t& address);

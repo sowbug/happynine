@@ -29,7 +29,6 @@
 namespace Json {
   class Value;
 }
-
 class Address;
 class Blockchain;
 class Credentials;

@@ -28,12 +28,13 @@
 #include <string>
 #include <set>
 
+#include "blockchain.h"
 #include "tx.h"
 #include "types.h"
 
-class Blockchain;
 class Credentials;
 class Node;
+struct HistoryItem;
 
 class Address {
  public:
@@ -50,16 +51,6 @@ class Address {
   const uint32_t child_num_;
   const bool is_public_;
   uint64_t balance_;
-};
-
-struct HistoryItem {
-  const bytes_t tx_hash;
-  const bytes_t hash160;
-  const uint64_t timestamp;
-  const uint64_t value;
-  const bool was_received;
-
-  typedef std::vector<HistoryItem> history_t;
 };
 
 class Wallet : public KeyProvider {
@@ -106,8 +97,6 @@ class Wallet : public KeyProvider {
                 bytes_t& tx);
 
   void GetAddresses(Address::addresses_t& addresses);
-
-  void GetHistory(HistoryItem::history_t& history);
 
  private:
   bytes_t GetNextUnusedChangeAddress();
