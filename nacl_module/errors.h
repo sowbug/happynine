@@ -25,6 +25,7 @@
 
 // Add new enums right before ERROR_NONE!
 typedef enum {
+  ERROR_YOU_WIN = -9999,
   ERROR_MISSING_PARAM = -1000,
   ERROR_INVALID_PARAM,
   ERROR_MISSING_CHILD_NODE,

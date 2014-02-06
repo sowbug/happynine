@@ -375,26 +375,25 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
-void API::GetError(const Json::Value& obj, int& code, std::string& message) {
+void API::GetError(const Json::Value& obj, Error& code, std::string& message) {
   if (!obj.isMember("error")) {
-    code = 0;
+    code = ERROR_NONE;
     message = "No error";
   } else {
-    // -99999 = poorly constructed error
-    code = obj["error"].get("code", -99999).asInt();
+    code = (Error)obj["error"].get("code", ERROR_YOU_WIN).asInt();
     message = obj["error"].get("message", "Missing error message").asString();
   }
 }
 
-int API::GetErrorCode(const Json::Value& obj) {
-  int code;
+Error API::GetErrorCode(const Json::Value& obj) {
+  Error code;
   std::string message;
   GetError(obj, code, message);
   return code;
 }
 
 bool API::DidResponseSucceed(const Json::Value& obj) {
-  return GetErrorCode(obj) == 0;
+  return GetErrorCode(obj) == ERROR_NONE;
 }
 
 void API::SetError(Json::Value& obj, Error code, const std::string& message) {

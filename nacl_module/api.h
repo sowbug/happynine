@@ -83,9 +83,9 @@ class API {
   bool HandleCreateTx(const Json::Value& args, Json::Value& result);
 
   // Utilities
-  void GetError(const Json::Value& obj, int& code, std::string& message);
+  void GetError(const Json::Value& obj, Error& code, std::string& message);
 
-  int GetErrorCode(const Json::Value& obj);
+  Error GetErrorCode(const Json::Value& obj);
 
   bool DidResponseSucceed(const Json::Value& obj);
 
