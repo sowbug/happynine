@@ -276,6 +276,10 @@ var walletAppController = function($scope,
     return $scope.wallet.activeMasterNode.extendedPublicBase58;
   };
 
+  $scope.getWalletBalance = function() {
+    return $scope.wallet.getBalance();
+  };
+
   $scope.getCurrentMasterNodeFingerprint = function() {
     if ($scope.getCurrentMasterNode()) {
       return $scope.getCurrentMasterNode().fingerprint;

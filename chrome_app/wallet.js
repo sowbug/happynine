@@ -29,6 +29,7 @@ function Wallet(electrum) {
     this.publicAddresses = [];
     this.changeAddresses = [];
     this.recentTransactions = [];
+    this.balance = 0;
   };
 
   this.init = function() {
@@ -256,6 +257,13 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
+  this.recalculateWalletBalance = function() {
+    this.balance = 0;
+    for (var i in this.watchedAddresses) {
+      this.balance += this.watchedAddresses[i].value;
+    }
+  };
+
   this.isWatching = function(addr_b58) {
     return !!this.watchedAddresses[addr_b58];
   }
@@ -289,6 +297,10 @@ function Wallet(electrum) {
     return 0;
   }
 
+  this.getBalance = function() {
+    return this.balance;
+  };
+
   this.getAddresses = function() {
     return new Promise(function(resolve, reject) {
       postRPC('get-addresses', {})
@@ -298,6 +310,7 @@ function Wallet(electrum) {
             this.watchAddress(addr.addr_b58, addr.is_public);
             this.updateAddress(addr);
           }
+          this.recalculateWalletBalance();
           resolve();
         }.bind(this));
     }.bind(this));
