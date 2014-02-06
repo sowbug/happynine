@@ -20,10 +20,14 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(__API_H__)
+#define __API_H__
+
 #include <memory>
 #include <set>
 #include <string>
 
+#include "errors.h"
 #include "types.h"
 
 namespace Json {
@@ -99,7 +103,7 @@ class API {
                          bytes_t& internal_key,
                          int& error_code,
                          std::string& error_message);
-  void SetError(Json::Value& obj, int code, const std::string& message);
+  void SetError(Json::Value& obj, Error code, const std::string& message);
 
   void GenerateMasterNode();
 
@@ -118,3 +122,5 @@ class API {
 
   DISALLOW_EVIL_CONSTRUCTORS(API);
 };
+
+#endif  // #if !defined(__API_H__)

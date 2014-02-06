@@ -397,7 +397,7 @@ bool API::DidResponseSucceed(const Json::Value& obj) {
   return GetErrorCode(obj) == 0;
 }
 
-void API::SetError(Json::Value& obj, int code, const std::string& message) {
+void API::SetError(Json::Value& obj, Error code, const std::string& message) {
   obj["error"]["code"] = code;
   if (message.size() > 0) {
     obj["error"]["message"] = message;

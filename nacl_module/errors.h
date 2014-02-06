@@ -20,8 +20,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(__ERRORS_H__)
+#define __ERRORS_H__
+
 // Add new enums right before ERROR_NONE!
-enum {
+typedef enum {
   ERROR_MISSING_PARAM = -1000,
   ERROR_INVALID_PARAM,
   ERROR_MISSING_CHILD_NODE,
@@ -30,4 +33,6 @@ enum {
   ERROR_DERIVATION_FAILED,
   ERROR_TRANSACTION_FAILED,
   ERROR_NONE = 0
-};
+} Error;
+
+#endif  // #if !defined(__ERRORS_H__)
