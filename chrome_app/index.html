@@ -23,7 +23,7 @@
       </div>
 
       <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav navbar-right" ng-if="getCurrentAccount()">
+        <ul class="nav navbar-nav navbar-right" ng-if="getCurrentChildNode()">
           <li ng-if="areRequestsPending()">
             <a href="#" class="disabled">
               <span class="glyphicon glyphicon-flash"></span>
@@ -31,7 +31,7 @@
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="satoshiToUnit(getCurrentAccount().balance)"></span>
+              <span ng-bind="satoshiToUnit(getCurrentChildNode().balance)"></span>
               <span ng-bind="unitLabel()"></span>
             </p>
           </li>
@@ -61,8 +61,8 @@
       <div class="col-md-2">
         <ul class="nav nav-pills nav-stacked" id="main-tabs">
           <li><a href="#home" data-toggle="tab">Home</a></li>
-          <li ng-if="getCurrentAccount()"><a href="#send" data-toggle="tab">Send</a></li>
-          <li ng-if="getCurrentAccount()"><a href="#receive" data-toggle="tab">Receive</a></li>
+          <li ng-if="getCurrentChildNode()"><a href="#send" data-toggle="tab">Send</a></li>
+          <li ng-if="getCurrentChildNode()"><a href="#receive" data-toggle="tab">Receive</a></li>
           <li><a href="#settings" data-toggle="tab">Settings</a></li>
         </ul>
       </div><!-- main-tabs col-md-2 -->
@@ -326,13 +326,13 @@
               <!-- Settings - Accounts -->
               <div class="tab-pane fade" id="settings-accounts">
 
-                <div class="panel panel-default" ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">
+                <div class="panel panel-default" ng-if="isWalletUnlocked() && isMasterKeyInstalled()">
                   <div class="panel-heading">Management</div>
                   <div class="panel-body">
                     <div class="row">
                       <div class="col-md-10 col-md-offset-2">
-                        <button class="btn btn-success" ng-click="deriveNextAccount()">Generate {{nextAccountName()}}</button>
-                        <button class="btn btn-default" ng-click="watchNextAccount()">Watch {{nextAccountName()}}</button>
+                        <button class="btn btn-success" ng-click="deriveNextChildNode()">Generate {{nextChildNodeName()}}</button>
+                        <button class="btn btn-default" ng-click="watchNextChildNode()">Watch {{nextChildNodeName()}}</button>
                       </div>
                     </div>
                   </div><!-- /panel-body -->
@@ -341,31 +341,34 @@
                 <div class="panel panel-default">
                   <div class="panel-heading">Installed Accounts</div>
                   <div class="panel-body">
-                    <div ng-if="!getAccountCount()">
+                    <div ng-if="!getChildNodeCount()">
                       <p id="no-accounts">None. To create an account:</p>
                       <ul>
                         <li ng-if="!isWalletUnlocked()">Unlock your wallet by clicking the lock icon <span class="glyphicon glyphicon-lock ok"></span> below.</li>
                         <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
-                        <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Click the <span class="label label-success">Generate Account</span> button above.</li>
+                        <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Press the <span class="label label-success">Generate Account</span> button above.</li>
                       </ul>
                     </div>
 
-                    <table class="table table-striped" ng-if="wallet.getAccountCount()">
+                    <table class="table table-striped" ng-if="wallet.getChildNodeCount()">
                       <thead>
                         <tr>
                           <th>Parent</th><th>Index</th><th>Fingerprint</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr data-ng-repeat="account in getAccounts() track by $index">
+                        <tr data-ng-repeat="node in getChildNodes() track by $index">
                           <td>
-                            {{account.parentFingerprint}}
+                            {{node.parentFingerprint}}
                           </td>
                           <td>
-                            {{account.path}}
+                            {{node.path}}
                           </td>
                           <td>
-                            {{account.fingerprint}}
+                            {{node.fingerprint}}
+                          </td>
+                          <td>
+<button class="btn btn-danger" ng-click="removeChildNode(node)">Remove</button>
                           </td>
                         </tr>
                       </tbody>
@@ -416,18 +419,18 @@
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
-        <li ng-if="credentials.hasMultipleAccounts()">
+        <li ng-if="credentials.hasMultipleChildNodes()">
           <div class="btn-group navbar-pagination">
-            <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevAccount()">&laquo;</button>
+            <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevChildNode()">&laquo;</button>
             <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="account.name()"></button>
-            <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextAccount()">&raquo;</button>
+            <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextChildNode()">&raquo;</button>
           </div>
         </li>
-        <li ng-if="getCurrentAccount()">
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentAccount().fingerprint"></p>
+        <li ng-if="getCurrentChildNode()">
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentChildNode().fingerprint"></p>
         </li>
         <li>
-          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentAccountFingerprint()}}" ng-if="getCurrentAccount()"/>
+          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentChildNodeFingerprint()}}" ng-if="getCurrentChildNode()"/>
         </li>
       </ul>
     </div><!-- footer -->

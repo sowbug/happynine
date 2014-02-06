@@ -56,7 +56,34 @@ function Wallet(electrum) {
     for (var i in o.nodes) {
       nodes.push(Node.fromStorableObject(o.nodes[i]));
     }
-    return Promise.all(nodes.map(this.restoreNode.bind(this)));
+    return Promise.all(nodes.map(this.describeNode.bind(this)));
+  };
+
+  this.describeNode = function(node) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'ext_pub_b58': node.extendedPublicBase58,
+      };
+      postRPC('describe-node', params)
+        .then(function(response) {
+          if (response.ext_pub_b58) {
+            var dnode = Node.fromStorableObject(response);
+            // If we had the private key, pass it through.
+            if (node.extendedPrivateEncrypted) {
+              dnode.extendedPrivateEncrypted = node.extendedPrivateEncrypted;
+            }
+            // TODO(miket): don't insert duplicates
+            if (dnode.isMaster()) {
+              this.rootNodes.push(dnode);
+            } else {
+              this.nodes.push(dnode);
+            }
+            resolve();
+          } else {
+            reject(response);
+          }
+        }.bind(this));
+    }.bind(this));
   };
 
   this.restoreNode = function(node) {
@@ -83,16 +110,53 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
+  this.removeNode = function(node) {
+    return new Promise(function(resolve, reject) {
+      var newNodes = [];
+      var oldNodes;
+      if (node.isMaster()) {
+        oldNodes = this.rootNodes;
+      } else {
+        oldNodes = this.nodes;
+      }
+      for (var i in oldNodes) {
+        var n = oldNodes[i];
+        if (!(n.fingerprint == node.fingerprint &&
+              n.childNum == node.childNum &&
+              n.parentFingerprint == node.parentFingerprint)) {
+          newNodes.push(n);
+        }
+      }
+      if (node.childNum == 0) {
+        this.rootNodes = newNodes;
+      } else {
+        this.nodes = newNodes;
+      }
+      resolve();
+      // TODO(miket): whoever's in charge of the current account needs
+      // to keep it up to date after this operation.
+      //
+      // TODO(miket): pretty sure this will have to be async, so
+      // setting it up that way now
+    }.bind(this));
+  };
+
   this.isKeySet = function() {
     return this.rootNodes.length > 0;
   };
 
-  this.getAccounts = function() {
+  this.getChildNodes = function() {
     return this.nodes;
   };
 
-  this.getNextAccountNumber = function() {
-    return 99;  // TODO
+  this.getNextChildNodeNumber = function() {
+    var next = 0x80000000;
+    for (var i in this.nodes) {
+      if (this.nodes[i].childNum >= next) {
+        next = this.nodes[i].childNum + 1;
+      }
+    }
+    return next - 0x80000000;
   };
 
   this.getExtendedPrivateBase58 = function() {
@@ -149,16 +213,18 @@ function Wallet(electrum) {
     this.rootNodes = [];
   };
 
-  this.deriveNextAccount = function(isWatchOnly, callbackBool) {
-    var params = {
-      'path': "m/0'",
-      'is_watch_only': isWatchOnly,
-    };
-    postRPC('derive-child-node', params)
-      .then(function(response) {
-        var node = Node.fromStorableObject(response);
-        this.restoreNode(node).then(resolve);
-      }.bind(this));
+  this.deriveChildNode = function(childNum, isWatchOnly) {
+    return new Promise(function(resolve, reject) {
+      var params = {
+        'path': "m/" + childNum + "'",
+        'is_watch_only': isWatchOnly,
+      };
+      postRPC('derive-child-node', params)
+        .then(function(response) {
+          var node = Node.fromStorableObject(response);
+          this.describeNode(node).then(resolve);
+        }.bind(this));
+    }.bind(this));
   };
 
   this.sendFunds = function(sendTo, sendValue, sendFee) {
@@ -182,7 +248,7 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
-  this.getAccountCount = function() {
+  this.getChildNodeCount = function() {
     return this.nodes.length;
   };
 
@@ -277,12 +343,36 @@ function Wallet(electrum) {
       .then(this.handleAddressGetHistory.bind(this));
   }.bind(this));
 
+  this.restoreInitialMasterNode = function() {
+    return new Promise(function(resolve, reject) {
+      if (this.rootNodes.length != 0) {
+        this.restoreNode(this.rootNodes[0]).then(resolve);
+      } else {
+        resolve();
+      }
+    }.bind(this));
+  };
+
+  this.restoreInitialChildNode = function() {
+    return new Promise(function(resolve, reject) {
+      if (this.nodes.length != 0) {
+        this.restoreNode(this.nodes[0]).then(resolve);
+      } else {
+        resolve();
+      }
+    }.bind(this));
+  };
+
   this.STORAGE_NAME = 'wallet';
   this.load = function() {
     return new Promise(function(resolve, reject) {
       var success = function(response) {
         if (response) {
-          this.loadStorableObject(response).then(resolve);
+          this.loadStorableObject(response)
+            .then(this.restoreInitialMasterNode.bind(this))
+            .then(this.restoreInitialChildNode.bind(this))
+            .then(resolve)
+            .catch(function(err) { console.log(err) });
         } else {
           this.init();
           resolve();

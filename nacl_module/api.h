@@ -62,6 +62,8 @@ class API {
   bool HandleAddChildNode(const Json::Value& args, Json::Value& result);
 
   // All Nodes
+  bool HandleDescribeNode(const Json::Value& args, Json::Value& result);
+
   bool HandleRestoreNode(const Json::Value& args, Json::Value& result);
 
   // Addresses

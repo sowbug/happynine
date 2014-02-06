@@ -87,6 +87,9 @@ public:
     if (method == "derive-child-node") {
       handled = api_->HandleDeriveChildNode(params, result);
     }
+    if (method == "describe-node") {
+      handled = api_->HandleDescribeNode(params, result);
+    }
     if (method == "restore-node") {
       handled = api_->HandleRestoreNode(params, result);
     }
@@ -104,7 +107,7 @@ public:
     }
     if (!handled) {
       result["error"]["code"] = -999;
-      result["error"]["message"] = "Unrecognized method";
+      result["error"]["message"] = "Unrecognized method: " + method;
     }
     Json::Value response;
     response["id"] = root["id"];

@@ -109,6 +109,7 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
                                bool include_prv) {
   dict["fp"] = "0x" + to_fingerprint(node->fingerprint());
   dict["pfp"] = "0x" + to_fingerprint(node->parent_fingerprint());
+  dict["child_num"] = node->child_num();
   dict["ext_pub_b58"] = Base58::toBase58Check(node->toSerializedPublic());
   if (!ext_prv_enc.empty()) {
     dict["ext_prv_enc"] = to_hex(ext_prv_enc);
@@ -198,16 +199,33 @@ void API::GenerateMasterNode() {
   }
 }
 
-bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
+bool API::HandleDescribeNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   if (ext_pub_b58.empty()) {
     SetError(result, ERROR_MISSING_PARAM, "Missing ext_pub_b58 param");
-    return false;
+    return true;
   }
   std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
   if (!node.get()) {
     SetError(result, -1, "ext_pub_b58 validation failed");
-    return false;
+    return true;
+  }
+
+  GenerateNodeResponse(result, node.get(), bytes_t(), false);
+
+  return true;
+}
+
+bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
+  const std::string ext_pub_b58(args["ext_pub_b58"].asString());
+  if (ext_pub_b58.empty()) {
+    SetError(result, ERROR_MISSING_PARAM, "Missing ext_pub_b58 param");
+    return true;
+  }
+  std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
+  if (!node.get()) {
+    SetError(result, -1, "ext_pub_b58 validation failed");
+    return true;
   }
 
   const bool is_master = (node->parent_fingerprint() == 0x00000000 &&
@@ -217,19 +235,16 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   if (is_master && ext_prv_enc.empty()) {
     SetError(result, ERROR_MISSING_PARAM,
              "Missing ext_prv_enc param for master node");
-    return false;
+    return true;
   }
 
-  result["foo"] = 1;
   if (is_master) {
     ext_pub_b58_ = ext_pub_b58;
     ext_prv_enc_ = ext_prv_enc;
     GenerateMasterNode();
-    result["bar"] = 1;
   } else {
     wallet_.reset(new Wallet(blockchain_, credentials_,
                              ext_pub_b58, ext_prv_enc));
-    result["baz"] = 1;
     result["wallet"] = wallet_.get();
   }
   GenerateNodeResponse(result, node.get(), ext_prv_enc, false);

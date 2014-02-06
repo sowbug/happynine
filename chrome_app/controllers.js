@@ -72,7 +72,7 @@ var walletAppController = function($scope,
       }
     }, true);
 
-    $scope.$watchCollection('getAccounts()', function(newItems, oldItems) {
+    $scope.$watchCollection('getChildNodes()', function(newItems, oldItems) {
       if (newItems != oldItems) {
         $scope.wallet.save();
       }
@@ -92,9 +92,9 @@ var walletAppController = function($scope,
     });
   };
 
-  $scope.$watch('getAccountCount()', function(newVal, oldVal) {
+  $scope.$watch('getChildNodeCount()', function(newVal, oldVal) {
     if (newVal > 0 && oldVal == 0) {
-      $scope.selectFirstAccount();
+      $scope.selectFirstChildNode();
     }
   });
 
@@ -121,7 +121,7 @@ var walletAppController = function($scope,
   );
 
   $scope.$watch(
-    'getCurrentAccountFingerprint()',
+    'getCurrentChildNodeFingerprint()',
     function(newVal, oldVal) {
       if (newVal != oldVal) {
         if (newVal) {
@@ -167,20 +167,21 @@ var walletAppController = function($scope,
     $scope.wallet.removeMasterKey();
   };
 
-  $scope.nextAccountName = function() {
-    return "Account " + $scope.wallet.getNextAccountNumber();
+  $scope.nextChildNodeName = function() {
+    return "Account " + $scope.wallet.getNextChildNodeNumber();
   };
 
-  $scope.deriveNextAccount = function() {
-    $scope.wallet.deriveNextAccount(false, function(succeeded) {
-      if (succeeded) {
+  $scope.deriveNextChildNode = function() {
+    $scope.wallet.deriveChildNode($scope.wallet.getNextChildNodeNumber(),
+                                  false)
+      .then(function() {
         $scope.$apply();
-      }
-    });
+      });
   };
 
-  $scope.watchNextAccount = function() {
-    $scope.wallet.deriveNextAccount(true, function(succeeded) {
+  $scope.watchNextChildNode = function() {
+    $scope.wallet.deriveChildNode($scope.wallet.getNextChildNodeNumber(),
+                                  true, function(succeeded) {
       if (succeeded) {
         $scope.$apply();
       }
@@ -261,8 +262,8 @@ var walletAppController = function($scope,
     return $scope.wallet.isKeySet();
   };
 
-  $scope.isWalletKeyPrivateSet = function() {
-    return $scope.wallet.isExtendedPrivateSet();
+  $scope.isMasterKeyInstalled = function() {
+    return $scope.wallet.rootNodes.length != 0;
   };
 
   $scope.getWalletKeyPrivate = function() {
@@ -277,12 +278,22 @@ var walletAppController = function($scope,
     return $scope.wallet.getFingerprint();
   };
 
-  $scope.getAccountCount = function() {
-    return $scope.wallet.getAccountCount();
+  $scope.getChildNodeCount = function() {
+    return $scope.wallet.getChildNodeCount();
   };
 
-  $scope.getAccounts = function() {
-    return $scope.wallet.getAccounts();
+  $scope.getChildNodes = function() {
+    return $scope.wallet.getChildNodes();
+  };
+
+  $scope.removeChildNode = function(node) {
+    $scope.wallet.removeNode(node)
+      .then(function() {
+        if (node == $scope.getCurrentChildNode()) {
+          $scope.selectFirstChildNode();
+        }
+        $scope.$apply();
+      });
   };
 
   $scope.getPublicAddresses = function() {
@@ -297,8 +308,8 @@ var walletAppController = function($scope,
     return $scope.wallet.watchedAddresses[addr_b58].value;
   }
 
-  $scope.getCurrentAccount = function() {
-    return $scope.w.currentAccount;
+  $scope.getCurrentChildNode = function() {
+    return $scope.w.currentChildNode;
   };
 
   $scope.getRecentTransactions = function() {
@@ -313,28 +324,28 @@ var walletAppController = function($scope,
     return "unconfirmed";
   };
 
-  $scope.getCurrentAccountFingerprint = function() {
-    if (!$scope.getCurrentAccount()) {
+  $scope.getCurrentChildNodeFingerprint = function() {
+    if (!$scope.getCurrentChildNode()) {
       return null;
     }
-    return $scope.getCurrentAccount().fingerprint;
+    return $scope.getCurrentChildNode().fingerprint;
   };
 
   $scope.areRequestsPending = function() {
     return $scope.electrum.areRequestsPending();
   };
 
-  $scope.setCurrentAccountByIndex = function(index) {
-    if ($scope.w.currentAccount == $scope.getAccounts()[index]) {
+  $scope.setCurrentChildNodeByIndex = function(index) {
+    if ($scope.w.currentChildNode == $scope.getChildNodes()[index]) {
       return;
     }
-    $scope.w.currentAccount = $scope.getAccounts()[index];
-   // $scope.refreshAccount();
+    $scope.w.currentChildNode = $scope.getChildNodes()[index];
+   // $scope.refreshChildNode();
   };
 
-  $scope.selectFirstAccount = function() {
-    if ($scope.getAccountCount() > 0) {
-      $scope.setCurrentAccountByIndex(0);
+  $scope.selectFirstChildNode = function() {
+    if ($scope.getChildNodeCount() > 0) {
+      $scope.setCurrentChildNodeByIndex(0);
     }
   };
 

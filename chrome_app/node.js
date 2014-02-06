@@ -27,6 +27,7 @@
 // nodes or addresses.
 function Node() {
   this.init = function() {
+    this.childNum = undefined;
     this.extendedPrivateEncrypted = undefined;
     this.extendedPublicBase58 = undefined;
     this.fingerprint = undefined;
@@ -49,6 +50,7 @@ function Node() {
 
   this.toStorableObject = function() {
     var o = {};
+    o.child_num = this.childNum;
     o.ext_prv_enc = this.extendedPrivateEncrypted;
     o.ext_pub_b58 = this.extendedPublicBase58;
     o.fp = this.fingerprint;
@@ -62,6 +64,10 @@ function Node() {
   this.isKeyAvailable = function() {
     return !!this.extendedPrivateBase58;
   };
+
+  this.isMaster = function() {
+    return this.childNum == 0;
+  }
 }
 
 Node.fromGetNodeResponse = function(credentials,
@@ -95,6 +101,8 @@ Node.fromGetNodeResponse = function(credentials,
 Node.fromStorableObject = function(o) {
   var s = new Node();
 
+  if (o.child_num != undefined)
+    s.childNum = o.child_num;
   if (o.ext_prv_enc != undefined)
     s.extendedPrivateEncrypted = o.ext_prv_enc;
   if (o.ext_pub_b58 != undefined)
