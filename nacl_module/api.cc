@@ -64,7 +64,7 @@ bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
     result["check"] = to_hex(check);
     result["ekey_enc"] = to_hex(encrypted_ephemeral_key);
   } else {
-    SetError(result, -1, "set-passphrase failed");
+    SetError(result, ERROR_INVALID_PARAM, "set-passphrase failed");
   }
   return true;
 }
@@ -82,7 +82,8 @@ bool API::HandleSetCredentials(const Json::Value& args, Json::Value& result) {
                        encrypted_ephemeral_key);
     result["success"] = true;
   } else {
-    SetError(result, -1, "missing valid salt/check/ekey_enc params");
+    SetError(result, ERROR_MISSING_PARAM,
+             "missing valid salt/check/ekey_enc params");
   }
   return true;
 }
@@ -99,7 +100,7 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
     result["success"] = credentials_->Unlock(passphrase);
     GenerateMasterNode();
   } else {
-    SetError(result, -1, "missing valid passphrase param");
+    SetError(result, ERROR_MISSING_PARAM, "missing valid passphrase param");
   }
   return true;
 }
@@ -127,7 +128,7 @@ bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
     std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
-    SetError(result, -1, "Root node derivation failed");
+    SetError(result, ERROR_INVALID_PARAM, "Root node derivation failed");
   }
   return true;
 }
@@ -139,7 +140,7 @@ bool API::HandleGenerateRootNode(const Json::Value& /*args*/,
     std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
-    SetError(result, -1, "Root node generation failed");
+    SetError(result, ERROR_INVALID_PARAM, "Root node generation failed");
   }
   return true;
 }
@@ -153,10 +154,11 @@ bool API::HandleImportRootNode(const Json::Value& args,
       std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
       GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
     } else {
-      SetError(result, -1, "Extended key failed validation");
+      SetError(result, ERROR_INVALID_PARAM, "Extended key failed validation");
     }
   } else {
-    SetError(result, -1, "Missing required ext_prv_b58 param");
+    SetError(result, ERROR_MISSING_PARAM,
+             "Missing required ext_prv_b58 param");
   }
   return true;
 }
@@ -183,7 +185,7 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
     GenerateNodeResponse(result, node.get(), ext_prv_enc, is_watch_only);
     result["path"] = path;
   } else {
-    SetError(result, -1, "Failed to derive child node");
+    SetError(result, ERROR_DERIVATION_FAILED, "Failed to derive child node");
   }
   return true;
 }
@@ -207,7 +209,7 @@ bool API::HandleDescribeNode(const Json::Value& args, Json::Value& result) {
   }
   std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
   if (!node.get()) {
-    SetError(result, -1, "ext_pub_b58 validation failed");
+    SetError(result, ERROR_INVALID_PARAM, "ext_pub_b58 validation failed");
     return true;
   }
 
@@ -367,7 +369,8 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   if (wallet_->CreateTx(recipient_txos, fee, should_sign, tx)) {
     result["tx"] = to_hex(tx);
   } else {
-    SetError(result, -1, "Transaction creation failed.");
+    SetError(result, ERROR_TRANSACTION_FAILED,
+             "Transaction creation failed.");
   }
   return true;
 }
