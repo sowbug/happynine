@@ -339,7 +339,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   request = Json::Value();
   response = Json::Value();
   request["ext_pub_b58"] = EXT_3442193E_PUB_B58;
-  EXPECT_FALSE(api->HandleRestoreNode(request, response));
+  EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 
   // Restore root node with just extended private. This should fail
@@ -347,7 +347,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   request = Json::Value();
   response = Json::Value();
   request["ext_prv_b58"] = EXT_3442193E_PRV_B58;
-  EXPECT_FALSE(api->HandleRestoreNode(request, response));
+  EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 
   // Restore root node with both public/private. This should succeed,

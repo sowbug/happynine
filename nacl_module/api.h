@@ -89,11 +89,6 @@ class API {
   void PopulateAddress(const Address* address, Json::Value& root);
   void PopulateHistoryItem(const HistoryItem* item, Json::Value& root);
 
-  void PopulateAddressStatuses(Json::Value& json_value);
-  void PopulateTxRequests(Json::Value& json_value);
-  void PopulateRecentTransactions(Json::Value& json_value);
-  void PopulateResponses(Json::Value& root);
-
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   void GenerateNodeResponse(Json::Value& dict, const Node* node,
                             const bytes_t& ext_prv_enc,
@@ -116,6 +111,8 @@ class API {
   std::auto_ptr<Node> master_node_;
   std::string ext_pub_b58_;
   bytes_t ext_prv_enc_;
+
+  // Child node
   std::string child_ext_pub_b58_;
   bytes_t child_ext_prv_enc_;
 

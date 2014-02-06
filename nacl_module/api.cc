@@ -224,7 +224,7 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   }
   std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
   if (!node.get()) {
-    SetError(result, -1, "ext_pub_b58 validation failed");
+    SetError(result, ERROR_INVALID_PARAM, "ext_pub_b58 validation failed");
     return true;
   }
 
