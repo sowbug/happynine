@@ -31,7 +31,7 @@
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="satoshiToUnit(getCurrentChildNode().balance)"></span>
+              <span ng-bind="satoshiToUnit(getWalletBalance())"></span>
               <span ng-bind="unitLabel()"></span>
             </p>
           </li>
@@ -281,16 +281,16 @@
                       <div class="form-group">
                         <label for="fingerprint-readonly" class="col-md-2 control-label">Fingerprint</label>
                         <div class="col-md-3">
-                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{getWalletKeyFingerprint()}}">
+                          <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{getCurrentMasterNodeFingerprint()}}">
                         </div>
                         <div class="col-md-2">
-                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getWalletKeyFingerprint()}}"/>
+                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getCurrentMasterNodeFingerprint()}}"/>
                         </div>
                       </div>
                       <div class="form-group">
                         <label for="xpub-readonly" class="col-md-2 control-label">Public Key</label>
                         <div class="col-md-10">
-                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="getWalletKeyPublic()"></textarea>
+                          <textarea rows="2" class="form-control" id="xpub-readonly" readonly ng-bind="getCurrentMasterNodePublicKey()"></textarea>
                         </div>
                       </div>
                       <div ng-if="isWalletUnlocked()">
@@ -342,10 +342,10 @@
                   <div class="panel-heading">Installed Accounts</div>
                   <div class="panel-body">
                     <div ng-if="!getChildNodeCount()">
-                      <p id="no-accounts">None. To create an account:</p>
+                      <p id="no-accounts">None.</p>
                       <ul>
                         <li ng-if="!isWalletUnlocked()">Unlock your wallet by clicking the lock icon <span class="glyphicon glyphicon-lock ok"></span> below.</li>
-                        <li ng-if="!isWalletKeyPrivateSet()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
+                        <li ng-if="!isMasterKeyInstalled()">Install a master private key by visiting the <span class="label label-primary">Master Key</span> section of <span class="label label-primary">Settings</span>.</li>
                         <li ng-if="isWalletUnlocked() && isWalletKeyPrivateSet()">Press the <span class="label label-success">Generate Account</span> button above.</li>
                       </ul>
                     </div>
@@ -353,7 +353,7 @@
                     <table class="table table-striped" ng-if="wallet.getChildNodeCount()">
                       <thead>
                         <tr>
-                          <th>Parent</th><th>Index</th><th>Fingerprint</th>
+                          <th>Parent</th><th>Index</th><th>Fingerprint</th><th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -362,13 +362,14 @@
                             {{node.parentFingerprint}}
                           </td>
                           <td>
-                            {{node.path}}
+                            {{node.prettyChildNum()}}
                           </td>
                           <td>
                             {{node.fingerprint}}
                           </td>
                           <td>
-<button class="btn btn-danger" ng-click="removeChildNode(node)">Remove</button>
+                            <button class="btn btn-primary" ng-click="selectChildNodeByIndex($index)" ng-disabled="node == getCurrentChildNode()">Use</button>
+                            <button class="btn btn-danger" ng-click="removeChildNode(node)">Remove</button>
                           </td>
                         </tr>
                       </tbody>
@@ -427,7 +428,7 @@
           </div>
         </li>
         <li ng-if="getCurrentChildNode()">
-          <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentChildNode().fingerprint"></p>
+          <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentChildNodeFingerprint()"></p>
         </li>
         <li>
           <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentChildNodeFingerprint()}}" ng-if="getCurrentChildNode()"/>

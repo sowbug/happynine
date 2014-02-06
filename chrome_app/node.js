@@ -68,6 +68,13 @@ function Node() {
   this.isMaster = function() {
     return this.childNum == 0;
   }
+
+  this.prettyChildNum = function() {
+    if (this.childNum >= 0x80000000) {
+      return this.childNum - 0x80000000;
+    }
+    return this.childNum;
+  };
 }
 
 Node.fromGetNodeResponse = function(credentials,

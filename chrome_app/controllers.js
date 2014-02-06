@@ -98,8 +98,14 @@ var walletAppController = function($scope,
     }
   });
 
+  $scope.$watch('isMasterKeyInstalled()', function(newVal, oldVal) {
+    if (newVal && !oldVal) {
+      $scope.selectFirstMasterNode(0);
+    }
+  });
+
   $scope.$watch(
-    'getWalletKeyFingerprint()',
+    'getCurrentMasterNodeFingerprint()',
     function(newVal, oldVal) {
       if (newVal != oldVal) {
         if (newVal) {
@@ -266,16 +272,29 @@ var walletAppController = function($scope,
     return $scope.wallet.rootNodes.length != 0;
   };
 
-  $scope.getWalletKeyPrivate = function() {
-    return $scope.wallet.getExtendedPrivateBase58();
-  };
-
   $scope.getWalletKeyPublic = function() {
-    return $scope.wallet.getExtendedPublicBase58();
+    return $scope.wallet.activeMasterNode.extendedPublicBase58;
   };
 
-  $scope.getWalletKeyFingerprint = function() {
-    return $scope.wallet.getFingerprint();
+  $scope.getCurrentMasterNodeFingerprint = function() {
+    if ($scope.getCurrentMasterNode()) {
+      return $scope.getCurrentMasterNode().fingerprint;
+    }
+    return undefined;
+  };
+
+  $scope.getCurrentChildNodeFingerprint = function() {
+    if ($scope.getCurrentChildNode()) {
+      return $scope.getCurrentChildNode().fingerprint;
+    }
+    return undefined;
+  };
+
+  $scope.getCurrentMasterNodePublicKey = function() {
+    if ($scope.getCurrentMasterNode()) {
+      return $scope.getCurrentMasterNode().extendedPublicBase58;
+    }
+    return undefined;
   };
 
   $scope.getChildNodeCount = function() {
@@ -287,9 +306,10 @@ var walletAppController = function($scope,
   };
 
   $scope.removeChildNode = function(node) {
+    var needNewSelection = node == $scope.getCurrentChildNode();
     $scope.wallet.removeNode(node)
       .then(function() {
-        if (node == $scope.getCurrentChildNode()) {
+        if (needNewSelection) {
           $scope.selectFirstChildNode();
         }
         $scope.$apply();
@@ -305,11 +325,15 @@ var walletAppController = function($scope,
   }
 
   $scope.getAddressBalance = function(addr_b58) {
-    return $scope.wallet.watchedAddresses[addr_b58].value;
+    return $scope.wallet.getAddressBalance(addr_b58);
   }
 
+  $scope.getCurrentMasterNode = function() {
+    return $scope.wallet.activeMasterNode;
+  };
+
   $scope.getCurrentChildNode = function() {
-    return $scope.w.currentChildNode;
+    return $scope.wallet.activeChildNode;
   };
 
   $scope.getRecentTransactions = function() {
@@ -324,36 +348,32 @@ var walletAppController = function($scope,
     return "unconfirmed";
   };
 
-  $scope.getCurrentChildNodeFingerprint = function() {
-    if (!$scope.getCurrentChildNode()) {
-      return null;
-    }
-    return $scope.getCurrentChildNode().fingerprint;
-  };
-
   $scope.areRequestsPending = function() {
     return $scope.electrum.areRequestsPending();
   };
 
-  $scope.setCurrentChildNodeByIndex = function(index) {
-    if ($scope.w.currentChildNode == $scope.getChildNodes()[index]) {
-      return;
-    }
-    $scope.w.currentChildNode = $scope.getChildNodes()[index];
-   // $scope.refreshChildNode();
+  $scope.selectFirstMasterNode = function() {
+    $scope.wallet.setActiveMasterNodeByIndex(0);
   };
 
   $scope.selectFirstChildNode = function() {
-    if ($scope.getChildNodeCount() > 0) {
-      $scope.setCurrentChildNodeByIndex(0);
-    }
+    console.log("called");
+    $scope.wallet.setActiveChildNodeByIndex(0);
+  };
+
+  $scope.selectChildNode = function(node) {
+    $scope.wallet.setActiveChildNode(node);
+  };
+
+  $scope.selectChildNodeByIndex = function(index) {
+    $scope.wallet.setActiveChildNodeByIndex(index);
   };
 
   $scope.exportMasterKey = function() {
     chrome.fileSystem.chooseEntry(
       {'type': 'saveFile',
        'suggestedName': 'Happynine-Export-' +
-       $scope.getWalletKeyFingerprint() + '.txt',
+       $scope.getCurrentMasterNodeFingerprint() + '.txt',
       },
       function(entry) {
         var errorHandler = function(e) {
@@ -366,7 +386,7 @@ var walletAppController = function($scope,
           };
           var message =
             "Happynine: BIP 0038 Master Key Export\r\n" +
-            $scope.getWalletKeyFingerprint() + ": " +
+            $scope.getCurrentMasterNodeFingerprint() + ": " +
             $scope.getWalletKeyPublic() + "\r\n" +
             "Private Key [NOT YET IMPLEMENTED]\r\n\r\n" +
             "THIS IS NOT A BACKUP OF YOUR KEY! THAT FEATURE IS COMING.\r\n";

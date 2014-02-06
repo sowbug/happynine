@@ -24,13 +24,17 @@
 
 // A Wallet is a collection of Nodes with a bunch of helper functions.
 function Wallet(electrum) {
-  this.init = function() {
-    this.rootNodes = [];
-    this.nodes = [];
+  this.initAddresses = function() {
     this.watchedAddresses = {};
     this.publicAddresses = [];
     this.changeAddresses = [];
     this.recentTransactions = [];
+  };
+
+  this.init = function() {
+    this.rootNodes = [];
+    this.nodes = [];
+    this.initAddresses();
   };
   this.init();
 
@@ -96,11 +100,10 @@ function Wallet(electrum) {
         .then(function(response) {
           if (response.fp) {
             var node = Node.fromStorableObject(response);
-            if (response.pfp == "0x00000000") {  // TODO: use explicit test
-              this.rootNodes.push(node);
+            if (node.isMaster()) {
               resolve();
             } else {
-              this.nodes.push(node);
+              this.initAddresses();
               this.getAddresses().then(resolve);
             }
           } else {
@@ -159,35 +162,12 @@ function Wallet(electrum) {
     return next - 0x80000000;
   };
 
-  this.getExtendedPrivateBase58 = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].extendedPrivateBase58;
-    }
-  };
-
-  this.isExtendedPrivateSet = function() {
-    return this.rootNodes.length > 0 &&
-      !!this.rootNodes[0].extendedPrivateEncrypted;
-  };
-
-  this.getExtendedPublicBase58 = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].extendedPublicBase58;
-    }
-  };
-
-  this.getFingerprint = function() {
-    if (this.rootNodes.length > 0) {
-      return this.rootNodes[0].fingerprint;
-    }
-  };
-
   this.addRandomMasterKey = function() {
     return new Promise(function(resolve, reject) {
       postRPC('generate-root-node', {})
         .then(function(response) {
           var node = Node.fromStorableObject(response);
-          this.restoreNode(node).then(resolve);
+          this.describeNode(node).then(resolve);
         }.bind(this));
     }.bind(this));
   };
@@ -201,7 +181,7 @@ function Wallet(electrum) {
         .then(function(response) {
           if (response.fp) {
             var node = Node.fromStorableObject(response);
-            this.restoreNode(node).then(resolve);
+            this.describeNode(node).then(resolve);
           } else {
             reject();
           }
@@ -292,17 +272,22 @@ function Wallet(electrum) {
     } else {
       this.changeAddresses.push(addr_b58);
     }
-    electrum.enqueueRpc("blockchain.address.get_history",
-                        [addr_b58])
+    electrum.enqueueRpc("blockchain.address.get_history", [addr_b58])
       .then(this.handleAddressGetHistory.bind(this));
-    electrum.enqueueRpc("blockchain.address.subscribe",
-                        [addr_b58])
+    electrum.enqueueRpc("blockchain.address.subscribe", [addr_b58])
       .then(this.handleAddressSubscribe.bind(this));
   };
 
   this.updateAddress = function(addr_status) {
     this.watchedAddresses[addr_status.addr_b58] = addr_status;
   };
+
+  this.getAddressBalance = function(addr_b58) {
+    if (this.isWatching(addr_b58)) {
+      return this.watchedAddresses[addr_b58].value;
+    }
+    return 0;
+  }
 
   this.getAddresses = function() {
     return new Promise(function(resolve, reject) {
@@ -343,23 +328,69 @@ function Wallet(electrum) {
       .then(this.handleAddressGetHistory.bind(this));
   }.bind(this));
 
+  this.setActiveMasterNode = function(node) {
+    return new Promise(function(resolve, reject) {
+      if (this.activeMasterNode == node) {
+        resolve();
+      } else {
+        this.activeMasterNode = node;
+        if (node) {
+          this.initAddresses();
+          this.restoreNode(this.activeMasterNode).then(resolve);
+        } else {
+          this.activeMasterNode = undefined;
+          resolve();
+        }
+      }
+    }.bind(this));
+  };
+
+  this.setActiveMasterNodeByIndex = function(index) {
+    return new Promise(function(resolve, reject) {
+      var node;
+      if (index < this.rootNodes.length) {
+        node = this.rootNodes[index];
+      }
+      this.setActiveMasterNode(node).then(resolve);
+    }.bind(this));
+  };
+
+  this.setActiveChildNode = function(node) {
+    return new Promise(function(resolve, reject) {
+      if (this.activeChildNode == node) {
+        resolve();
+      } else {
+        this.activeChildNode = node;
+        if (node) {
+          this.initAddresses();
+          this.restoreNode(this.activeChildNode).then(resolve);
+        } else {
+          this.activeChildNode = undefined;
+          resolve();
+        }
+      }
+    }.bind(this));
+  };
+
+  this.setActiveChildNodeByIndex = function(index) {
+    return new Promise(function(resolve, reject) {
+      var node;
+      if (index < this.nodes.length) {
+        node = this.nodes[index];
+      }
+      this.setActiveChildNode(node).then(resolve);
+    }.bind(this));
+  };
+
   this.restoreInitialMasterNode = function() {
     return new Promise(function(resolve, reject) {
-      if (this.rootNodes.length != 0) {
-        this.restoreNode(this.rootNodes[0]).then(resolve);
-      } else {
-        resolve();
-      }
+      this.setActiveMasterNode(0).then(resolve);
     }.bind(this));
   };
 
   this.restoreInitialChildNode = function() {
     return new Promise(function(resolve, reject) {
-      if (this.nodes.length != 0) {
-        this.restoreNode(this.nodes[0]).then(resolve);
-      } else {
-        resolve();
-      }
+      this.setActiveChildNode(0).then(resolve);
     }.bind(this));
   };
 
