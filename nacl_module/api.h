@@ -82,6 +82,9 @@ class API {
 
   bool HandleCreateTx(const Json::Value& args, Json::Value& result);
 
+  // Blocks
+  bool HandleConfirmBlock(const Json::Value& args, Json::Value& result);
+
   // Utilities
   void GetError(const Json::Value& obj, Error& code, std::string& message);
 

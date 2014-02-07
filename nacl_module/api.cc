@@ -375,6 +375,14 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
+bool API::HandleConfirmBlock(const Json::Value& args,
+                             Json::Value& /*result*/) {
+  const uint64_t block_height = args["block_height"].asUInt64();
+  const uint64_t timestamp = args["timestamp"].asUInt64();
+  blockchain_->ConfirmBlock(block_height, timestamp);
+  return true;
+}
+
 void API::GetError(const Json::Value& obj, Error& code, std::string& message) {
   if (!obj.isMember("error")) {
     code = ERROR_NONE;

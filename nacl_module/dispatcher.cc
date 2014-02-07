@@ -105,8 +105,14 @@ public:
     if (method == "create-tx") {
       handled = api_->HandleCreateTx(params, result);
     }
+    if (method == "get-history") {
+      handled = api_->HandleGetHistory(params, result);
+    }
+    if (method == "confirm-block") {
+      handled = api_->HandleConfirmBlock(params, result);
+    }
     if (!handled) {
-      result["error"]["code"] = -999;
+      result["error"]["code"] = ERROR_UNKNOWN_METHOD;
       result["error"]["message"] = "Unrecognized method: " + method;
     }
     Json::Value response;

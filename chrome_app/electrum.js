@@ -31,6 +31,48 @@ function Electrum($http) {
   this.callbackId = 1;
   this.rpcQueue = [];
 
+  this.issueAddressGetHistory = function(addr_b58) {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.address.get_history", [addr_b58])
+        .then(resolve);
+    }.bind(this));
+  };
+
+  this.issueAddressSubscribe = function(addr_b58) {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.address.subscribe", [addr_b58])
+        .then(resolve);
+    }.bind(this));
+  };
+
+  this.issueTransactionGet = function(tx_hash) {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.transaction.get", [tx_hash])
+        .then(resolve);
+    }.bind(this));
+  };
+
+  this.issueTransactionBroadcast = function(tx) {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.transaction.broadcast", [tx])
+        .then(resolve);
+    }.bind(this));
+  };
+
+  this.issueHeadersSubscribe = function() {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.headers.subscribe", [])
+        .then(resolve);
+    }.bind(this));
+  };
+
+  this.issueBlockGetHeader = function(block_num) {
+    return new Promise(function(resolve, reject) {
+      this._enqueueRpc("blockchain.block.get_header", [block_num])
+        .then(resolve);
+    }.bind(this));
+  };
+
   // TODO(miket): there's just no way this will work
   this.pendingRpcCount = 0;
 
@@ -61,7 +103,7 @@ function Electrum($http) {
     this.advanceTimeoutDuration();
   };
 
-  this.enqueueRpc = function(method, params) {
+  this._enqueueRpc = function(method, params) {
     return new Promise(function(resolve, reject) {
       var rpc = { "id": this.callbackId++,
                   "method": method,
@@ -92,6 +134,8 @@ function Electrum($http) {
         console.log("notification from electrum", o);
         var ALLOWED_METHODS = [
           'blockchain.address.subscribe',
+          'blockchain.headers.subscribe',
+          'blockchain.numblocks.subscribe',
         ];
         if (ALLOWED_METHODS.indexOf(o.method) != -1) {
           $.event.trigger({

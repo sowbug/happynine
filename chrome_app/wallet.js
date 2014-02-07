@@ -38,6 +38,10 @@ function Wallet(electrum) {
     this.initAddresses();
   };
   this.init();
+  electrum.issueHeadersSubscribe()
+    .then(function(response) {
+      this.handleBlockGetHeader(response);
+    });
 
   this.toStorableObject = function() {
     var o = {};
@@ -219,8 +223,7 @@ function Wallet(electrum) {
         .then(function(response) {
           if (response.tx) {
             console.log("got", response.tx);
-            electrum.enqueueRpc("blockchain.transaction.broadcast",
-                                [response.tx])
+            electrum.issueTransactionBroadcast(response.tx)
               .then(resolve);
           } else {
             reject("create-tx failed");
@@ -237,24 +240,34 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       postRPC('report-tx-statuses', { 'tx_statuses': txs })
         .then(function(response) {
-          resolve();
+          var tx_hashes = [];
+          for (var i in txs) {
+            tx_hashes.push(txs[i].tx_hash);
+          }
+          Promise.all(tx_hashes.map(this.handleTransactionGet.bind(this)))
+            .then(resolve);
         }.bind(this));
     }.bind(this));
   };
 
   this.handleAddressSubscribe = function(response) {
     return new Promise(function(resolve, reject) {
-      console.log("for address subscribe", response);
+      console.log("Subscribed to address", response);
     }.bind(this));
   };
 
-  this.handleTransactionGet = function(tx) {
+  this.handleTransactionGet = function(tx_hash) {
     return new Promise(function(resolve, reject) {
-      postRPC('report-txs', { 'txs': [{'tx': tx}] })
+      electrum.issueTransactionGet(tx_hash)
         .then(function(response) {
-          resolve();
+          postRPC('report-txs', { 'txs': [{ 'tx': response }] })
+            .then(function(response) {
+              this.getHistory()  // TODO: move this to caller so less waste
+                .then(this.getAddresses)
+                .then(resolve);
+            }.bind(this));
         }.bind(this));
-    }.bind(this));
+    }.bind(this))
   };
 
   this.recalculateWalletBalance = function() {
@@ -280,10 +293,9 @@ function Wallet(electrum) {
     } else {
       this.changeAddresses.push(addr_b58);
     }
-    electrum.enqueueRpc("blockchain.address.get_history", [addr_b58])
+    electrum.issueAddressGetHistory(addr_b58)
       .then(this.handleAddressGetHistory.bind(this));
-    electrum.enqueueRpc("blockchain.address.subscribe", [addr_b58])
-      .then(this.handleAddressSubscribe.bind(this));
+    electrum.issueAddressSubscribe(addr_b58);
   };
 
   this.updateAddress = function(addr_status) {
@@ -316,29 +328,35 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
-  $(document).on("tx_requests", function(evt) {
-    var tx_requests = evt.message;
-    for (var t in tx_requests) {
-      console.log("requesting", tx_requests[t]);
-      electrum.enqueueRpc("blockchain.transaction.get",
-                          [tx_requests[t]])
-        .then(this.handleTransactionGet.bind(this));
-    }
-  }.bind(this));
+  this.getHistory = function() {
+    return new Promise(function(resolve, reject) {
+      postRPC('get-history', {})
+        .then(function(response) {
+          this.recentTransactions = response.history;
+          resolve();
+        }.bind(this));
+    }.bind(this));
+  };
 
-  $(document).on("recent_txs", function(evt) {
-    var items = evt.message;
-    for (var i in items) {
-      console.log("rtx", items[i]);
-      this.recentTransactions.push(items[i]);
-    }
-  }.bind(this));
+  this.handleBlockGetHeader = function(h) {
+    console.log("new block", h);
+    return new Promise(function(resolve, reject) {
+      var params = { 'timestamp': h.timestamp,
+                     'block_height': h.block_height };
+      postRPC('confirm-block', params)
+        .then(resolve);
+    }.bind(this));
+  };
 
   $(document).on("blockchain.address.subscribe", function(evt) {
     var params = evt.message;
-    electrum.enqueueRpc("blockchain.address.get_history",
-                        [params[0]])
+    electrum.issueAddressGetHistory(params[0])
       .then(this.handleAddressGetHistory.bind(this));
+  }.bind(this));
+
+  $(document).on("blockchain.headers.subscribe", function(evt) {
+    var params = evt.message;
+    this.handleBlockGetHeader(params[0]);
   }.bind(this));
 
   this.setActiveMasterNode = function(node) {
