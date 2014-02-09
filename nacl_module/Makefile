@@ -14,6 +14,7 @@ SOURCES = \
   blockchain.cc \
   credentials.cc \
   crypto.cc \
+  encrypting_node_factory.cc \
   node.cc \
   node_factory.cc \
   secp256k1.cc \

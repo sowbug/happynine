@@ -63,29 +63,6 @@ class Wallet : public KeyProvider {
          const bytes_t& ext_prv_enc);
   virtual ~Wallet();
 
-  // Root nodes
-  static bool DeriveRootNode(Credentials* credentials,
-                             const bytes_t& seed, bytes_t& ext_prv_enc);
-  static bool GenerateRootNode(Credentials* credentials,
-                               bytes_t& ext_prv_enc);
-  static bool ImportRootNode(Credentials* credentials,
-                             const std::string& ext_prv_b58,
-                             bytes_t& ext_prv_enc);
-
-  // Child nodes
-  static bool DeriveChildNode(Credentials* credentials,
-                              const Node* master_node,
-                              const std::string& path,
-                              bytes_t& ext_prv_enc);
-  static bool DeriveChildNode(const Node* master_node,
-                              const std::string& path,
-                              std::string& ext_pub_b58);
-
-  // All nodes
-  static Node* RestoreNode(Credentials* credentials,
-                           const bytes_t& ext_prv_enc);
-  static Node* RestoreNode(const std::string& ext_pub_b58);
-
   uint32_t public_address_count() const { return public_address_count_; }
   uint32_t change_address_count() const { return change_address_count_; }
 

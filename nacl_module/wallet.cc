@@ -30,6 +30,7 @@
 #include "blockchain.h"
 #include "credentials.h"
 #include "crypto.h"
+#include "encrypting_node_factory.h"
 #include "errors.h"
 #include "node.h"
 #include "node_factory.h"
@@ -46,7 +47,7 @@ Wallet::Wallet(Blockchain* blockchain,
                const bytes_t& ext_prv_enc)
   : blockchain_(blockchain), credentials_(credentials),
     ext_pub_b58_(ext_pub_b58), ext_prv_enc_(ext_prv_enc),
-    watch_only_node_(RestoreNode(ext_pub_b58_)),
+    watch_only_node_(EncryptingNodeFactory::RestoreNode(ext_pub_b58_)),
     public_address_gap_(4), change_address_gap_(4),
     public_address_start_(0), change_address_start_(0),
     next_change_address_index_(change_address_start_) {
@@ -66,94 +67,6 @@ Wallet::~Wallet() {
        ++i) {
     delete i->second;
   }
-}
-
-bool Wallet::DeriveRootNode(Credentials* credentials,
-                            const bytes_t& seed,
-                            bytes_t& ext_prv_enc) {
-  if (credentials->isLocked()) {
-    return false;
-  }
-
-  // If the caller passed in a zero-length seed, as a policy we're going to
-  // error out. We don't want a user of this method to forget to supply
-  // entropy and ship something that seems to work, but gives the same root
-  // node to everyone.
-  if (seed.empty()) {
-    return false;
-  }
-
-  std::auto_ptr<Node> node(NodeFactory::CreateNodeFromSeed(seed));
-  if (node.get()) {
-    if (Crypto::Encrypt(credentials->ephemeral_key(),
-                        node->toSerialized(),
-                        ext_prv_enc)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Wallet::GenerateRootNode(Credentials* credentials,
-                              bytes_t& ext_prv_enc) {
-  if (credentials->isLocked()) {
-    return false;
-  }
-  bytes_t seed(32, 0);
-  if (!Crypto::GetRandomBytes(seed)) {
-    return false;
-  }
-  return DeriveRootNode(credentials, seed, ext_prv_enc);
-}
-
-bool Wallet::ImportRootNode(Credentials* credentials,
-                            const std::string& ext_prv_b58,
-                            bytes_t& ext_prv_enc) {
-  if (credentials->isLocked()) {
-    return false;
-  }
-  const bytes_t ext_prv = Base58::fromBase58Check(ext_prv_b58);
-  std::auto_ptr<Node> node(NodeFactory::CreateNodeFromExtended(ext_prv));
-  if (node.get()) {
-    if (Crypto::Encrypt(credentials->ephemeral_key(),
-                        ext_prv,
-                        ext_prv_enc)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Wallet::DeriveChildNode(Credentials* credentials,
-                             const Node* master_node,
-                             const std::string& path,
-                             bytes_t& ext_prv_enc) {
-  if (credentials->isLocked()) {
-    return false;
-  }
-
-  std::auto_ptr<Node> node(NodeFactory::
-                           DeriveChildNodeWithPath(*master_node, path));
-  if (node.get()) {
-    if (Crypto::Encrypt(credentials->ephemeral_key(),
-                        node->toSerialized(),
-                        ext_prv_enc)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Wallet::DeriveChildNode(const Node* master_node,
-                             const std::string& path,
-                             std::string& ext_pub_b58) {
-  std::auto_ptr<Node> node(NodeFactory::
-                           DeriveChildNodeWithPath(*master_node, path));
-  if (node.get()) {
-    ext_pub_b58 = Base58::toBase58Check(node->toSerializedPublic());
-    return true;
-  }
-  return false;
 }
 
 void Wallet::WatchAddress(const bytes_t& hash160,
@@ -247,22 +160,6 @@ void Wallet::CheckChangeAddressGap(uint32_t address_index_used) {
   }
 }
 
-Node* Wallet::RestoreNode(Credentials* credentials,
-                          const bytes_t& ext_prv_enc) {
-  bytes_t ext_prv;
-  if (!Crypto::Decrypt(credentials->ephemeral_key(),
-                       ext_prv_enc,
-                       ext_prv)) {
-    return NULL;
-  }
-  return NodeFactory::CreateNodeFromExtended(ext_prv);
-}
-
-Node* Wallet::RestoreNode(const std::string& ext_pub_b58) {
-  const bytes_t ext_pub = Base58::fromBase58Check(ext_pub_b58);
-  return NodeFactory::CreateNodeFromExtended(ext_pub);
-}
-
 bytes_t Wallet::GetNextUnusedChangeAddress() {
   // TODO(miket): we should probably increment
   // next_change_address_index_ here, because a transaction might take
@@ -321,65 +218,6 @@ void Wallet::GenerateAllSigningKeys(Node* signing_node) {
   }
 }
 
-// static bool SortRecentTransactions(const Wallet::recent_tx_t& a,
-//                                    const Wallet::recent_tx_t& b) {
-//   if (a.timestamp != b.timestamp) {
-//     return a.timestamp > b.timestamp;
-//   }
-//   return a.value > b.value;
-// }
-
-// bool Wallet::GetRecentTransactionsToReport(recent_txs_t& recent_txs) {
-//   for (std::set<bytes_t>::const_iterator i = recent_txs_to_report_.begin();
-//        i != recent_txs_to_report_.end();
-//        ++i) {
-//     Transaction* tx = blockchain_->
-
-//     // Check the inputs. If we recognize the sender, add it.
-//     for (tx_ins_t::const_iterator j = tx->inputs().begin();
-//          j != tx->inputs().end();
-//          ++j) {
-//       if (!DoesTxExist(j->prev_txo_hash())) {
-//         continue;
-//       }
-//       Transaction* spent_tx = GetTx(j->prev_txo_hash());
-//       if (!spent_tx) {
-//         continue;
-//       }
-//       const TxOut* txo = &spent_tx->outputs()[j->prev_txo_index()];
-//       const bytes_t& address = txo->GetSigningAddress();
-//       if (IsAddressWatched(address)) {
-//         recent_tx_t rtx;
-//         rtx.hash = spent_tx->hash();
-//         rtx.hash160 = address;
-//         rtx.value = txo->value();
-//         rtx.was_received = false;
-//         rtx.timestamp = GetTxTimestamp(rtx.hash);
-//         recent_txs.push_back(rtx);
-//       }
-//     }
-
-//     // Check the outputs. If we recognize the recipient, add it.
-//     for (tx_outs_t::const_iterator j = tx->outputs().begin();
-//          j != tx->outputs().end();
-//          ++j) {
-//       const bytes_t& address = j->GetSigningAddress();
-//       if (IsAddressWatched(address)) {
-//         recent_tx_t rtx;
-//         rtx.hash = tx->hash();
-//         rtx.hash160 = address;
-//         rtx.value = j->value();
-//         rtx.was_received = true;
-//         rtx.timestamp = GetTxTimestamp(rtx.hash);
-//         recent_txs.push_back(rtx);
-//       }
-//     }
-//   }
-//   std::sort(recent_txs.begin(), recent_txs.end(), SortRecentTransactions);
-//   recent_txs_to_report_.clear();
-//   return true;
-// }
-
 bool Wallet::CreateTx(const tx_outs_t& recipients,
                       uint64_t fee,
                       bool should_sign,
@@ -389,7 +227,9 @@ bool Wallet::CreateTx(const tx_outs_t& recipients,
   }
   TxOut change_txo(0, GetNextUnusedChangeAddress());
 
-  std::auto_ptr<Node> signing_node(RestoreNode(credentials_, ext_prv_enc_));
+  std::auto_ptr<Node>
+    signing_node(EncryptingNodeFactory::RestoreNode(credentials_,
+                                                    ext_prv_enc_));
   GenerateAllSigningKeys(signing_node.get());
 
   Blockchain::address_set_t addresses;

@@ -40,7 +40,7 @@
 #include "crypto.h"
 #include "errors.h"
 #include "node.h"
-#include "node_factory.h"
+#include "encrypting_node_factory.h"
 #include "tx.h"
 #include "types.h"
 #include "wallet.h"
@@ -124,8 +124,9 @@ bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
   const bytes_t seed(unhexlify(args["seed_hex"].asString()));
 
   bytes_t ext_prv_enc;
-  if (Wallet::DeriveRootNode(credentials_, seed, ext_prv_enc)) {
-    std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+  if (EncryptingNodeFactory::DeriveRootNode(credentials_, seed, ext_prv_enc)) {
+    std::auto_ptr<Node>
+      node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
     SetError(result, ERROR_INVALID_PARAM, "Root node derivation failed");
@@ -136,8 +137,9 @@ bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
 bool API::HandleGenerateRootNode(const Json::Value& /*args*/,
                                  Json::Value& result) {
   bytes_t ext_prv_enc;
-  if (Wallet::GenerateRootNode(credentials_, ext_prv_enc)) {
-    std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+  if (EncryptingNodeFactory::GenerateRootNode(credentials_, ext_prv_enc)) {
+    std::auto_ptr<Node>
+      node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
     SetError(result, ERROR_INVALID_PARAM, "Root node generation failed");
@@ -150,8 +152,11 @@ bool API::HandleImportRootNode(const Json::Value& args,
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
-    if (Wallet::ImportRootNode(credentials_, ext_prv_b58, ext_prv_enc)) {
-      std::auto_ptr<Node> node(Wallet::RestoreNode(credentials_, ext_prv_enc));
+    if (EncryptingNodeFactory::ImportRootNode(credentials_,
+                                              ext_prv_b58,
+                                              ext_prv_enc)) {
+      std::auto_ptr<Node>
+        node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
       GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
     } else {
       SetError(result, ERROR_INVALID_PARAM, "Extended key failed validation");
@@ -172,13 +177,17 @@ bool API::HandleDeriveChildNode(const Json::Value& args,
   bytes_t ext_prv_enc;
   if (is_watch_only) {
     std::string ext_pub_b58;
-    if (Wallet::DeriveChildNode(master_node_.get(), path, ext_pub_b58)) {
-      node.reset(Wallet::RestoreNode(ext_pub_b58));
+    if (EncryptingNodeFactory::DeriveChildNode(master_node_.get(),
+                                               path,
+                                               ext_pub_b58)) {
+      node.reset(EncryptingNodeFactory::RestoreNode(ext_pub_b58));
     }
   } else {
-    if (Wallet::DeriveChildNode(credentials_, master_node_.get(), path,
-                                ext_prv_enc)) {
-      node.reset(Wallet::RestoreNode(credentials_, ext_prv_enc));
+    if (EncryptingNodeFactory::DeriveChildNode(credentials_,
+                                               master_node_.get(), path,
+                                               ext_prv_enc)) {
+      node.reset(EncryptingNodeFactory::RestoreNode(credentials_,
+                                                    ext_prv_enc));
     }
   }
   if (node.get()) {
@@ -195,9 +204,10 @@ void API::GenerateMasterNode() {
     return;
   }
   if (credentials_->isLocked()) {
-    master_node_.reset(Wallet::RestoreNode(ext_pub_b58_));
+    master_node_.reset(EncryptingNodeFactory::RestoreNode(ext_pub_b58_));
   } else {
-    master_node_.reset(Wallet::RestoreNode(credentials_, ext_prv_enc_));
+    master_node_.reset(EncryptingNodeFactory::RestoreNode(credentials_,
+                                                          ext_prv_enc_));
   }
 }
 
@@ -207,7 +217,7 @@ bool API::HandleDescribeNode(const Json::Value& args, Json::Value& result) {
     SetError(result, ERROR_MISSING_PARAM, "Missing ext_pub_b58 param");
     return true;
   }
-  std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
+  std::auto_ptr<Node> node(EncryptingNodeFactory::RestoreNode(ext_pub_b58));
   if (!node.get()) {
     SetError(result, ERROR_INVALID_PARAM, "ext_pub_b58 validation failed");
     return true;
@@ -224,7 +234,7 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
     SetError(result, ERROR_MISSING_PARAM, "Missing ext_pub_b58 param");
     return true;
   }
-  std::auto_ptr<Node> node(Wallet::RestoreNode(ext_pub_b58));
+  std::auto_ptr<Node> node(EncryptingNodeFactory::RestoreNode(ext_pub_b58));
   if (!node.get()) {
     SetError(result, ERROR_INVALID_PARAM, "ext_pub_b58 validation failed");
     return true;

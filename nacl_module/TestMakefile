@@ -85,9 +85,10 @@ SOURCES = \
   credentials_unittest.cc \
   crypto.cc \
   crypto_unittest.cc \
+  encrypting_node_factory.cc \
   node.cc \
-  node_unittest.cc \
   node_factory.cc \
+  node_unittest.cc \
   secp256k1.cc \
   tx.cc \
   tx_unittest.cc \
