@@ -463,6 +463,28 @@ TxOut::TxOut(uint64_t value, const bytes_t& script,
 }
 
 bytes_t TxOut::GetSigningAddress() const {
+  // http://www.reddit.com/r/Bitcoin/comments/1x93tf/some_irc_chatter_about_what_is_going_on_at_mtgox/cf99yac
+  //
+  // "There is a design flaw in the Bitcoin protocol where it's
+  // possible for a third party to take a valid transaction of yours
+  // and mutate it in a way which leaves it valid and functionally
+  // identical but with a different transaction ID. This greatly
+  // complicates writing correct wallet software, and it can be used
+  // abusively to invalidate long chains of unconfirmed transactions
+  // that depend on the non-mutant transaction (since transactions
+  // refer to each other by txid).
+  //
+  // "This issue arises from several sources, one of them being
+  // OpenSSL's willingness to accept and make sense of signatures with
+  // invalid encodings. A normal ECDSA signature encodes two large
+  // integers, the encoding isn't constant length— if there are
+  // leading zeros you are supposed to drop them.
+  //
+  // "It's easy to write software that assumes the signature will be a
+  // constant length and then leave extra leading zeros in them."
+  //
+  // TODO: handle this properly.
+
   if (script_.size() == 25 &&
       script_[0] == 0x76 && script_[1] == 0xa9 && script_[2] == 0x14 &&
       script_[23] == 0x88 && script_[24] == 0xac) {
