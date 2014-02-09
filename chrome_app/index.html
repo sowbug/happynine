@@ -93,7 +93,7 @@
 
             <div class="panel panel-default" ng-if="isWalletKeySet()">
               <div class="panel-heading">Recent Transactions</div>
-              <div class="panel-body">
+              <div class="panel-body scrollable-pane" id="recent-tx-panel-body">
                 <p id="no-transactions" ng-if="getRecentTransactions().length == 0">None.</p>
                 <table id="transaction-table" class="table table-striped" ng-if="getRecentTransactions().length != 0">
                   <thead>
@@ -151,11 +151,11 @@
           <div class="tab-pane fade" id="receive">
             <div class="panel panel-default">
               <div class="panel-heading">Receive Bitcoin</div>
-              <div class="panel-body" id="receive-panel-body">
+              <div class="panel-body scrollable-pane" id="receive-panel-body">
                 <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th>Receiving Address</th><th>Balance ({{unitLabel()}})</th>
+                      <th>Receiving Address</th><th>Balance ({{unitLabel()}})</th><th>Tx Count</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -164,6 +164,7 @@
                         <a class="addr-qr" data-toggle="modal" data-target="#address-detail-modal" ng-click="setAddress(addr)">{{addr}}</a>
                       </td>
                       <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
+                      <td>{{getAddressTxCount(addr)}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -340,7 +341,7 @@
 
                 <div class="panel panel-default">
                   <div class="panel-heading">Installed Accounts</div>
-                  <div class="panel-body">
+                  <div class="panel-body scrollable-pane">
                     <div ng-if="!getChildNodeCount()">
                       <p id="no-accounts">None.</p>
                       <ul>

@@ -99,6 +99,10 @@ class Wallet : public KeyProvider {
                 bool should_sign,
                 bytes_t& tx);
 
+  // To be called when we know that something changed in the
+  // blockchain.
+  void UpdateAddressBalancesAndTxCounts();
+
   void GetAddresses(Address::addresses_t& addresses);
 
  protected:

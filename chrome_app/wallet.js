@@ -236,16 +236,32 @@ function Wallet(electrum) {
     return this.nodes.length;
   };
 
+  this.getBlockHeader = function(height) {
+    return new Promise(function(resolve, reject) {
+      electrum.issueBlockGetHeader(height)
+        .then(function(response) {
+          this.handleBlockGetHeader(response)
+            .then(this.getHistory.bind(this))
+            .then(resolve);
+        }.bind(this));
+    }.bind(this));
+  };
+
   this.handleAddressGetHistory = function(txs) {
     return new Promise(function(resolve, reject) {
       postRPC('report-tx-statuses', { 'tx_statuses': txs })
         .then(function(response) {
           var tx_hashes = [];
+          var heights = [];
           for (var i in txs) {
             tx_hashes.push(txs[i].tx_hash);
+            heights.push(txs[i].height);
           }
-          Promise.all(tx_hashes.map(this.handleTransactionGet.bind(this)))
-            .then(resolve);
+          var promises = tx_hashes.map(this.handleTransactionGet.bind(this))
+            .concat(heights.map(this.getBlockHeader.bind(this)));
+          Promise.all(promises)
+            .then(resolve)
+            .catch(function(err) { console.log("whoops", err); });
         }.bind(this));
     }.bind(this));
   };
@@ -263,7 +279,7 @@ function Wallet(electrum) {
           postRPC('report-txs', { 'txs': [{ 'tx': response }] })
             .then(function(response) {
               this.getHistory()  // TODO: move this to caller so less waste
-                .then(this.getAddresses)
+                .then(this.getAddresses.bind(this))
                 .then(resolve);
             }.bind(this));
         }.bind(this));
@@ -305,6 +321,13 @@ function Wallet(electrum) {
   this.getAddressBalance = function(addr_b58) {
     if (this.isWatching(addr_b58)) {
       return this.watchedAddresses[addr_b58].value;
+    }
+    return 0;
+  }
+
+  this.getAddressTxCount = function(addr_b58) {
+    if (this.isWatching(addr_b58)) {
+      return this.watchedAddresses[addr_b58].tx_count;
     }
     return 0;
   }

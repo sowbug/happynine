@@ -81,7 +81,7 @@ TEST(WalletTest, HappyPath) {
 
   // Send to that address. Does the number of addresses in the wallet
   // increase?
-  w->FakeUpdateAddressBalance(ADDR, 12);
+  w->FakeUpdateAddressTxCount(ADDR, 12);
   EXPECT_EQ(4 + 4, w->public_address_count());
   EXPECT_EQ(4, w->change_address_count());
 

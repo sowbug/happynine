@@ -220,7 +220,7 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_EQ((4 * 2) + 4, response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58,
                                          expected_balance));
 
@@ -245,7 +245,7 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_EQ((2 * 4) + (2 * 4), response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
                                          expected_balance));
 
@@ -269,7 +269,7 @@ TEST(ApiTest, HappyPath) {
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_EQ((2 * 4) + (2 * 4), response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58,
                                          expected_balance));
 
@@ -460,12 +460,11 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   // + 4 because using addresses generates another block
-  //  EXPECT_EQ(4 + 4, public_addresses.size());
   request = Json::Value();
   response = Json::Value();
   EXPECT_TRUE(api->HandleGetAddresses(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  EXPECT_EQ(4 + 4, response["addresses"].size());
+  EXPECT_EQ((2 * 4) + 4, response["addresses"].size());
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_199T_B58,
                                          29000));
 
@@ -474,8 +473,6 @@ TEST(ApiTest, ReportActualTransactions) {
   request["txs"][0]["tx"] = TX_100D_HEX;
   EXPECT_TRUE(api->HandleReportTxs(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
-  // + 4 because using addresses generates another block
-  //  EXPECT_EQ(2 + 4, response["address_statuses"].size());
 
   request = Json::Value();
   response = Json::Value();

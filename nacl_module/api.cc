@@ -259,6 +259,7 @@ void API::PopulateAddress(const Address* address, Json::Value& root) {
   root["child_num"] = address->child_num();
   root["is_public"] = address->is_public();
   root["value"] = (Json::Value::UInt64)address->balance();
+  root["tx_count"] = (Json::Value::UInt64)address->tx_count();
 }
 
 void API::PopulateHistoryItem(const HistoryItem* item, Json::Value& root) {
@@ -348,6 +349,7 @@ bool API::HandleReportTxs(const Json::Value& args, Json::Value& /*result*/) {
   for (Json::Value::iterator i = txs.begin(); i != txs.end(); ++i) {
     blockchain_->AddTransaction(unhexlify((*i)["tx"].asString()));
   }
+  wallet_->UpdateAddressBalancesAndTxCounts();
   return true;
 }
 

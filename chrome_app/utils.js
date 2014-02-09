@@ -22,6 +22,8 @@
 
 'use strict';
 
+var SHOULD_LOG = chrome.runtime.getManifest().version.substr(-4) == ".0.1";
+
 function logRpcError(error) {
   console.log("rpc error:", error.code, error.message);
 }

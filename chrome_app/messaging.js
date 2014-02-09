@@ -25,8 +25,6 @@
 var callbacks = {};
 var callbackId = 1;
 
-var shouldLog = true;
-
 var postRPC = function(method, params) {
   return new Promise(function(resolve, reject) {
     var rpc = { 'jsonrpc': '2.0',
@@ -36,7 +34,7 @@ var postRPC = function(method, params) {
               };
     callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
     common.naclModule.postMessage(JSON.stringify(rpc));
-    if (shouldLog)
+    if (SHOULD_LOG)
       console.log(rpc);
   });
 };
@@ -73,7 +71,7 @@ var checkForNotifications = function(response) {
 
 function handleMessage(message) {
   var o = JSON.parse(message.data);
-  if (shouldLog)
+  if (SHOULD_LOG)
     console.log(o);
   var id = o.id;
   if (id) {

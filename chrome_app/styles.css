@@ -25,7 +25,15 @@ html, body {
   margin-bottom: 20px;
 }
 
+#recent-tx-panel-body {
+  /* TODO: when warning goes away, up to 458 */
+  max-height: 398px;
+}
+
 #receive-panel-body {
+}
+
+.scrollable-pane {
   overflow-y: auto;
   max-height: 458px;
 }
