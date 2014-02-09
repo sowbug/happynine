@@ -104,6 +104,7 @@ class Wallet : public KeyProvider {
   void UpdateAddressBalancesAndTxCounts();
 
   void GetAddresses(Address::addresses_t& addresses);
+  void GetHistory(history_t& history);
 
  protected:
   void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);

@@ -299,27 +299,8 @@ bool API::HandleGetHistory(const Json::Value& /*args*/,
     return true;
   }
 
-  Address::addresses_t addresses;
-  wallet_->GetAddresses(addresses);
-
-  Blockchain::address_set_t address_set;
-  for (Address::addresses_t::const_iterator i = addresses.begin();
-       i != addresses.end();
-       ++i) {
-    address_set.insert((*i)->hash160());
-  }
-
-  std::vector<const Transaction*> transactions;
-  blockchain_->GetTransactionsForAddresses(address_set, transactions);
-
   history_t history;
-  for (std::vector<const Transaction*>::const_iterator i =
-         transactions.begin();
-       i != transactions.end();
-       ++i) {
-    HistoryItem item = blockchain_->TransactionToHistoryItem(address_set, *i);
-    history.push_back(item);
-  }
+  wallet_->GetHistory(history);
 
   result["history"] = Json::Value();
   for (history_t::const_iterator i = history.begin();

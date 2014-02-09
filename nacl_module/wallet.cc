@@ -456,3 +456,35 @@ void Wallet::UpdateAddressBalancesAndTxCounts() {
     }
   }
 }
+
+static bool SortHistory(const HistoryItem& a, const HistoryItem& b) {
+  if (a.timestamp() != b.timestamp()) {
+    return a.timestamp() > b.timestamp();
+  }
+  return a.hash160() < b.hash160();
+}
+
+void Wallet::GetHistory(history_t& history) {
+  Address::addresses_t addresses;
+  GetAddresses(addresses);
+
+  Blockchain::address_set_t address_set;
+  for (Address::addresses_t::const_iterator i = addresses.begin();
+       i != addresses.end();
+       ++i) {
+    address_set.insert((*i)->hash160());
+  }
+
+  std::vector<const Transaction*> transactions;
+  blockchain_->GetTransactionsForAddresses(address_set, transactions);
+
+  for (std::vector<const Transaction*>::const_iterator i =
+         transactions.begin();
+       i != transactions.end();
+       ++i) {
+    HistoryItem item = blockchain_->TransactionToHistoryItem(address_set, *i);
+    history.push_back(item);
+  }
+  std::sort(history.begin(), history.end(), SortHistory);
+
+}

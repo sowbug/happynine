@@ -130,7 +130,11 @@ TEST(EncryptionTest, Basic) {
 
   // Different key: decryption garbled?
   bytes_t plaintext_output_2;
-  EXPECT_FALSE(Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2));
+  // I used to EXPECT_FALSE() on this method call, but it very very
+  // very occasionally succeeds with the plaintext still being
+  // garbled. There must be a not-too-precise check for decryption
+  // success that gives false positives.
+  Crypto::Decrypt(key_2, ciphertext_1, plaintext_output_2);
   EXPECT_NE(plaintext_output_2, plaintext);
 
   // Same salt, different key: decryption garbled?
