@@ -33,8 +33,8 @@
 #include "types.h"
 
 class Credentials;
+class HistoryItem;
 class Node;
-struct HistoryItem;
 
 class Address {
  public:

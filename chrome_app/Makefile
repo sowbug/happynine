@@ -1,8 +1,11 @@
 ZIPBASE ?= $(PWD)/../out/zip
 IMAGES := img
 
+TOOLCHAIN ?= pnacl
+CONFIG ?= Release
+
 all: force_look
-	mkdir -p $(ZIPBASE)/newlib/Release
+	mkdir -p $(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
 	cp -R *.html *.js *.json *.css $(ZIPBASE)
 	mkdir -p $(ZIPBASE)
 	cp -R js $(ZIPBASE)

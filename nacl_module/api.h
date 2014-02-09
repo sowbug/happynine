@@ -36,9 +36,9 @@ namespace Json {
 class Address;
 class Blockchain;
 class Credentials;
+class HistoryItem;
 class Node;
 class Wallet;
-struct HistoryItem;
 
 class API {
  public:

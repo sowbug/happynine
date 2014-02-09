@@ -1,4 +1,4 @@
-VALID_TOOLCHAINS := newlib # glibc pnacl
+VALID_TOOLCHAINS := pnacl
 
 NACL_SDK_ROOT ?= $(abspath $(CURDIR)/../..)i
 include $(NACL_SDK_ROOT)/tools/common.mk
@@ -35,10 +35,10 @@ endif
 $(eval $(call NMF_RULE,$(TARGET),))
 
 all: force_look
-	cp $(OUTBASE)/newlib/Release/$(TARGET).nmf $(ZIPBASE)/newlib/Release
-	cp $(OUTBASE)/newlib/Release/$(TARGET)_arm.nexe $(ZIPBASE)/newlib/Release
-	cp $(OUTBASE)/newlib/Release/$(TARGET)_x86_32.nexe $(ZIPBASE)/newlib/Release
-	cp $(OUTBASE)/newlib/Release/$(TARGET)_x86_64.nexe $(ZIPBASE)/newlib/Release
+	cp $(OUTBASE)/$(TOOLCHAIN)/$(CONFIG)/$(TARGET).nmf \
+		$(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
+	cp $(OUTBASE)/$(TOOLCHAIN)/$(CONFIG)/$(TARGET)_*.*exe \
+		$(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
 
 force_look:
 	true
