@@ -103,7 +103,7 @@
                   </thead>
                   <tbody>
                     <tr data-ng-repeat="tx in getRecentTransactions() track by $index">
-                      <td>{{friendlyTimestamp(tx.timestamp)}}</td><td>{{tx.addr_b58}}</td><td>{{satoshiToUnit(tx.value)}}</td>
+                      <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td>{{tx.addr_b58}}</td><td>{{satoshiToUnit(tx.value)}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -181,7 +181,7 @@
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr}} <span class="caret"></span></a>
                           <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="https://blockchain.info/address/{{addr}}" target="_blank" >Visit Blockchain.info for this address</a></li>
+                            <li><a href="https://blockchain.info/address/{{addr}}" target="_blank">Visit Blockchain.info for this address</a></li>
                             <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
                             <li><a href="#">Generate receiving QR code</a></li>
                           </ul>
