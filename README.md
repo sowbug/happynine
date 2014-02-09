@@ -77,5 +77,6 @@ Acknowledgments
 * [Richard Kiss](http://blog.richardkiss.com/?p=313), whose blog post walked through what a BIP 0032 wallet really is.
 * [Eric Lombrozo](https://github.com/CodeShark), some of whose C++ BIP 0032 HD wallet code appears here.
 * [JP Richardson](https://github.com/jprichardson)'s invaluable [blog post](http://procbits.com/2013/08/27/generating-a-bitcoin-address-with-javascript) that went into interactive detail about compressed keys/addresses.
+* [Joseph Gleason](https://github.com/fireduck64) for a safe-to-abuse Electrum server, real-world testing facilities, and general moral support.
 * Various folks who have posted on [bitcointalk](https://bitcointalk.org/) about BIP 0032.
 * Portions adapted from [the reference Bitcoin client](https://github.com/bitcoin/bitcoin).
