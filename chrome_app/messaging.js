@@ -34,61 +34,28 @@ var postRPC = function(method, params) {
               };
     callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
     common.naclModule.postMessage(JSON.stringify(rpc));
-    if (SHOULD_LOG)
-      console.log(rpc);
+    logInfo(rpc);
   });
-};
-
-var checkForNotifications = function(response) {
-  if (!response) {
-    return;
-  }
-  if (response.tx_requests) {
-    console.log("noticed tx_requests");
-    var tx_requests = response.tx_requests;
-    for (var i in tx_requests) {
-      console.log(tx_requests[i]);
-    }
-    $.event.trigger({
-      'type': 'tx_requests',
-      'message': tx_requests,
-      time: new Date(),
-    });
-  }
-  if (response.recent_txs) {
-    console.log("noticed recent_txs");
-    var items = response.recent_txs;
-    for (var i in items) {
-      console.log(items[i]);
-    }
-    $.event.trigger({
-      'type': 'recent_txs',
-      'message': items,
-      time: new Date(),
-    });
-  }
 };
 
 function handleMessage(message) {
   var o = JSON.parse(message.data);
-  if (SHOULD_LOG)
-    console.log(o);
+  logDebug(o);
   var id = o.id;
   if (id) {
     if (callbacks[id]) {
       if (o.error) {
-        logRpcError(o.error);
+        logFatal(o.error);
         callbacks[id].reject(o.error);
       } else {
         callbacks[id].resolve(o.result);
-        checkForNotifications(o.result);
       }
       delete callbacks[id];
     } else {
-      console.log("strange: unrecognized id", o);
+      logWarning("strange: unrecognized id", o);
     }
   } else {
-    console.log("posting", o);
+    logDebug("posting", o);
     $.event.trigger({
       'type': o.method,
       'message': o.result,

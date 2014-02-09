@@ -222,7 +222,7 @@ function Wallet(electrum) {
       postRPC('create-tx', params)
         .then(function(response) {
           if (response.tx) {
-            console.log("got", response.tx);
+            logImportant("got", response.tx);
             electrum.issueTransactionBroadcast(response.tx)
               .then(resolve);
           } else {
@@ -259,16 +259,17 @@ function Wallet(electrum) {
           }
           var promises = tx_hashes.map(this.handleTransactionGet.bind(this))
             .concat(heights.map(this.getBlockHeader.bind(this)));
-          Promise.all(promises)
-            .then(resolve)
-            .catch(function(err) { console.log("whoops", err); });
+          var catchError = function(err) {
+            logFatal("handleAddressGetHistory", err);
+          };
+          Promise.all(promises).then(resolve).catch(catchError.bind(this));
         }.bind(this));
     }.bind(this));
   };
 
   this.handleAddressSubscribe = function(response) {
     return new Promise(function(resolve, reject) {
-      console.log("Subscribed to address", response);
+      logInfo("Subscribed to address", response);
     }.bind(this));
   };
 
@@ -362,7 +363,7 @@ function Wallet(electrum) {
   };
 
   this.handleBlockGetHeader = function(h) {
-    console.log("new block", h);
+    logInfo("new block", h);
     return new Promise(function(resolve, reject) {
       var params = { 'timestamp': h.timestamp,
                      'block_height': h.block_height };
@@ -457,7 +458,7 @@ function Wallet(electrum) {
             .then(this.restoreInitialMasterNode.bind(this))
             .then(this.restoreInitialChildNode.bind(this))
             .then(resolve)
-            .catch(function(err) { console.log(err) });
+            .catch(function(err) { logFatal(err); });
         } else {
           this.init();
           resolve();

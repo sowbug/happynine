@@ -131,7 +131,7 @@ function Electrum($http) {
         delete this.callbacks[id];
         this.pendingRpcCount--;
       } else {
-        console.log("notification from electrum", o);
+        logInfo("notification from electrum", o);
         var ALLOWED_METHODS = [
           'blockchain.address.subscribe',
           'blockchain.headers.subscribe',
@@ -161,7 +161,7 @@ function Electrum($http) {
       this.scheduleNextConnect();
     };
     var error = function(data, status, headers, config) {
-      console.log("error", status, data);
+      logFatal("Electrum error", status, data);
       this.scheduleNextConnect();
     }
 

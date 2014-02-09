@@ -24,10 +24,30 @@
 
 var SHOULD_LOG = chrome.runtime.getManifest().version.substr(-4) == ".0.1";
 
-function logRpcError(error) {
-  console.log("rpc error:", error.code, error.message);
+function logDebug() {
+  if (SHOULD_LOG) {
+    console.log.apply(console, arguments);
+  }
 }
 
-function delayedCallback(c) {
-  window.setTimeout(c, 0);
+function logInfo() {
+  if (SHOULD_LOG) {
+    console.log.apply(console, arguments);
+  }
+}
+
+function logWarning() {
+  console.log.apply(console, arguments);
+}
+
+function logFatal() {
+  console.log.apply(console, arguments);
+}
+
+function logImportant() {
+  console.log.apply(console, arguments);
+}
+
+function logRpcError(error) {
+  console.log("rpc error:", error.code, error.message);
 }

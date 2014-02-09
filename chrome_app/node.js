@@ -82,7 +82,7 @@ Node.fromGetNodeResponse = function(credentials,
                                     callback,
                                     response) {
   if (response.error) {
-    console.log("error", response.error.code, response.error.message);
+    logFatal("error", response.error.code, response.error.message);
     callback.call(this, undefined);
     return;
   }

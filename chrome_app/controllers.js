@@ -88,7 +88,7 @@ var walletAppController = function($scope,
       $scope.$apply();
       $scope.addPostLoadWatchers();
     }).catch(function(err) {
-      console.log("error", err);
+      logFatal("startLoading", err);
     });
   };
 
@@ -155,13 +155,17 @@ var walletAppController = function($scope,
   };
 
   $scope.importMasterKey = function() {
+    var success = function() {
+      $scope.w.importMasterKey = null;
+      $("#import-master-key-modal").modal('hide');
+      $scope.$apply();
+    };
+    var failure = function(err) {
+      logFatal("importMasterKey", err);
+    };
     $scope.wallet.importMasterKey($scope.w.importMasterKey)
-      .then(function() {
-        $scope.w.importMasterKey = null;
-        $("#import-master-key-modal").modal('hide');
-        $scope.$apply();
-      }.bind(this),
-            function() { console.log("nope"); }.bind(this));
+      .then(success.bind(this),
+            failure.bind(this));
   };
 
   $scope.removeMasterKey = function() {
@@ -223,11 +227,11 @@ var walletAppController = function($scope,
   $scope.setPassphrase = function() {
     // TODO: angularjs can probably do this check for us
     if (!$scope.w.passphraseNew || $scope.w.passphraseNew.length == 0) {
-      console.log("missing new passphrase");
+      logFatal("missing new passphrase");
       return;
     }
     if ($scope.w.passphraseNew != $scope.w.passphraseConfirm) {
-      console.log("new didn't match confirm:" + $scope.w.passphraseNew);
+      logInfo("new didn't match confirm:" + $scope.w.passphraseNew);
       return;
     }
 
@@ -365,7 +369,6 @@ var walletAppController = function($scope,
   };
 
   $scope.selectFirstChildNode = function() {
-    console.log("called");
     $scope.wallet.setActiveChildNodeByIndex(0);
   };
 
@@ -385,13 +388,10 @@ var walletAppController = function($scope,
       },
       function(entry) {
         var errorHandler = function(e) {
-          console.log(e);
+          logFatal(e);
         };
         entry.createWriter(function(writer) {
           writer.onerror = errorHandler;
-          writer.onwriteend = function(e) {
-            console.log('write complete');
-          };
           var message =
             "Happynine: BIP 0038 Master Key Export\r\n" +
             $scope.getCurrentMasterNodeFingerprint() + ": " +
@@ -417,8 +417,6 @@ var walletAppController = function($scope,
     var sendFee = $scope.unitToSatoshi($scope.w.sendFee);
 
     if (sendValue > 0 && sendFee > 0 && sendTo.length > 25) {
-      console.log("send", sendTo, sendValue, $scope.unitLabel(),
-                  "for", sendFee);
       $scope.wallet.sendFunds(sendTo, sendValue, sendFee)
         .then(function() {
           $scope.$apply();
