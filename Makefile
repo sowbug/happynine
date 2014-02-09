@@ -8,7 +8,7 @@ DIRS := chrome_app nacl_module
 OUTBASE ?= $(PWD)/out
 ZIPBASE := $(OUTBASE)/zip
 APP_FILES := chrome_app/index.html
-ZIP := happynine-$(MAJOR)-$(MINOR)-$(BUILD)-$(PATCH).zip
+ZIP := happynine-$(MAJOR).$(MINOR).$(BUILD).$(PATCH).zip
 
 all: $(ZIP)
 
