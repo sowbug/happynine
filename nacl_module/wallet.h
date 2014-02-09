@@ -98,6 +98,9 @@ class Wallet : public KeyProvider {
 
   void GetAddresses(Address::addresses_t& addresses);
 
+ protected:
+  void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
+
  private:
   bytes_t GetNextUnusedChangeAddress();
 
@@ -115,7 +118,6 @@ class Wallet : public KeyProvider {
                     uint32_t child_num,
                     bool is_public);
   bool IsAddressWatched(const bytes_t& hash160);
-  void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
 
   void GenerateAllSigningKeys(Node* signing_node);
 

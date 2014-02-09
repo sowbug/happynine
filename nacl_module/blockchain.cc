@@ -137,6 +137,13 @@ void Blockchain::CalculateTransactionCounts() {
   }
 }
 
+void Blockchain::UpdateDerivedInformation() {
+  MarkSpentTxos();
+  CalculateUnspentTxos();
+  CalculateBalances();
+  CalculateTransactionCounts();
+}
+
 void Blockchain::AddTransaction(const tx_t& transaction) {
   std::istringstream is;
   const char* p = reinterpret_cast<const char*>(&transaction[0]);
@@ -144,10 +151,7 @@ void Blockchain::AddTransaction(const tx_t& transaction) {
   Transaction* tx = new Transaction(is);
   transactions_[tx->hash()] = tx;
 
-  MarkSpentTxos();
-  CalculateUnspentTxos();
-  CalculateBalances();
-  CalculateTransactionCounts();
+  UpdateDerivedInformation();
 }
 
 void Blockchain::ConfirmTransaction(const tx_hash_t& tx_hash,
@@ -180,15 +184,24 @@ uint64_t Blockchain::GetTransactionTimestamp(const tx_hash_t& tx_hash) {
 }
 
 uint64_t Blockchain::GetBlockTimestamp(uint64_t height) {
-  return block_timestamps_[height];
+  if (block_timestamps_.count(height) != 0) {
+    return block_timestamps_[height];
+  }
+  return 0;
 }
 
 uint64_t Blockchain::GetAddressBalance(const Blockchain::address_t& address) {
-  return balances_[address];
+  if (balances_.count(address) != 0) {
+    return balances_[address];
+  }
+  return 0;
 }
 
 uint64_t Blockchain::GetAddressTxCount(const Blockchain::address_t& address) {
-  return tx_counts_[address];
+  if (tx_counts_.count(address) != 0) {
+    return tx_counts_[address];
+  }
+  return 0;
 }
 
 void Blockchain::

@@ -329,9 +329,9 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   Json::Value response;
 
   // Restore wallet
-  request["check"] = "c1c89ecb018a907c59926f0ff258dfe05984ee9d9778c9d64569d4b14143f97559ccf015fbc2437aceab2515af84f1ed1a914cdf8e5e42468a789de9876ee3fcd774160ad0318a0b06e47bf2ba92b993";
-  request["ekey_enc"] = "dbfcae7ee9756ae82dfef5375733dd29161c0368024ad17f2a60468cf0101904826147276f14cc7e9e4d6f3551d85ff286a04608c732f1188fbad3284a82fec850ac191ba57dc41325ce7229f1826e0c";
-  request["salt"] = "4ff991e1b756b4c34a11a435e0ca6a8da738001ad34c7df2327d237bffcb705e";
+  request["check"] = CREDENTIALS_CHECK;
+  request["ekey_enc"] = CREDENTIALS_EKEY_ENC;
+  request["salt"] = CREDENTIALS_SALT;
   EXPECT_TRUE(api->HandleSetCredentials(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
@@ -356,7 +356,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   request = Json::Value();
   response = Json::Value();
   request["ext_pub_b58"] = EXT_3442193E_PUB_B58;
-  request["ext_prv_enc"] = "728f52c0144d0d48ae888b01ba9392b84e79c617291263e2c39c9369f7b4f9b0c3d856d6934efaba17b76582570f0719d642532c3cc668b511dff38cd089f098c4a87e3ea8de334c5348322f18844cfc4d81650f7c3b3f2301d81ac06f87b9ef9e99b3f5e9d60ea59dffb16fb8fcd3af";
+  request["ext_prv_enc"] = EXT_3442193E_PRV_ENC;
   EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
   EXPECT_EQ("0x3442193e", response["fp"].asString());

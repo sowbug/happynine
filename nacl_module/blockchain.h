@@ -92,6 +92,7 @@ class Blockchain {
 
  private:
   Transaction* GetTransaction(const tx_hash_t& tx_hash);
+  void UpdateDerivedInformation();
   void MarkSpentTxos();
   void CalculateUnspentTxos();
   void CalculateBalances();
