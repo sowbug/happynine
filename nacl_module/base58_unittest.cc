@@ -20,25 +20,40 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined(__BASE58_H__)
-#define __BASE58_H__
+#include <fstream>
+#include <iostream>
 
-#include <string>
+#include "gtest/gtest.h"
+#include "jsoncpp/json/reader.h"
 
-#include "types.h"
+#include "base58.h"
 
-class Base58 {
- public:
-  static std::string toBase58(const bytes_t& bytes);
-  static std::string toBase58Check(const bytes_t& bytes);
-  static bytes_t fromBase58(const std::string s);
-  static bytes_t fromBase58Check(const std::string s);
-  static bytes_t fromAddress(const std::string addr_b58);
+TEST(Base58Test, ReferenceTests) {
+  std::ifstream json;
+  json.open("base58_encode_decode.json");
+  std::string json_string;
+  while (!json.eof()) {
+    std::string line;
+    std::getline(json, line);
+    json_string += line + "\n";
+  }
+  json.close();
 
-  static bytes_t toHash160(const bytes_t& public_key);
-  static std::string hash160toAddress(const bytes_t& hash160);
-  static std::string toAddress(const bytes_t& public_key);
-  static std::string toPrivateKey(const bytes_t& key);
-};
+  Json::Value obj;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(json_string, obj);
+  if (!parsingSuccessful) {
+    std::cerr << reader.getFormattedErrorMessages();
+    return;
+  }
 
-#endif  // #if !defined(__BASE58_H__)
+  for (Json::Value::iterator i = obj.begin();
+       i != obj.end();
+       ++i) {
+    Json::Value& pair = *i;
+    EXPECT_EQ(unhexlify(pair[0].asString()),
+              Base58::fromBase58(pair[1].asString()));
+    EXPECT_EQ(pair[1].asString(),
+              Base58::toBase58(unhexlify(pair[0].asString())));
+  }
+}

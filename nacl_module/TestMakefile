@@ -79,6 +79,7 @@ SOURCES = \
   api.cc \
   api_unittest.cc \
   base58.cc \
+  base58_unittest.cc \
   blockchain.cc \
   blockchain_unittest.cc \
   credentials.cc \

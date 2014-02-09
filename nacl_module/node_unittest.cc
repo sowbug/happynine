@@ -25,9 +25,10 @@
 #include <memory>
 #include <string>
 
-#include "base58.h"
 #include "gtest/gtest.h"
 #include "jsoncpp/json/reader.h"
+
+#include "base58.h"
 #include "node.h"
 #include "node_factory.h"
 #include "types.h"
