@@ -172,7 +172,7 @@
                 <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th>Change Address</th><th>Balance ({{unitLabel()}})</th>
+                      <th>Change Address</th><th>Balance ({{unitLabel()}})</th><th>Tx Count</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -188,6 +188,7 @@
                         </div>
                       </td>
                       <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
+                      <td>{{getAddressTxCount(addr)}}</td>
                     </tr>
                   </tbody>
                 </table>
