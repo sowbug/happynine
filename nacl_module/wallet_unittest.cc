@@ -45,6 +45,11 @@ public:
                                 uint64_t balance) {
     UpdateAddressBalance(hash160, balance);
   }
+
+  void FakeUpdateAddressTxCount(const bytes_t& hash160,
+                                uint64_t tx_count) {
+    UpdateAddressTxCount(hash160, tx_count);
+  }
 };
 
 TEST(WalletTest, HappyPath) {
@@ -83,11 +88,11 @@ TEST(WalletTest, HappyPath) {
   // ... and to one of the change addresses. Number should increase as well.
   const Blockchain::address_t
     CHANGE_ADDR(Base58::fromAddress("1GtD6J3DK1SrZu7bqMt1VKGNjhFap7t5Ku"));
-  w->FakeUpdateAddressBalance(CHANGE_ADDR, 12);
+  w->FakeUpdateAddressTxCount(CHANGE_ADDR, 12);
   EXPECT_EQ(4 + 4, w->public_address_count());
   EXPECT_EQ(4 + 4, w->change_address_count());
 
-  // More sending to addresses in the initial block, which shouldn't
+  // More twiddling addresses in the initial block, which shouldn't
   // cause additional new blocks to be allocated.
   std::vector<Blockchain::address_t> ADDRS;
   ADDRS.push_back(Base58::fromAddress("12CL4K2eVqj7hQTix7dM7CVHCkpP17Pry3"));
@@ -98,6 +103,12 @@ TEST(WalletTest, HappyPath) {
   ADDRS.push_back(Base58::fromAddress("1J4LVanjHMu3JkXbVrahNuQCTGCRRgfWWx"));
   ADDRS.push_back(Base58::fromAddress("1NZ97rKhSPy6NLud5Dp89E4yH5a2fUGeyC"));
   ADDRS.push_back(Base58::fromAddress("1NwEtFZ6Td7cpKaJtYoeryS6avP2TUkSMh"));
+  for (std::vector<Blockchain::address_t>::const_iterator i = ADDRS.begin();
+       i != ADDRS.end();
+       ++i) {
+    w->FakeUpdateAddressBalance(*i, 12);
+    w->FakeUpdateAddressTxCount(*i, 12);
+  }
   EXPECT_EQ(4 + 4, w->public_address_count());
   EXPECT_EQ(4 + 4, w->change_address_count());
 }

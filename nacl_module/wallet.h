@@ -44,6 +44,8 @@ class Address {
   bool is_public() const { return is_public_; }
   uint64_t balance() const { return balance_; }
   void set_balance(uint64_t balance) { balance_ = balance; }
+  uint64_t tx_count() const { return tx_count_; }
+  void set_tx_count(uint64_t tx_count) { tx_count_ = tx_count; }
 
   typedef std::vector<const Address*> addresses_t;
  private:
@@ -51,6 +53,7 @@ class Address {
   const uint32_t child_num_;
   const bool is_public_;
   uint64_t balance_;
+  uint64_t tx_count_;
 };
 
 class Wallet : public KeyProvider {
@@ -100,6 +103,7 @@ class Wallet : public KeyProvider {
 
  protected:
   void UpdateAddressBalance(const bytes_t& hash160, uint64_t balance);
+  void UpdateAddressTxCount(const bytes_t& hash160, uint64_t tx_count);
 
  private:
   bytes_t GetNextUnusedChangeAddress();

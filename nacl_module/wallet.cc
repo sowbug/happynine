@@ -172,12 +172,28 @@ bool Wallet::IsAddressWatched(const bytes_t& hash160) {
 
 void Wallet::UpdateAddressBalance(const bytes_t& hash160, uint64_t balance) {
   if (!IsAddressWatched(hash160)) {
-    std::cerr << "oops, update address of unwatched address" << std::endl;
+    std::cerr << "oops, update balance of unwatched address" << std::endl;
     return;
   }
   if (watched_addresses_[hash160]->balance() != balance) {
     Address* a = watched_addresses_[hash160];
     a->set_balance(balance);
+    if (a->is_public()) {
+      CheckPublicAddressGap(a->child_num());
+    } else {
+      CheckChangeAddressGap(a->child_num());
+    }
+  }
+}
+
+void Wallet::UpdateAddressTxCount(const bytes_t& hash160, uint64_t tx_count) {
+  if (!IsAddressWatched(hash160)) {
+    std::cerr << "oops, update tx_count of unwatched address" << std::endl;
+    return;
+  }
+  if (watched_addresses_[hash160]->tx_count() != tx_count) {
+    Address* a = watched_addresses_[hash160];
+    a->set_tx_count(tx_count);
     if (a->is_public()) {
       CheckPublicAddressGap(a->child_num());
     } else {
@@ -418,10 +434,12 @@ static bool SortAddresses(const Address* a, const Address* b) {
 
 void Wallet::GetAddresses(Address::addresses_t& addresses) {
   addresses.clear();
+
   for (hash_to_address_t::const_iterator i = watched_addresses_.begin();
        i != watched_addresses_.end();
        ++i) {
     i->second->set_balance(blockchain_->GetAddressBalance(i->first));
+    i->second->set_tx_count(blockchain_->GetAddressTxCount(i->first));
     addresses.push_back(i->second);
   }
   std::sort(addresses.begin(), addresses.end(), SortAddresses);
