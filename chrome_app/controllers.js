@@ -340,6 +340,17 @@ var walletAppController = function($scope,
     return $scope.wallet.getAddressTxCount(addr_b58);
   }
 
+  $scope.isAddressExpended = function(addr_b58) {
+    if ($scope.getAddressBalance(addr_b58) != 0) {
+      return false;
+    }
+    if ($scope.getAddressTxCount(addr_b58) == 0) {
+      return false;
+    }
+    return true;
+  };
+
+
   $scope.getCurrentMasterNode = function() {
     return $scope.wallet.activeMasterNode;
   };

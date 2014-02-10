@@ -9,7 +9,7 @@
     <link href="styles.css" rel="stylesheet">
   </head>
 
-  <body data-name="hd_wallet" data-tools="pnacl" data-configs="Release" data-path="{tc}/{config}" data-ng-controller="MainCtrl">
+  <body data-name="hd_wallet" data-tools="pnacl" data-configs="Release" data-path="{tc}/{config}" ng-controller="MainCtrl">
 
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
@@ -23,7 +23,7 @@
       </div>
 
       <div class="label label-danger navbar-fixed-top">
-        <strong>Warning!</strong> This app is <strong>EXPERIMENTAL</strong>. Use only bitcoin you wish to <strong>LOSE FOREVER</strong>.
+        <strong>Warning!</strong> This app is <strong>experimental</strong>. Use only bitcoin you wish to <strong>LOSE FOREVER</strong>.
       </div>
 
       <div class="navbar-collapse collapse">
@@ -100,7 +100,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="tx in getRecentTransactions() track by $index">
+                    <tr ng-repeat="tx in getRecentTransactions() track by $index">
                       <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td>{{tx.addr_b58}}</td><td>{{satoshiToUnit(tx.value)}}</td>
                     </tr>
                   </tbody>
@@ -150,6 +150,11 @@
             <div class="panel panel-default">
               <div class="panel-heading">Receive Bitcoin</div>
               <div class="panel-body scrollable-pane" id="receive-panel-body">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" ng-model="w.showExpended"> Show expended addresses
+                  </label>
+                </div>
                 <table class="table table-striped">
                   <thead>
                     <tr>
@@ -157,7 +162,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getPublicAddresses() track by $index">
+                    <tr ng-repeat="addr in getPublicAddresses() track by $index" ng-if="w.showExpended || !isAddressExpended(addr)">
                       <td>
                         <a class="addr-qr" data-toggle="modal" data-target="#address-detail-modal" ng-click="setAddress(addr)">{{addr}}</a>
                       </td>
@@ -174,7 +179,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr data-ng-repeat="addr in getChangeAddresses() track by $index">
+                    <tr ng-repeat="addr in getChangeAddresses() track by $index" ng-if="w.showExpended || !isAddressExpended(addr)">
                       <td>
                         <div class="dropdown">
                           <a class="dropdown-toggle" data-toggle="dropdown">{{addr}} <span class="caret"></span></a>
@@ -357,7 +362,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr data-ng-repeat="node in getChildNodes() track by $index">
+                        <tr ng-repeat="node in getChildNodes() track by $index">
                           <td>
                             {{node.parentFingerprint}}
                           </td>
