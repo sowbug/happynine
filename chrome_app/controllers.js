@@ -39,6 +39,7 @@ function AppController($scope,
   $scope.w = {};
   $scope.w.showPrivateKey = false;
   $scope.w.selectedAddress = undefined;
+  $scope.w.enableLogging = SHOULD_LOG;  // First time through, pick it up
 
   if (chrome && chrome.runtime) {
     var manifest = chrome.runtime.getManifest();
@@ -146,6 +147,12 @@ function AppController($scope,
         }
       }
     });
+
+  $scope.$watch('w.enableLogging', function(newVal, oldVal) {
+    if (newVal !== oldVal) {
+      SHOULD_LOG = newVal;
+    }
+  });
 
   $scope.newMasterKey = function() {
     $scope.wallet.addRandomMasterKey()
