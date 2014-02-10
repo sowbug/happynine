@@ -53,12 +53,12 @@ class API {
 
   bool HandleUnlock(const Json::Value& args, Json::Value& result);
 
-  // Root Nodes
-  bool HandleDeriveRootNode(const Json::Value& args, Json::Value& result);
+  // Master Nodes
+  bool HandleDeriveMasterNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleGenerateRootNode(const Json::Value& args, Json::Value& result);
+  bool HandleGenerateMasterNode(const Json::Value& args, Json::Value& result);
 
-  bool HandleImportRootNode(const Json::Value& args, Json::Value& result);
+  bool HandleImportMasterNode(const Json::Value& args, Json::Value& result);
 
   // Child Nodes
   bool HandleDeriveChildNode(const Json::Value& args, Json::Value& result);
@@ -95,8 +95,8 @@ class API {
   bool DidResponseSucceed(const Json::Value& obj);
 
  private:
-  void PopulateAddress(const Address* address, Json::Value& root);
-  void PopulateHistoryItem(const HistoryItem* item, Json::Value& root);
+  void PopulateAddress(const Address* address, Json::Value& value);
+  void PopulateHistoryItem(const HistoryItem* item, Json::Value& value);
 
   void PopulateDictionaryFromNode(Json::Value& dict, Node* node);
   void GenerateNodeResponse(Json::Value& dict, const Node* node,

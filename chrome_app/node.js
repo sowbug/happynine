@@ -22,7 +22,7 @@
 
 'use strict';
 
-// A Node is a node in a BIP0032 tree. If it's a root node, its only
+// A Node is a node in a BIP0032 tree. If it's a master node, its only
 // power is to mint child nodes. Otherwise it generates either child
 // nodes or addresses.
 function Node() {

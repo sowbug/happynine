@@ -131,21 +131,21 @@ TEST(ApiTest, HappyPath) {
   request = Json::Value();
   response = Json::Value();
   request["seed_hex"] = "baddecaf99887766554433221100";
-  EXPECT_TRUE(api->HandleDeriveRootNode(request, response));
+  EXPECT_TRUE(api->HandleDeriveMasterNode(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   const std::string ext_pub_b58(response["ext_pub_b58"].asString());
   const std::string ext_prv_enc(response["ext_prv_enc"].asString());
   EXPECT_EQ("0x8bb9cbc0", response["fp"].asString());
 
-  // Generate a root node and make sure the response changed
+  // Generate a master node and make sure the response changed
   request = Json::Value();
   response = Json::Value();
-  EXPECT_TRUE(api->HandleGenerateRootNode(request, response));
+  EXPECT_TRUE(api->HandleGenerateMasterNode(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
   EXPECT_NE(ext_pub_b58, response["ext_pub_b58"].asString());
 
-  // Set back to the imported root node
+  // Set back to the imported master node
   request = Json::Value();
   response = Json::Value();
   request["ext_pub_b58"] = ext_pub_b58;
@@ -299,7 +299,7 @@ TEST(ApiTest, BadExtPrvB58) {
   response = Json::Value();
   request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
     "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
-  EXPECT_TRUE(api->HandleImportRootNode(request, response));
+  EXPECT_TRUE(api->HandleImportMasterNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 }
 
@@ -317,7 +317,7 @@ TEST(ApiTest, BadSeedWhenDeriving) {
   // Derive with no arguments
   request = Json::Value();
   response = Json::Value();
-  EXPECT_TRUE(api->HandleDeriveRootNode(request, response));
+  EXPECT_TRUE(api->HandleDeriveMasterNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 }
 
@@ -335,14 +335,14 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api->HandleSetCredentials(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
-  // Restore root node with just public. This should always fail.
+  // Restore master node with just public. This should always fail.
   request = Json::Value();
   response = Json::Value();
   request["ext_pub_b58"] = EXT_3442193E_PUB_B58;
   EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 
-  // Restore root node with just extended private. This should fail
+  // Restore master node with just extended private. This should fail
   // with a locked wallet.
   request = Json::Value();
   response = Json::Value();
@@ -350,7 +350,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 
-  // Restore root node with both public/private. This should succeed,
+  // Restore master node with both public/private. This should succeed,
   // though it will be impossible to derive children while the wallet
   // is locked.
   request = Json::Value();
@@ -380,7 +380,7 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   // Confirm that the wallet correctly distinguished between restored
-  // root and child by deriving a different child.
+  // master and child by deriving a different child.
   request = Json::Value();
   response = Json::Value();
   request["path"] = "m/0'/1";
@@ -407,7 +407,7 @@ TEST(ApiTest, ReportActualTransactions) {
   request = Json::Value();
   response = Json::Value();
   request["seed_hex"] = "baddecaf99887766554433221100";
-  EXPECT_TRUE(api->HandleDeriveRootNode(request, response));
+  EXPECT_TRUE(api->HandleDeriveMasterNode(request, response));
   EXPECT_TRUE(api->DidResponseSucceed(response));
 
   const std::string ext_pub_b58(response["ext_pub_b58"].asString());

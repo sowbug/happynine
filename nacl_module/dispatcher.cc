@@ -50,16 +50,16 @@ public:
     if (!var_message.is_string())
       return;
     std::string message = var_message.AsString();
-    Json::Value root;
+    Json::Value value;
     Json::Reader reader;
-    bool parsingSuccessful = reader.parse(message, root);
+    bool parsingSuccessful = reader.parse(message, value);
     if (!parsingSuccessful) {
       //                 << reader.getFormattedErrorMessages();
       return;
     }
-    const std::string method = root.get("method",
-                                        "[missing method]").asString();
-    const Json::Value params = root.get("params", "{}");
+    const std::string method = value.get("method",
+                                         "[missing method]").asString();
+    const Json::Value params = value.get("params", "{}");
     Json::Value result;
     bool handled = false;
 
@@ -75,14 +75,14 @@ public:
     if (method == "unlock") {
       handled = api_->HandleUnlock(params, result);
     }
-    if (method == "derive-root-node") {
-      handled = api_->HandleDeriveRootNode(params, result);
+    if (method == "derive-master-node") {
+      handled = api_->HandleDeriveMasterNode(params, result);
     }
-    if (method == "generate-root-node") {
-      handled = api_->HandleGenerateRootNode(params, result);
+    if (method == "generate-master-node") {
+      handled = api_->HandleGenerateMasterNode(params, result);
     }
-    if (method == "import-root-node") {
-      handled = api_->HandleImportRootNode(params, result);
+    if (method == "import-master-node") {
+      handled = api_->HandleImportMasterNode(params, result);
     }
     if (method == "derive-child-node") {
       handled = api_->HandleDeriveChildNode(params, result);
@@ -119,7 +119,7 @@ public:
       result["error"]["message"] = "Unrecognized method: " + method;
     }
     Json::Value response;
-    response["id"] = root["id"];
+    response["id"] = value["id"];
     response["jsonrpc"] = "2.0";
     response["result"] = result;
     if (result.isMember("error")) {

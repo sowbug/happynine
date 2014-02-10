@@ -39,7 +39,7 @@
 TEST(TxTest, BasicTransaction) {
   // Using parts of BIP 0032 Test Vector 1.
   //
-  // - Root master key m is fingerprint 3442193e
+  // - Master key m is fingerprint 3442193e
   // - Sending account m/0' is fingerprint 5c1bd648
   // - unspent txo was sent to m/0'/0/0
   //   - L3dzheSvHWc2scJdiikdZmYdFzPcvZMAnT5g62ikVWZdBewoWpL1

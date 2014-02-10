@@ -33,7 +33,7 @@ function Wallet(electrum) {
   };
 
   this.init = function() {
-    this.rootNodes = [];
+    this.masterNodes = [];
     this.nodes = [];
     this.initAddresses();
   };
@@ -46,8 +46,8 @@ function Wallet(electrum) {
   this.toStorableObject = function() {
     var o = {};
     o.rnodes = [];
-    for (var i in this.rootNodes) {
-      o.rnodes.push(this.rootNodes[i].toStorableObject());
+    for (var i in this.masterNodes) {
+      o.rnodes.push(this.masterNodes[i].toStorableObject());
     }
     o.nodes = [];
     for (var i in this.nodes) {
@@ -83,7 +83,7 @@ function Wallet(electrum) {
             }
             // TODO(miket): don't insert duplicates
             if (dnode.isMaster()) {
-              this.rootNodes.push(dnode);
+              this.masterNodes.push(dnode);
             } else {
               this.nodes.push(dnode);
             }
@@ -123,7 +123,7 @@ function Wallet(electrum) {
       var newNodes = [];
       var oldNodes;
       if (node.isMaster()) {
-        oldNodes = this.rootNodes;
+        oldNodes = this.masterNodes;
       } else {
         oldNodes = this.nodes;
       }
@@ -136,7 +136,7 @@ function Wallet(electrum) {
         }
       }
       if (node.childNum == 0) {
-        this.rootNodes = newNodes;
+        this.masterNodes = newNodes;
       } else {
         this.nodes = newNodes;
       }
@@ -150,7 +150,7 @@ function Wallet(electrum) {
   };
 
   this.isKeySet = function() {
-    return this.rootNodes.length > 0;
+    return this.masterNodes.length > 0;
   };
 
   this.getChildNodes = function() {
@@ -169,7 +169,7 @@ function Wallet(electrum) {
 
   this.addRandomMasterKey = function() {
     return new Promise(function(resolve, reject) {
-      postRPC('generate-root-node', {})
+      postRPC('generate-master-node', {})
         .then(function(response) {
           var node = Node.fromStorableObject(response);
           this.describeNode(node).then(resolve);
@@ -182,7 +182,7 @@ function Wallet(electrum) {
       var params = {
         'ext_prv_b58': ext_prv_b58
       };
-      postRPC('import-root-node', params)
+      postRPC('import-master-node', params)
         .then(function(response) {
           if (response.fp) {
             var node = Node.fromStorableObject(response);
@@ -195,16 +195,16 @@ function Wallet(electrum) {
   };
 
   this.removeMasterKey = function() {
-    this.rootNodes = [];
+    this.masterNodes = [];
   };
 
   this.retrieveMasterPrivateKey = function() {
     return new Promise(function(resolve, reject) {
-      if (this.rootNodes.length == 0) {
-        reject("missing root node");
+      if (this.masterNodes.length == 0) {
+        reject("missing master node");
         return;
       }
-      var node = this.rootNodes[0];
+      var node = this.masterNodes[0];
       var params = {
         'ext_prv_enc': node.extendedPrivateEncrypted,
       };
@@ -424,8 +424,8 @@ function Wallet(electrum) {
   this.setActiveMasterNodeByIndex = function(index) {
     return new Promise(function(resolve, reject) {
       var node;
-      if (index < this.rootNodes.length) {
-        node = this.rootNodes[index];
+      if (index < this.masterNodes.length) {
+        node = this.masterNodes[index];
       }
       this.setActiveMasterNode(node).then(resolve);
     }.bind(this));

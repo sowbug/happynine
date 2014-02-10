@@ -30,17 +30,17 @@
 #include "node.h"
 #include "node_factory.h"
 
-bool EncryptingNodeFactory::DeriveRootNode(Credentials* credentials,
-                                           const bytes_t& seed,
-                                           bytes_t& ext_prv_enc) {
+bool EncryptingNodeFactory::DeriveMasterNode(Credentials* credentials,
+                                             const bytes_t& seed,
+                                             bytes_t& ext_prv_enc) {
   if (credentials->isLocked()) {
     return false;
   }
 
-  // If the caller passed in a zero-length seed, as a policy we're going to
-  // error out. We don't want a user of this method to forget to supply
-  // entropy and ship something that seems to work, but gives the same root
-  // node to everyone.
+  // If the caller passed in a zero-length seed, as a policy we're
+  // going to error out. We don't want a user of this method to forget
+  // to supply entropy and ship something that seems to work, but
+  // gives the same master node to everyone.
   if (seed.empty()) {
     return false;
   }
@@ -56,8 +56,8 @@ bool EncryptingNodeFactory::DeriveRootNode(Credentials* credentials,
   return false;
 }
 
-bool EncryptingNodeFactory::GenerateRootNode(Credentials* credentials,
-                                             bytes_t& ext_prv_enc) {
+bool EncryptingNodeFactory::GenerateMasterNode(Credentials* credentials,
+                                               bytes_t& ext_prv_enc) {
   if (credentials->isLocked()) {
     return false;
   }
@@ -65,12 +65,12 @@ bool EncryptingNodeFactory::GenerateRootNode(Credentials* credentials,
   if (!Crypto::GetRandomBytes(seed)) {
     return false;
   }
-  return DeriveRootNode(credentials, seed, ext_prv_enc);
+  return DeriveMasterNode(credentials, seed, ext_prv_enc);
 }
 
-bool EncryptingNodeFactory::ImportRootNode(Credentials* credentials,
-                                           const std::string& ext_prv_b58,
-                                           bytes_t& ext_prv_enc) {
+bool EncryptingNodeFactory::ImportMasterNode(Credentials* credentials,
+                                             const std::string& ext_prv_b58,
+                                             bytes_t& ext_prv_enc) {
   if (credentials->isLocked()) {
     return false;
   }

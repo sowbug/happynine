@@ -120,41 +120,44 @@ void API::GenerateNodeResponse(Json::Value& dict, const Node* node,
   }
 }
 
-bool API::HandleDeriveRootNode(const Json::Value& args, Json::Value& result) {
+bool API::HandleDeriveMasterNode(const Json::Value& args,
+                                 Json::Value& result) {
   const bytes_t seed(unhexlify(args["seed_hex"].asString()));
 
   bytes_t ext_prv_enc;
-  if (EncryptingNodeFactory::DeriveRootNode(credentials_, seed, ext_prv_enc)) {
+  if (EncryptingNodeFactory::DeriveMasterNode(credentials_,
+                                              seed,
+                                              ext_prv_enc)) {
     std::auto_ptr<Node>
       node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
-    SetError(result, ERROR_INVALID_PARAM, "Root node derivation failed");
+    SetError(result, ERROR_INVALID_PARAM, "Master node derivation failed");
   }
   return true;
 }
 
-bool API::HandleGenerateRootNode(const Json::Value& /*args*/,
-                                 Json::Value& result) {
+bool API::HandleGenerateMasterNode(const Json::Value& /*args*/,
+                                   Json::Value& result) {
   bytes_t ext_prv_enc;
-  if (EncryptingNodeFactory::GenerateRootNode(credentials_, ext_prv_enc)) {
+  if (EncryptingNodeFactory::GenerateMasterNode(credentials_, ext_prv_enc)) {
     std::auto_ptr<Node>
       node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
     GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
   } else {
-    SetError(result, ERROR_INVALID_PARAM, "Root node generation failed");
+    SetError(result, ERROR_INVALID_PARAM, "Master node generation failed");
   }
   return true;
 }
 
-bool API::HandleImportRootNode(const Json::Value& args,
-                               Json::Value& result) {
+bool API::HandleImportMasterNode(const Json::Value& args,
+                                 Json::Value& result) {
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
     bytes_t ext_prv_enc;
-    if (EncryptingNodeFactory::ImportRootNode(credentials_,
-                                              ext_prv_b58,
-                                              ext_prv_enc)) {
+    if (EncryptingNodeFactory::ImportMasterNode(credentials_,
+                                                ext_prv_b58,
+                                                ext_prv_enc)) {
       std::auto_ptr<Node>
         node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
       GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
@@ -288,20 +291,20 @@ bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
-void API::PopulateAddress(const Address* address, Json::Value& root) {
-  root["addr_b58"] = Base58::hash160toAddress(address->hash160());
-  root["child_num"] = address->child_num();
-  root["is_public"] = address->is_public();
-  root["value"] = (Json::Value::UInt64)address->balance();
-  root["tx_count"] = (Json::Value::UInt64)address->tx_count();
+void API::PopulateAddress(const Address* address, Json::Value& value) {
+  value["addr_b58"] = Base58::hash160toAddress(address->hash160());
+  value["child_num"] = address->child_num();
+  value["is_public"] = address->is_public();
+  value["value"] = (Json::Value::UInt64)address->balance();
+  value["tx_count"] = (Json::Value::UInt64)address->tx_count();
 }
 
-void API::PopulateHistoryItem(const HistoryItem* item, Json::Value& root) {
-  root["tx_hash"] = to_hex(item->tx_hash());
-  root["addr_b58"] = Base58::hash160toAddress(item->hash160());
-  root["timestamp"] = (Json::Value::UInt64)item->timestamp();
-  root["value"] = (Json::Value::Int64)item->value();
-  root["fee"] = (Json::Value::UInt64)item->fee();
+void API::PopulateHistoryItem(const HistoryItem* item, Json::Value& value) {
+  value["tx_hash"] = to_hex(item->tx_hash());
+  value["addr_b58"] = Base58::hash160toAddress(item->hash160());
+  value["timestamp"] = (Json::Value::UInt64)item->timestamp();
+  value["value"] = (Json::Value::Int64)item->value();
+  value["fee"] = (Json::Value::UInt64)item->fee();
 }
 
 bool API::HandleGetAddresses(const Json::Value& /*args*/,
@@ -319,9 +322,9 @@ bool API::HandleGetAddresses(const Json::Value& /*args*/,
   for (Address::addresses_t::const_iterator i = addresses.begin();
        i != addresses.end();
        ++i) {
-    Json::Value root;
-    PopulateAddress(*i, root);
-    result["addresses"].append(root);
+    Json::Value value;
+    PopulateAddress(*i, value);
+    result["addresses"].append(value);
   }
   return true;
 }
@@ -340,9 +343,9 @@ bool API::HandleGetHistory(const Json::Value& /*args*/,
   for (history_t::const_iterator i = history.begin();
        i != history.end();
        ++i) {
-    Json::Value root;
-    PopulateHistoryItem(&(*i), root);
-    result["history"].append(root);
+    Json::Value value;
+    PopulateHistoryItem(&(*i), value);
+    result["history"].append(value);
   }
   return true;
 }

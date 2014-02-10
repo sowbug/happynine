@@ -30,7 +30,7 @@ class NodeFactory {
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#master-key-generation
   static Node* CreateNodeFromSeed(const bytes_t& seed);
 
-  // From a decoded-from-Base58 xpub/xprv string. Used for both root
+  // From a decoded-from-Base58 xpub/xprv string. Used for both master
   // and children.
   // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#serialization-format
   static Node* CreateNodeFromExtended(const bytes_t& bytes);

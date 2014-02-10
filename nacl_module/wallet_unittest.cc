@@ -131,22 +131,22 @@ TEST(WalletTest, NodeCreation) {
 
   // Generate a new node.
   bytes_t ext_prv_enc;
-  EXPECT_TRUE(EncryptingNodeFactory::GenerateRootNode(c.get(), ext_prv_enc));
+  EXPECT_TRUE(EncryptingNodeFactory::GenerateMasterNode(c.get(), ext_prv_enc));
   std::auto_ptr<Node>
     master_node(EncryptingNodeFactory::RestoreNode(c.get(), ext_prv_enc));
   uint32_t fp = master_node->fingerprint();
   EXPECT_NE(0, fp);  // This will fail one out of every 2^32 times.
 
   // Does importing a bad xprv fail?
-  EXPECT_FALSE(EncryptingNodeFactory::ImportRootNode(c.get(),
-                                                     EXT_3442193E_PRV_B58
-                                                     + "z",
-                                                     ext_prv_enc));
+  EXPECT_FALSE(EncryptingNodeFactory::ImportMasterNode(c.get(),
+                                                       EXT_3442193E_PRV_B58
+                                                       + "z",
+                                                       ext_prv_enc));
 
   // Can we import an xprv?
-  EXPECT_TRUE(EncryptingNodeFactory::ImportRootNode(c.get(),
-                                                    EXT_3442193E_PRV_B58,
-                                                    ext_prv_enc));
+  EXPECT_TRUE(EncryptingNodeFactory::ImportMasterNode(c.get(),
+                                                      EXT_3442193E_PRV_B58,
+                                                      ext_prv_enc));
   master_node.reset(EncryptingNodeFactory::RestoreNode(c.get(), ext_prv_enc));
   EXPECT_EQ(0x3442193e, master_node->fingerprint());
 

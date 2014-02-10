@@ -27,14 +27,14 @@ class Node;
 
 class EncryptingNodeFactory {
  public:
-  // Root nodes
-  static bool DeriveRootNode(Credentials* credentials,
-                             const bytes_t& seed, bytes_t& ext_prv_enc);
-  static bool GenerateRootNode(Credentials* credentials,
+  // Master nodes
+  static bool DeriveMasterNode(Credentials* credentials,
+                               const bytes_t& seed, bytes_t& ext_prv_enc);
+  static bool GenerateMasterNode(Credentials* credentials,
+                                 bytes_t& ext_prv_enc);
+  static bool ImportMasterNode(Credentials* credentials,
+                               const std::string& ext_prv_b58,
                                bytes_t& ext_prv_enc);
-  static bool ImportRootNode(Credentials* credentials,
-                             const std::string& ext_prv_b58,
-                             bytes_t& ext_prv_enc);
 
   // Child nodes
   static bool DeriveChildNode(Credentials* credentials,

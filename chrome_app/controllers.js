@@ -273,7 +273,7 @@ function AppController($scope,
   };
 
   $scope.isMasterKeyInstalled = function() {
-    return $scope.wallet.rootNodes.length != 0;
+    return $scope.wallet.masterNodes.length != 0;
   };
 
   $scope.getWalletKeyPublic = function() {
