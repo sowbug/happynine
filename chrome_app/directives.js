@@ -22,37 +22,10 @@
 
 'use strict';
 
-var app = angular.module('app', []);
-
-app.factory('settings', function() {
-  return new Settings();
-});
-
-app.factory('credentials', function() {
-  return new Credentials();
-});
-
-app.factory('electrum', ['$http', function($http) {
-  return new Electrum($http);
-}]);
-
-app.factory('wallet', ['electrum', function(electrum) {
-  return new Wallet(electrum);
-}]);
-
-app.directive('bitcoinAddress', function() {
-  return new BitcoinAddress();
-});
-
-app.controller('AppCtrl', ['$scope',
-                           '$http',
-                           'settings',
-                           'credentials',
-                           'wallet',
-                           'electrum',
-                           function ($scope, $http, settings, credentials,
-                                     wallet, electrum) {
-                             return new AppController($scope, $http, settings,
-                                                      credentials, wallet,
-                                                      electrum);
-                           }]);
+function BitcoinAddress() {
+  return {
+    restrict: 'E',
+    scope: { 'addr': '=addrB58' },
+    template: '<a class="addr-qr" data-toggle="modal" data-target="#address-detail-modal">{{addr}}</a>'
+  }
+}

@@ -22,12 +22,12 @@
 
 'use strict';
 
-var walletAppController = function($scope,
-                                   $http,
-                                   settings,
-                                   credentials,
-                                   wallet,
-                                   electrum) {
+function AppController($scope,
+                       $http,
+                       settings,
+                       credentials,
+                       wallet,
+                       electrum) {
   $scope.settings = settings;
   $scope.credentials = credentials;
   $scope.wallet = wallet;
@@ -462,4 +462,4 @@ var walletAppController = function($scope,
   listenerDiv.addEventListener('load', function() {
     $scope.startLoading();
   }, true);
-};
+}

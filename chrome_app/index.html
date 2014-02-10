@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-ng-app="walletApp">
+<html data-ng-app="app">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title ng-bind="app_name"></title>
@@ -9,7 +9,7 @@
     <link href="styles.css" rel="stylesheet">
   </head>
 
-  <body data-name="hd_wallet" data-tools="pnacl" data-configs="Release" data-path="{tc}/{config}" ng-controller="MainCtrl">
+  <body data-name="hd_wallet" data-tools="pnacl" data-configs="Release" data-path="{tc}/{config}" ng-controller="AppCtrl">
 
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
@@ -101,7 +101,7 @@
                   </thead>
                   <tbody>
                     <tr ng-repeat="tx in getRecentTransactions() track by $index">
-                      <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td>{{tx.addr_b58}}</td><td>{{satoshiToUnit(tx.value)}}</td>
+                      <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td><bitcoin-address addr-b58="tx.addr_b58" ng-click="setAddress(tx.addr_b58)"></bitcoin-address></td><td>{{satoshiToUnit(tx.value)}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -164,7 +164,7 @@
                   <tbody>
                     <tr ng-repeat="addr in getPublicAddresses() track by $index" ng-if="w.showExpended || !isAddressExpended(addr)">
                       <td>
-                        <a class="addr-qr" data-toggle="modal" data-target="#address-detail-modal" ng-click="setAddress(addr)">{{addr}}</a>
+                        <bitcoin-address addr-b58="addr" ng-click="setAddress(addr)"></bitcoin-address>
                       </td>
                       <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
                       <td>{{getAddressTxCount(addr)}}</td>
@@ -181,14 +181,7 @@
                   <tbody>
                     <tr ng-repeat="addr in getChangeAddresses() track by $index" ng-if="w.showExpended || !isAddressExpended(addr)">
                       <td>
-                        <div class="dropdown">
-                          <a class="dropdown-toggle" data-toggle="dropdown">{{addr}} <span class="caret"></span></a>
-                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                            <li><a href="https://blockchain.info/address/{{addr}}" target="_blank">Visit Blockchain.info for this address</a></li>
-                            <li><a href="#">Transactions: {{addr.tx_count}}</a></li>
-                            <li><a href="#">Generate receiving QR code</a></li>
-                          </ul>
-                        </div>
+                        <bitcoin-address addr-b58="addr" ng-click="setAddress(addr)"></bitcoin-address>
                       </td>
                       <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
                       <td>{{getAddressTxCount(addr)}}</td>
@@ -530,8 +523,8 @@
     <script type="text/javascript" src="electrum.js"></script>
     <script type="text/javascript" src="messaging.js"></script>
     <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="directives.js"></script>
     <script type="text/javascript" src="controllers.js"></script>
     <script type="text/javascript" src="app.js"></script>
-
   </body>
 </html>
