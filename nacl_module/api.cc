@@ -228,6 +228,30 @@ bool API::HandleDescribeNode(const Json::Value& args, Json::Value& result) {
   return true;
 }
 
+bool API::HandleDescribePrivateNode(const Json::Value& args,
+                                    Json::Value& result) {
+  if (credentials_->isLocked()) {
+    SetError(result, ERROR_CREDENTIALS_NOT_AVAILABLE,
+             "Wallet locked.");
+    return true;
+  }
+  const bytes_t ext_prv_enc(unhexlify(args["ext_prv_enc"].asString()));
+  if (ext_prv_enc.empty()) {
+    SetError(result, ERROR_MISSING_PARAM, "Missing ext_prv_enc param");
+    return true;
+  }
+  std::auto_ptr<Node>
+    node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
+  if (!node.get()) {
+    SetError(result, ERROR_INVALID_PARAM, "ext_prv_enc validation failed");
+    return true;
+  }
+
+  GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
+
+  return true;
+}
+
 bool API::HandleRestoreNode(const Json::Value& args, Json::Value& result) {
   const std::string ext_pub_b58(args["ext_pub_b58"].asString());
   if (ext_pub_b58.empty()) {
@@ -362,8 +386,7 @@ bool API::HandleCreateTx(const Json::Value& args, Json::Value& result) {
   if (wallet_->CreateTx(recipient_txos, fee, should_sign, tx)) {
     result["tx"] = to_hex(tx);
   } else {
-    SetError(result, ERROR_TRANSACTION_FAILED,
-             "Transaction creation failed.");
+    SetError(result, ERROR_TRANSACTION_FAILED, "Transaction creation failed.");
   }
   return true;
 }

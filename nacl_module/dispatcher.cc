@@ -90,6 +90,9 @@ public:
     if (method == "describe-node") {
       handled = api_->HandleDescribeNode(params, result);
     }
+    if (method == "describe-private-node") {
+      handled = api_->HandleDescribePrivateNode(params, result);
+    }
     if (method == "restore-node") {
       handled = api_->HandleRestoreNode(params, result);
     }

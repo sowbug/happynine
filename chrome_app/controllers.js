@@ -392,34 +392,40 @@ function AppController($scope,
   };
 
   $scope.exportMasterKey = function() {
-    chrome.fileSystem.chooseEntry(
-      {'type': 'saveFile',
-       'suggestedName': 'Happynine-Export-' +
-       $scope.getCurrentMasterNodeFingerprint() + '.txt',
-      },
-      function(entry) {
-        var errorHandler = function(e) {
-          logFatal(e);
-        };
-        entry.createWriter(function(writer) {
-          writer.onerror = errorHandler;
-          var message =
-            "Happynine: BIP 0038 Master Key Export\r\n" +
-            $scope.getCurrentMasterNodeFingerprint() + ": " +
-            $scope.getWalletKeyPublic() + "\r\n" +
-            "Private Key [NOT YET IMPLEMENTED]\r\n\r\n" +
-            "THIS IS NOT A BACKUP OF YOUR KEY! THAT FEATURE IS COMING.\r\n";
-          message += "Meanwhile, here is a proof of concept text " +
-            "QR code (NOT YOURS). \r\n\r\n";
-          var qr = $('<div></div>');
-          qr.qrcode({'text': $scope.getWalletKeyPublic(),
-                     'render': 'text',
-                     'correctLevel': QRErrorCorrectLevel.L});
-          message += qr.text();
-          var blob = new Blob([message], {type: 'text/plain; charset=utf-8'});
-          writer.write(blob);
-        }, errorHandler);
-      });
+    var doExport = function(key) {
+      chrome.fileSystem.chooseEntry(
+        {'type': 'saveFile',
+         'suggestedName': 'Happynine-Export-' +
+         $scope.getCurrentMasterNodeFingerprint() + '.txt',
+        },
+        function(entry) {
+          var errorHandler = function(e) {
+            logFatal("file export", e);
+          };
+          entry.createWriter(function(writer) {
+            writer.onerror = errorHandler;
+            var message =
+              "Happynine Export for BIP 0038 Master Key " +
+              $scope.getCurrentMasterNodeFingerprint() + "\r\n" +
+              "PUBLIC : " + $scope.getWalletKeyPublic() + "\r\n" +
+              "PRIVATE: " + key + "\r\n" +
+              "Print with a small monospace (fixed-width) typeface.\r\n\r\n";
+            var qr = $('<div></div>');
+            qr.qrcode({'text': key,
+                       'render': 'text',
+                       'correctLevel': QRErrorCorrectLevel.L});
+            message += qr.text();
+            var blob = new Blob([message],
+                                {type: 'text/plain; charset=utf-8'});
+            writer.write(blob);
+          }, errorHandler);
+        });
+    };
+    var doFail = function(err) {
+      logFatal("exporting", err);
+    };
+    $scope.wallet.retrieveMasterPrivateKey()
+      .then(doExport.bind(this), doFail.bind(this));
   };
 
   $scope.send = function() {

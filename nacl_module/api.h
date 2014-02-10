@@ -68,6 +68,8 @@ class API {
   // All Nodes
   bool HandleDescribeNode(const Json::Value& args, Json::Value& result);
 
+  bool HandleDescribePrivateNode(const Json::Value& args, Json::Value& result);
+
   bool HandleRestoreNode(const Json::Value& args, Json::Value& result);
 
   // Addresses

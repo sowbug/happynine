@@ -198,6 +198,27 @@ function Wallet(electrum) {
     this.rootNodes = [];
   };
 
+  this.retrieveMasterPrivateKey = function() {
+    return new Promise(function(resolve, reject) {
+      if (this.rootNodes.length == 0) {
+        reject("missing root node");
+        return;
+      }
+      var node = this.rootNodes[0];
+      var params = {
+        'ext_prv_enc': node.extendedPrivateEncrypted,
+      };
+      postRPC('describe-private-node', params)
+        .then(function(response) {
+          if (response.ext_prv_b58) {
+            resolve(response.ext_prv_b58);
+          } else {
+            reject();
+          }
+        }.bind(this));
+    }.bind(this));
+  };
+
   this.deriveChildNode = function(childNum, isWatchOnly) {
     return new Promise(function(resolve, reject) {
       var params = {
