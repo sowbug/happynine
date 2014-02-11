@@ -77,7 +77,7 @@ function Electrum($http) {
   this.pendingRpcCount = 0;
 
   this.resetTimeoutDuration = function() {
-    this.timeoutDuration = 500;
+    this.timeoutDuration = 16;
   };
 
   this.areRequestsPending = function() {
