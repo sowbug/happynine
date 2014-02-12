@@ -32,9 +32,9 @@ app.factory('credentials', function() {
   return new Credentials();
 });
 
-app.factory('electrum', ['$http', function($http) {
-  return new Electrum($http);
-}]);
+app.factory('electrum', function() {
+  return new Electrum();
+});
 
 app.factory('wallet', ['electrum', function(electrum) {
   return new Wallet(electrum);

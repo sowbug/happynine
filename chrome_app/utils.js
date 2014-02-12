@@ -51,3 +51,24 @@ function logImportant() {
 function logRpcError(error) {
   console.log("rpc error:", error.code, error.message);
 }
+
+// Many thanks to Dennis for his StackOverflow answer:
+// http://goo.gl/UDanx Since amended to handle BlobBuilder
+// deprecation.
+function string2ArrayBuffer(string, callback) {
+  var blob = new Blob([string]);
+  var f = new FileReader();
+  f.onload = function(e) {
+    callback(e.target.result);
+  };
+  f.readAsArrayBuffer(blob);
+}
+
+function arrayBuffer2String(buf, callback) {
+  var blob = new Blob([new Uint8Array(buf)]);
+  var f = new FileReader();
+  f.onload = function(e) {
+    callback(e.target.result);
+  };
+  f.readAsText(blob);
+}

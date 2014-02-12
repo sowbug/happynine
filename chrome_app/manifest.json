@@ -12,7 +12,9 @@
     "storage",
     "unlimitedStorage",
 
-    "http://b.1209k.com/",
     "http://robohash.org/"
-  ]
+  ],
+  "sockets": {
+    "tcp":  {"connect": "*:50001"}
+  }
 }

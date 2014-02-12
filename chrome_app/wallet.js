@@ -38,9 +38,12 @@ function Wallet(electrum) {
     this.initAddresses();
   };
   this.init();
-  electrum.issueHeadersSubscribe()
-    .then(function(response) {
-      this.handleBlockGetHeader(response);
+  electrum.connectToServer()
+    .then(function() {
+      electrum.issueHeadersSubscribe()
+        .then(function(response) {
+          this.handleBlockGetHeader(response);
+        });
     });
 
   this.toStorableObject = function() {

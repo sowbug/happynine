@@ -22,14 +22,15 @@
 
 'use strict';
 
-function Electrum($http) {
+function Electrum() {
   this.SERVERS = [
-    'http://b.1209k.com/',
+    'b.1209k.com',
   ];
-  this.currentServerUrl = this.SERVERS[0];
+  this.currentServerHostname = this.SERVERS[0];
   this.callbacks = {};
   this.callbackId = 1;
-  this.rpcQueue = [];
+  this.socketId = undefined;
+  this.stringBuffer = "";
 
   this.issueAddressGetHistory = function(addr_b58) {
     return new Promise(function(resolve, reject) {
@@ -73,34 +74,92 @@ function Electrum($http) {
     }.bind(this));
   };
 
-  // TODO(miket): there's just no way this will work
-  this.pendingRpcCount = 0;
-
-  this.resetTimeoutDuration = function() {
-    this.timeoutDuration = 16;
-  };
-
-  this.areRequestsPending = function() {
-    return this.pendingRpcCount > 0;
-  };
-
-  this.advanceTimeoutDuration = function() {
-    if (!this.timeoutDuration) {
-      this.resetTimeoutDuration();
+  this.handleResponse = function(o) {
+    var id = o.id;
+    if (this.callbacks[id]) {
+      this.callbacks[id].resolve(o.result);
+      delete this.callbacks[id];
+      this.pendingRpcCount--;
+      this.$scope.$apply();
     } else {
-      if (this.timeoutDuration < 16 * 1000) {
-        this.timeoutDuration *= 2;
+      logInfo("notification from electrum", o);
+      var ALLOWED_METHODS = [
+        'blockchain.address.subscribe',
+        'blockchain.headers.subscribe',
+        'blockchain.numblocks.subscribe',
+      ];
+      if (ALLOWED_METHODS.indexOf(o.method) != -1) {
+        $.event.trigger({
+          'type': o.method,
+          'message': o.params,
+          time: new Date(),
+        });
       }
     }
   };
 
-  this.scheduleNextConnect = function() {
-    if (this.nextConnectTimeoutId) {
-      window.clearTimeout(this.nextConnectTimeoutId);
-    }
-    this.nextConnectTimeoutId = window.setTimeout(this.connect.bind(this),
-                                                  this.timeoutDuration);
-    this.advanceTimeoutDuration();
+  this.onSocketReceive = function(receiveInfo) {
+    arrayBuffer2String(receiveInfo.data, function(str) {
+      this.stringBuffer += str;
+      var parts = this.stringBuffer.split("\n");
+      if (parts.length > 1) {
+        for (var i = 0; i < parts.length - 1; ++i) {
+          var part = parts[i];
+          if (part.length == 0) {
+            continue;
+          }
+          this.handleResponse(JSON.parse(part));
+        }
+        if (parts[parts.length - 1].length > 0) {
+          this.stringBuffer = parts[parts.length - 1];
+        }
+      }
+    }.bind(this));
+  };
+
+  this.onSocketReceiveError = function(receiveErrorInfo) {
+    logFatal("receive error", receiveErrorInfo);
+  };
+
+  this.onSendComplete = function(sendInfo) {
+  };
+
+  this.connectToServer = function() {
+    return new Promise(function(resolve, reject) {
+      function onConnectComplete(result) {
+        if (result != 0) {
+          logFatal("onConnectComplete", result);
+          reject(result);
+        } else {
+          resolve();
+        }
+      };
+
+      function onSocketCreate(socketInfo) {
+        this.socketId = socketInfo.socketId;
+        chrome.sockets.tcp.onReceive.addListener(
+          this.onSocketReceive.bind(this));
+        chrome.sockets.tcp.onReceiveError.addListener(
+          this.onSocketReceiveError.bind(this));
+        chrome.sockets.tcp.connect(this.socketId,
+                                   this.currentServerHostname,
+                                   50001,
+                                   onConnectComplete.bind(this));
+      }
+
+      chrome.sockets.tcp.create({
+        "name": "electrum",
+        "persistent": true,
+        "bufferSize": 16384
+      }, onSocketCreate.bind(this));
+    }.bind(this));
+  }
+
+  // TODO(miket): there's just no way this will work
+  this.pendingRpcCount = 0;
+
+  this.areRequestsPending = function() {
+    return this.pendingRpcCount > 0;
   };
 
   this._enqueueRpc = function(method, params) {
@@ -109,70 +168,15 @@ function Electrum($http) {
                   "method": method,
                   "params": params,
                 };
-      this.rpcQueue.push(rpc);
+      string2ArrayBuffer(
+        JSON.stringify(rpc) + "\n",
+        function(arrayBuffer) {
+          chrome.sockets.tcp.send(this.socketId,
+                                  arrayBuffer,
+                                  this.onSendComplete.bind(this));
+        }.bind(this));
       this.callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
       this.pendingRpcCount++;
-      this.resetTimeoutDuration();
-      this.scheduleNextConnect();
     }.bind(this));
-  };
-
-  this.connect = function() {
-    var obj = undefined;
-    if (this.rpcQueue.length) {
-      obj = this.rpcQueue.shift();
-      // TODO(miket): can probably push whole thing
-    }
-
-    var handleResponse = function(o) {
-      var id = o.id;
-      if (this.callbacks[id]) {
-        this.callbacks[id].resolve(o.result);
-        delete this.callbacks[id];
-        this.pendingRpcCount--;
-      } else {
-        logInfo("notification from electrum", o);
-        var ALLOWED_METHODS = [
-          'blockchain.address.subscribe',
-          'blockchain.headers.subscribe',
-          'blockchain.numblocks.subscribe',
-        ];
-        if (ALLOWED_METHODS.indexOf(o.method) != -1) {
-          $.event.trigger({
-            'type': o.method,
-            'message': o.params,
-            time: new Date(),
-          });
-        }
-      }
-    };
-
-    var success = function(data, status, headers, config) {
-      if (data && !data.error) {
-        this.resetTimeoutDuration();
-        if (data instanceof Array) {
-          for (var o in data) {
-            handleResponse.call(this, data[o]);
-          }
-        } else {
-          handleResponse.call(this, data);
-        }
-      }
-      this.scheduleNextConnect();
-    };
-    var error = function(data, status, headers, config) {
-      logFatal("Electrum error", status, data);
-      this.scheduleNextConnect();
-    }
-
-    if (obj) {
-      $http.post(this.currentServerUrl, obj, { withCredentials: true }).
-        success(success.bind(this)).
-        error(error.bind(this));
-    } else {
-      $http.get(this.currentServerUrl, { withCredentials: true }).
-        success(success.bind(this)).
-        error(error.bind(this));
-    }
   };
 }
