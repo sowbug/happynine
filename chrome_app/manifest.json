@@ -1,6 +1,7 @@
 {
   "name": "PRODUCTNAME",
-  "description": "A Bitcoin HD wallet that's BIP-0032 compliant.",
+  "description": "BIP 0032 hierarchical deterministic Bitcoin wallet",
+  "minimum_chrome_version": "33",
   "version": "MAJOR.MINOR.BUILD.PATCH",
   "app": {
     "background": {
