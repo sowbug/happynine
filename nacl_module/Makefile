@@ -17,6 +17,7 @@ SOURCES = \
   encrypting_node_factory.cc \
   node.cc \
   node_factory.cc \
+  scrypt/crypto_scrypt-ref.c \
   secp256k1.cc \
   tx.cc \
   types.cc \

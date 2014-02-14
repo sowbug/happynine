@@ -22,11 +22,27 @@
 
 #include "crypto.h"
 
+extern "C" {
+#include "scrypt/crypto_scrypt.h"
+}
+
+#if defined(DEBUG)
+// Substantially quicker because debug isn't optimized
+#define SCRYPT_N (256)
+#define SCRYPT_R (2)
+#define SCRYPT_P (2)
+#else
+// Params borrowed from BIP 0038
+#define SCRYPT_N (16384)
+#define SCRYPT_R (8)
+#define SCRYPT_P (8)
+#endif
+
+#include "secp256k1.h"
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/ripemd.h>
 #include <openssl/sha.h>
-#include "secp256k1.h"
 
 const int ROUNDS = 32768;
 const size_t AES_BLOCK_SIZE = 256 / 8;
@@ -43,14 +59,14 @@ bool Crypto::DeriveKey(const std::string& passphrase,
   }
   bytes_t passphrase_bytes(passphrase.begin(), passphrase.end());
 
-  int error = PKCS5_PBKDF2_HMAC_SHA1((const char*)&passphrase_bytes[0],
-                                     passphrase_bytes.size(),
-                                     &salt[0],
-                                     salt.capacity(),
-                                     ROUNDS,
-                                     key.capacity(),
-                                     &key[0]);
-  if (error == 1) {
+  int error = crypto_scrypt(&passphrase_bytes[0],
+                            passphrase_bytes.size(),
+                            &salt[0],
+                            salt.capacity(),
+                            SCRYPT_N, SCRYPT_R, SCRYPT_P,
+                            &key[0],
+                            key.capacity());
+  if (error == 0) {
     return true;
   }
   return false;

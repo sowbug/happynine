@@ -29,8 +29,8 @@ class Crypto {
   // underlying method fails, returns false.
   static bool GetRandomBytes(bytes_t& bytes);
 
-  // Using PKCS5_PBKDF2_HMAC_SHA1, takes a passphrase and salt and
-  // derives a key from them. Returns true if successful.
+  // Takes a passphrase and salt and derives a key from them. Returns
+  // true if successful.
   //
   // The key vector should be set to the desired capacity. For example:
   //

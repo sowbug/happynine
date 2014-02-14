@@ -297,8 +297,7 @@ TEST(ApiTest, BadExtPrvB58) {
   // Import a bad xprv; should fail
   request = Json::Value();
   response = Json::Value();
-  request["ext_prv_b58"] = "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stb"
-    "Py6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHz";
+  request["ext_prv_b58"] = EXT_3442193E_PRV_B58 + "z";
   EXPECT_TRUE(api->HandleImportMasterNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 }
@@ -342,8 +341,8 @@ TEST(ApiTest, RestoreWithLockedWallet) {
   EXPECT_TRUE(api->HandleRestoreNode(request, response));
   EXPECT_FALSE(api->DidResponseSucceed(response));
 
-  // Restore master node with just extended private. This should fail
-  // with a locked wallet.
+  // Restore master node with just extended private. This should
+  // always fail.
   request = Json::Value();
   response = Json::Value();
   request["ext_prv_b58"] = EXT_3442193E_PRV_B58;

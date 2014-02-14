@@ -28,7 +28,7 @@ ifeq ($(BE_LOUD), 1)
   CPPFLAGS += -DBE_LOUD
   CXXFLAGS += -DBE_LOUD
 endif
-CPPFLAGS += -ggdb -isystem $(GTEST_DIR)/include -DBUILDING_FOR_TEST=1
+CPPFLAGS += -DDEBUG=1 -ggdb -isystem $(GTEST_DIR)/include -DBUILDING_FOR_TEST=1
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -ggdb -Wall -Wextra -pthread
@@ -90,6 +90,7 @@ SOURCES = \
   node.cc \
   node_factory.cc \
   node_unittest.cc \
+  scrypt/crypto_scrypt-ref.cc \
   secp256k1.cc \
   tx.cc \
   tx_unittest.cc \
