@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ -n "$( git status --porcelain )" ]; then
+  echo "Tree is dirty"
+  exit 1
+fi
+
 . ./VERSION
 
 pushd nacl_module && \
@@ -7,29 +12,24 @@ pushd nacl_module && \
     make -f TestMakefile && \
     popd
 
-if [ -n ! "$(git status --porcelain )" ]; then
-  echo "Tree is dirty"
-  exit 1
-else
-  # HEAD is what we want to tag.
-  TAG="H9_${MAJOR}_${MINOR}_${BUILD}_${PATCH}"
-  git tag -a $TAG -m $TAG
+# HEAD is what we want to tag.
+TAG="H9_${MAJOR}_${MINOR}_${BUILD}_${PATCH}"
+git tag -a $TAG -m $TAG
 
-  # Now update HEAD to refer to the next version. The reason we leave
-  # HEAD on a future version is that we don't want stray builds to be
-  # confused with tagged/released builds.
-  BUILD_NEXT=`expr $BUILD + 1`
-  echo -e "MAJOR=$MAJOR\nMINOR=$MINOR\nBUILD=$BUILD_NEXT\nPATCH=$PATCH" \
-      > ./VERSION
-  VER_STR="$MAJOR.$MINOR.$BUILD_NEXT.$PATCH"
-  git commit -m "Bump version => $VER_STR" VERSION
+# Now update HEAD to refer to the next version. The reason we leave
+# HEAD on a future version is that we don't want stray builds to be
+# confused with tagged/released builds.
+BUILD_NEXT=`expr $BUILD + 1`
+echo -e "MAJOR=$MAJOR\nMINOR=$MINOR\nBUILD=$BUILD_NEXT\nPATCH=$PATCH" \
+    > ./VERSION
+VER_STR="$MAJOR.$MINOR.$BUILD_NEXT.$PATCH"
+git commit -m "Bump version => $VER_STR" VERSION
 
-  # Now build what the tag tagged.
-  git checkout $TAG
-  make clean
-  PRODUCTNAME="Happynine" \
+# Now build what the tag tagged.
+git checkout $TAG
+make clean
+PRODUCTNAME="Happynine" \
 		MAJOR=${MAJOR} BUILD=${BUILD} PATCH=${PATCH} make
 
-  # And put us back on HEAD for further development.
-  git checkout master
-fi
+# And put us back on HEAD for further development.
+git checkout master
