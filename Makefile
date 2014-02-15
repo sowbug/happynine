@@ -13,6 +13,7 @@ ZIP := happynine-$(MAJOR).$(MINOR).$(BUILD).$(PATCH).zip
 all: $(ZIP)
 
 $(ZIP): force_look
+	mkdir -p $(ZIPBASE)
 	cd chrome_app; ZIPBASE=$(ZIPBASE) $(MAKE) $(MFLAGS)
 	sed -i'' "s/PRODUCTNAME/${PRODUCTNAME}/" $(ZIPBASE)/manifest.json
 	sed -i'' "s/MAJOR/${MAJOR}/" $(ZIPBASE)/manifest.json
