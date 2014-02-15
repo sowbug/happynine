@@ -111,7 +111,7 @@ Credentials.prototype.setRelockTimeout = function(callbackVoid) {
   this.clearRelockTimeout();
   this.isLocked = false;
   this.relockTimeoutId = window.setTimeout(function() {
-    this.lock(callbackVoid);
+    this.lock().then(callbackVoid.call(this));
   }.bind(this), 1000 * 60 * 1);
 };
 

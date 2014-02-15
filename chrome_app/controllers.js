@@ -38,7 +38,6 @@ function AppController($scope,
   // the model's scope-level objects, so I have to create another
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
-  $scope.w.showPrivateKey = false;
   $scope.w.selectedAddress = undefined;
   $scope.w.enableLogging = SHOULD_LOG;  // First time through, pick it up
 
@@ -67,9 +66,6 @@ function AppController($scope,
 
     $scope.$watch("wallet", function(newVal, oldVal) {
       if (newVal != oldVal) {
-        // A small hack: if the wallet ever changes, it's a good
-        // time to hide this checkbox.
-        $scope.w.showPrivateKey = false;
         $scope.wallet.save();
       }
     }, true);
@@ -217,7 +213,6 @@ function AppController($scope,
       $scope.$apply();
     };
     var relockCallback = function() {
-      //$scope.w.showPrivateKey = false;
       $scope.$apply();
     };
 
@@ -399,41 +394,20 @@ function AppController($scope,
     $scope.wallet.setActiveChildNodeByIndex(index);
   };
 
-  $scope.exportMasterKey = function() {
-    var doExport = function(key) {
-      chrome.fileSystem.chooseEntry(
-        {'type': 'saveFile',
-         'suggestedName': 'Happynine-Export-' +
-         $scope.getCurrentMasterNodeFingerprint() + '.txt'
-        },
-        function(entry) {
-          var errorHandler = function(e) {
-            logFatal("file export", e);
-          };
-          entry.createWriter(function(writer) {
-            writer.onerror = errorHandler;
-            var message =
-              "Happynine Export for BIP 0038 Master Key " +
-              $scope.getCurrentMasterNodeFingerprint() + "\r\n" +
-              "PUBLIC : " + $scope.getWalletKeyPublic() + "\r\n" +
-              "PRIVATE: " + key + "\r\n" +
-              "Print with a small monospace (fixed-width) typeface.\r\n\r\n";
-            var qr = $('<div></div>');
-            qr.qrcode({'text': key,
-                       'render': 'text',
-                       'correctLevel': QRErrorCorrectLevel.L});
-            message += qr.text();
-            var blob = new Blob([message],
-                                {type: 'text/plain; charset=utf-8'});
-            writer.write(blob);
-          }, errorHandler);
-        });
-    };
+  $scope.exportMasterNode = function() {
+    $scope.exportNode($scope.getCurrentMasterNode());
+  };
+
+  $scope.exportNode = function(node) {
     var doFail = function(err) {
       logFatal("exporting", err);
     };
-    $scope.wallet.retrieveMasterPrivateKey()
-      .then(doExport.bind(this), doFail.bind(this));
+    var exporter = new Exporter($scope.wallet);
+    $scope.wallet.retrievePrivateKey(node)
+      .then(function(key) {
+        exporter.exportNode(node, key);
+      },
+            doFail.bind(this));
   };
 
   $scope.send = function() {

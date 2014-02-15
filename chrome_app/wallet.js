@@ -205,13 +205,8 @@ function Wallet(electrum) {
     this.masterNodes = [];
   };
 
-  this.retrieveMasterPrivateKey = function() {
+  this.retrievePrivateKey = function(node) {
     return new Promise(function(resolve, reject) {
-      if (this.masterNodes.length == 0) {
-        reject("missing master node");
-        return;
-      }
-      var node = this.masterNodes[0];
       var params = {
         'ext_prv_enc': node.extendedPrivateEncrypted
       };

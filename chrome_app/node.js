@@ -67,7 +67,11 @@ function Node() {
 
   this.isMaster = function() {
     return this.childNum == 0;
-  }
+  };
+
+  this.hasPrivateKey = function() {
+    return !!this.extendedPrivateEncrypted;
+  };
 
   this.prettyChildNum = function() {
     if (this.childNum >= 0x80000000) {

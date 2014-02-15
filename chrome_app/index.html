@@ -310,8 +310,8 @@
 
                         <div class="form-group">
                           <div class="col-md-6 col-md-offset-2">
-                            <button class="btn btn-danger" ng-click="removeMasterKey()">Remove Master Key</button>
-                            <button class="btn btn-info" ng-click="exportMasterKey()">Export Master Key</button>
+                            <button class="btn btn-danger" ng-click="removeMasterNode()">Remove Master Key</button>
+                            <button class="btn btn-info" ng-click="exportMasterNode()">Export Master Key</button>
                           </div>
                         </div>
                       </div><!-- isWalletUnlocked -->
@@ -367,6 +367,7 @@
                           </td>
                           <td>
                             <button class="btn btn-primary" ng-click="selectChildNodeByIndex($index)" ng-disabled="node == getCurrentChildNode()">Use</button>
+                            <button class="btn btn-info" ng-click="exportNode(node)" ng-if="isWalletUnlocked() && node.hasPrivateKey()">Export</button>
                             <button class="btn btn-danger" ng-click="removeChildNode(node)">Remove</button>
                           </td>
                         </tr>
@@ -523,6 +524,6 @@
     <script type="text/javascript" src="js/jquery/jquery.qrcode.min.js"></script>
     <script type="text/javascript" src="js/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/angular/angular.min.js"></script>
-    <script type="text/javascript" src="compiled.js"></script>
+    <script type="text/javascript" src="happynine-min.js"></script>
   </body>
 </html>
