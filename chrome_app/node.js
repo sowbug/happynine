@@ -25,6 +25,10 @@
 // A Node is a node in a BIP0032 tree. If it's a master node, its only
 // power is to mint child nodes. Otherwise it generates either child
 // nodes or addresses.
+
+/**
+ * @constructor
+ */
 function Node() {
   this.init = function() {
     this.childNum = undefined;
@@ -50,19 +54,15 @@ function Node() {
 
   this.toStorableObject = function() {
     var o = {};
-    o.child_num = this.childNum;
-    o.ext_prv_enc = this.extendedPrivateEncrypted;
-    o.ext_pub_b58 = this.extendedPublicBase58;
-    o.fp = this.fingerprint;
-    o.next_change_addr = this.nextChangeAddressIndex;
-    o.next_pub_addr = this.nextPublicAddressIndex;
-    o.pfp = this.parentFingerprint;
-    o.path = this.path;
+    o["child_num"] = this.childNum;
+    o["ext_prv_enc"] = this.extendedPrivateEncrypted;
+    o["ext_pub_b58"] = this.extendedPublicBase58;
+    o["fp"] = this.fingerprint;
+    o["next_change_addr"] = this.nextChangeAddressIndex;
+    o["next_pub_addr"] = this.nextPublicAddressIndex;
+    o["pfp"] = this.parentFingerprint;
+    o["path"] = this.path;
     return o;
-  };
-
-  this.isKeyAvailable = function() {
-    return !!this.extendedPrivateBase58;
   };
 
   this.isMaster = function() {
@@ -77,53 +77,25 @@ function Node() {
   };
 }
 
-Node.fromGetNodeResponse = function(credentials,
-                                    isWatchOnly,
-                                    callback,
-                                    response) {
-  if (response.error) {
-    logFatal("error", response.error.code, response.error.message);
-    callback.call(this, undefined);
-    return;
-  }
-  if (response.ext_prv_b58 && !isWatchOnly) {
-    credentials.encrypt(response.ext_prv_b58,
-                        function(encryptedItem) {
-                          callback.call(this, Node.fromStorableObject({
-                            'ext_prv_b58': response.ext_prv_b58,
-                            'ext_prv_b58_enc': encryptedItem,
-                            'ext_pub_b58': response.ext_pub_b58,
-                            'path': response.path,
-                          }));
-                        }.bind(this));
-  } else {
-    callback.call(this, Node.fromStorableObject({
-      'ext_pub_b58': response.ext_pub_b58,
-      'path': response.path
-    }));
-  }
-
-};
-
 Node.fromStorableObject = function(o) {
   var s = new Node();
 
-  if (o.child_num != undefined)
-    s.childNum = o.child_num;
-  if (o.ext_prv_enc != undefined)
-    s.extendedPrivateEncrypted = o.ext_prv_enc;
-  if (o.ext_pub_b58 != undefined)
-    s.extendedPublicBase58 = o.ext_pub_b58;
-  if (o.fp != undefined)
-    s.fingerprint = o.fp;
-  if (o.next_change_addr != undefined)
-    s.nextChangeAddressIndex = o.next_change_addr;
-  if (o.next_pub_addr != undefined)
-    s.nextPublicAddressIndex = o.next_pub_addr;
-  if (o.path != undefined)
-    s.path = o.path;
-  if (o.pfp != undefined)
-    s.parentFingerprint = o.pfp;
+  if (o["child_num"] != undefined)
+    s.childNum = o["child_num"];
+  if (o["ext_prv_enc"] != undefined)
+    s.extendedPrivateEncrypted = o["ext_prv_enc"];
+  if (o["ext_pub_b58"] != undefined)
+    s.extendedPublicBase58 = o["ext_pub_b58"];
+  if (o["fp"] != undefined)
+    s.fingerprint = o["fp"];
+  if (o["next_change_addr"] != undefined)
+    s.nextChangeAddressIndex = o["next_change_addr"];
+  if (o["next_pub_addr"] != undefined)
+    s.nextPublicAddressIndex = o["next_pub_addr"];
+  if (o["path"] != undefined)
+    s.path = o["path"];
+  if (o["pfp"] != undefined)
+    s.parentFingerprint = o["pfp"];
 
   return s;
 };

@@ -22,9 +22,12 @@
 
 'use strict';
 
+/**
+ * @constructor
+ */
 function Electrum() {
   this.SERVERS = [
-    'b.1209k.com',
+    "b.1209k.com"
   ];
   this.currentServerHostname = this.SERVERS[0];
   this.callbacks = {};
@@ -75,24 +78,24 @@ function Electrum() {
   };
 
   this.handleResponse = function(o) {
-    var id = o.id;
+    var id = o["id"];
     if (this.callbacks[id]) {
-      this.callbacks[id].resolve(o.result);
+      this.callbacks[id].resolve(o["result"]);
       delete this.callbacks[id];
       this.pendingRpcCount--;
       this.$scope.$apply();
     } else {
       logInfo("notification from electrum", o);
       var ALLOWED_METHODS = [
-        'blockchain.address.subscribe',
-        'blockchain.headers.subscribe',
-        'blockchain.numblocks.subscribe',
+        "blockchain.address.subscribe",
+        "blockchain.headers.subscribe",
+        "blockchain.numblocks.subscribe"
       ];
-      if (ALLOWED_METHODS.indexOf(o.method) != -1) {
+      if (ALLOWED_METHODS.indexOf(o["method"]) != -1) {
         $.event.trigger({
-          'type': o.method,
-          'message': o.params,
-          time: new Date(),
+          "type": o["method"],
+          "message": o["params"],
+          time: new Date()
         });
       }
     }
@@ -164,10 +167,11 @@ function Electrum() {
 
   this._enqueueRpc = function(method, params) {
     return new Promise(function(resolve, reject) {
-      var rpc = { "id": this.callbackId++,
-                  "method": method,
-                  "params": params,
-                };
+      var rpc = {
+        "id": this.callbackId++,
+        "method": method,
+        "params": params
+      };
       string2ArrayBuffer(
         JSON.stringify(rpc) + "\n",
         function(arrayBuffer) {
@@ -175,7 +179,7 @@ function Electrum() {
                                   arrayBuffer,
                                   this.onSendComplete.bind(this));
         }.bind(this));
-      this.callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
+      this.callbacks[rpc["id"]] = {"resolve": resolve, "reject": reject};
       this.pendingRpcCount++;
     }.bind(this));
   };

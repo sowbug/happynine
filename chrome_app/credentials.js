@@ -24,6 +24,10 @@
 
 // The Credentials model keeps track of secrets that lock/unlock and
 // encrypt/decrypt things.
+
+/**
+ * @constructor
+ */
 function Credentials() {
   this.init = function() {
     this.check = undefined;
@@ -36,18 +40,18 @@ function Credentials() {
 
   this.toStorableObject = function() {
     var o = {};
-    o.check = this.check;
-    o.ekey_enc = this.ephemeralKeyEncrypted;
-    o.salt = this.salt;
+    o["check"] = this.check;
+    o["ekey_enc"] = this.ephemeralKeyEncrypted;
+    o["salt"] = this.salt;
     return o;
   };
 
   this.loadStorableObject = function(o) {
     return new Promise(function(resolve, reject) {
       this.init();
-      this.check = o.check;
-      this.ephemeralKeyEncrypted = o.ekey_enc;
-      this.salt = o.salt;
+      this.check = o["check"];
+      this.ephemeralKeyEncrypted = o["ekey_enc"];
+      this.salt = o["salt"];
       this.loadCredentials().then(resolve);
     }.bind(this));
   };
@@ -78,7 +82,7 @@ function Credentials() {
       };
 
       var params = {
-        'new_passphrase': newPassphrase,
+        'new_passphrase': newPassphrase
       };
       postRPC('set-passphrase', params).then(success.bind(this), reject);
     }.bind(this));
@@ -89,7 +93,7 @@ function Credentials() {
       var params = {
         'check': this.check,
         'ekey_enc': this.ephemeralKeyEncrypted,
-        'salt': this.salt,
+        'salt': this.salt
       };
       postRPC('set-credentials', params).then(resolve);
     }.bind(this));

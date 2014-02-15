@@ -24,6 +24,10 @@
 
 // The Settings model keeps track of miscellaneous options/preferences
 // that are expected to be saved across app restarts.
+
+/**
+ * @constructor
+ */
 function Settings() {
   this.availableUnits = {
     "btc": "BTC",
@@ -39,13 +43,13 @@ function Settings() {
 
   this.toStorableObject = function() {
     var o = {};
-    o.units = this.units;
+    o["units"] = this.units;
     return o;
   };
 
   this.loadStorableObject = function(o) {
     this.init();
-    this.units = o.units;
+    this.units = o["units"];
   };
 
   this.satoshiToUnit = function(satoshis) {

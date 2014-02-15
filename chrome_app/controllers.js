@@ -404,7 +404,7 @@ function AppController($scope,
       chrome.fileSystem.chooseEntry(
         {'type': 'saveFile',
          'suggestedName': 'Happynine-Export-' +
-         $scope.getCurrentMasterNodeFingerprint() + '.txt',
+         $scope.getCurrentMasterNodeFingerprint() + '.txt'
         },
         function(entry) {
           var errorHandler = function(e) {

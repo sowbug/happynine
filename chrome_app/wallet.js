@@ -23,6 +23,10 @@
 'use strict';
 
 // A Wallet is a collection of Nodes with a bunch of helper functions.
+
+/**
+ * @constructor
+ */
 function Wallet(electrum) {
   this.initAddresses = function() {
     this.watchedAddresses = {};
@@ -48,13 +52,13 @@ function Wallet(electrum) {
 
   this.toStorableObject = function() {
     var o = {};
-    o.rnodes = [];
+    o['rnodes'] = [];
     for (var i in this.masterNodes) {
-      o.rnodes.push(this.masterNodes[i].toStorableObject());
+      o['rnodes'].push(this.masterNodes[i].toStorableObject());
     }
-    o.nodes = [];
+    o['nodes'] = [];
     for (var i in this.nodes) {
-      o.nodes.push(this.nodes[i].toStorableObject());
+      o['nodes'].push(this.nodes[i].toStorableObject());
     }
     return o;
   };
@@ -62,11 +66,11 @@ function Wallet(electrum) {
   this.loadStorableObject = function(o) {
     this.init();
     var nodes = [];
-    for (var i in o.rnodes) {
-      nodes.push(Node.fromStorableObject(o.rnodes[i]));
+    for (var i in o['rnodes']) {
+      nodes.push(Node.fromStorableObject(o['rnodes'][i]));
     }
-    for (var i in o.nodes) {
-      nodes.push(Node.fromStorableObject(o.nodes[i]));
+    for (var i in o['nodes']) {
+      nodes.push(Node.fromStorableObject(o['nodes'][i]));
     }
     return Promise.all(nodes.map(this.describeNode.bind(this)));
   };
@@ -74,7 +78,7 @@ function Wallet(electrum) {
   this.describeNode = function(node) {
     return new Promise(function(resolve, reject) {
       var params = {
-        'ext_pub_b58': node.extendedPublicBase58,
+        'ext_pub_b58': node.extendedPublicBase58
       };
       postRPC('describe-node', params)
         .then(function(response) {
@@ -102,7 +106,7 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       var params = {
         'ext_pub_b58': node.extendedPublicBase58,
-        'ext_prv_enc': node.extendedPrivateEncrypted,
+        'ext_prv_enc': node.extendedPrivateEncrypted
       };
       postRPC('restore-node', params)
         .then(function(response) {
@@ -209,7 +213,7 @@ function Wallet(electrum) {
       }
       var node = this.masterNodes[0];
       var params = {
-        'ext_prv_enc': node.extendedPrivateEncrypted,
+        'ext_prv_enc': node.extendedPrivateEncrypted
       };
       postRPC('describe-private-node', params)
         .then(function(response) {
@@ -226,7 +230,7 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       var params = {
         'path': "m/" + childNum + "'",
-        'is_watch_only': isWatchOnly,
+        'is_watch_only': isWatchOnly
       };
       postRPC('derive-child-node', params)
         .then(function(response) {
@@ -241,7 +245,7 @@ function Wallet(electrum) {
       var params = {
         'sign': true,
         'fee': sendFee,
-        'recipients': [{'addr_b58': sendTo, 'value': sendValue}],
+        'recipients': [{'addr_b58': sendTo, 'value': sendValue}]
       };
       postRPC('create-tx', params)
         .then(function(response) {
@@ -389,8 +393,10 @@ function Wallet(electrum) {
   this.handleBlockGetHeader = function(h) {
     logInfo("new block", h);
     return new Promise(function(resolve, reject) {
-      var params = { 'timestamp': h.timestamp,
-                     'block_height': h.block_height };
+      var params = {
+        'timestamp': h.timestamp,
+        'block_height': h.block_height
+      };
       postRPC('confirm-block', params)
         .then(resolve);
     }.bind(this));

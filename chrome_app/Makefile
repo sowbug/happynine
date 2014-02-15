@@ -4,9 +4,24 @@ IMAGES := img
 TOOLCHAIN ?= pnacl
 CONFIG ?= Release
 
-all: force_look
+JS_SOURCES = \
+	app.js \
+	controllers.js \
+	credentials.js \
+	directives.js \
+	electrum.js \
+	index.js \
+	messaging.js \
+	node.js \
+	settings.js \
+	storage.js \
+	utils.js \
+	wallet.js \
+  #
+
+all: force_look compiled.js
 	mkdir -p $(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
-	cp -R *.html *.js *.json *.css $(ZIPBASE)
+	cp -R *.html *.json *.css background.js common.js $(ZIPBASE)
 	mkdir -p $(ZIPBASE)
 	cp -R js $(ZIPBASE)
 	mkdir -p $(ZIPBASE)/$(IMAGES)
@@ -14,6 +29,15 @@ all: force_look
 	rm $(ZIPBASE)/js/bootstrap/js/bootstrap.js
 	rm $(ZIPBASE)/js/bootstrap/css/bootstrap.css
 	rm $(ZIPBASE)/js/bootstrap/css/bootstrap-theme.css
+
+compiled.js: $(JS_SOURCES)
+	java -jar $(GOOGLE_CLOSURE_JAR) \
+		--js $(JS_SOURCES) \
+		--js js/externs/angular-1.2.js \
+		--js js/externs/chrome_extensions.js \
+		--js_output_file $(ZIPBASE)/compiled.js \
+		--language_in ECMASCRIPT5_STRICT \
+		--compilation_level SIMPLE_OPTIMIZATIONS
 
 clean:
 	rm -f $(ZIPBASE)/*.html

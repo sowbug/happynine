@@ -27,28 +27,28 @@ var callbackId = 1;
 
 var postRPC = function(method, params) {
   return new Promise(function(resolve, reject) {
-    var rpc = { 'jsonrpc': '2.0',
-                'id': callbackId++,
-                'method': method,
-                'params': params,
+    var rpc = { "jsonrpc": "2.0",
+                "id": callbackId++,
+                "method": method,
+                "params": params
               };
-    callbacks[rpc.id] = {'resolve': resolve, 'reject': reject};
+    callbacks[rpc["id"]] = {"resolve": resolve, "reject": reject};
     common.naclModule.postMessage(JSON.stringify(rpc));
     logInfo(rpc);
   });
 };
 
 function handleMessage(message) {
-  var o = JSON.parse(message.data);
+  var o = JSON.parse(message["data"]);
   logDebug(o);
-  var id = o.id;
+  var id = o["id"];
   if (id) {
     if (callbacks[id]) {
-      if (o.error) {
-        logFatal(o.error);
-        callbacks[id].reject(o.error);
+      if (o["error"]) {
+        logFatal(o["error"]);
+        callbacks[id].reject(o["error"]);
       } else {
-        callbacks[id].resolve(o.result);
+        callbacks[id].resolve(o["result"]);
       }
       delete callbacks[id];
     } else {
@@ -57,9 +57,9 @@ function handleMessage(message) {
   } else {
     logDebug("posting", o);
     $.event.trigger({
-      'type': o.method,
-      'message': o.result,
-      time: new Date(),
+      "type": o["method"],
+      "message": o["result"],
+      time: new Date()
     });
   }
 }

@@ -22,37 +22,31 @@
 
 'use strict';
 
-var app = angular.module('app', []);
-
-app.factory('settings', function() {
-  return new Settings();
-});
-
-app.factory('credentials', function() {
-  return new Credentials();
-});
-
-app.factory('electrum', function() {
-  return new Electrum();
-});
-
-app.factory('wallet', ['electrum', function(electrum) {
-  return new Wallet(electrum);
-}]);
-
-app.directive('bitcoinAddress', function() {
-  return new BitcoinAddress();
-});
-
-app.controller('AppCtrl', ['$scope',
-                           '$http',
-                           'settings',
-                           'credentials',
-                           'wallet',
-                           'electrum',
-                           function ($scope, $http, settings, credentials,
-                                     wallet, electrum) {
-                             return new AppController($scope, $http, settings,
-                                                      credentials, wallet,
-                                                      electrum);
-                           }]);
+angular.module('app', [])
+  .factory('settings', function() {
+    return new Settings();
+  })
+  .factory('credentials', function() {
+    return new Credentials();
+  })
+  .factory('electrum', function() {
+    return new Electrum();
+  })
+  .factory('wallet', ['electrum', function(electrum) {
+    return new Wallet(electrum);
+  }])
+  .directive('bitcoinAddress', function() {
+    return new BitcoinAddress();
+  })
+  .controller('AppCtrl', ['$scope',
+                          '$http',
+                          'settings',
+                          'credentials',
+                          'wallet',
+                          'electrum',
+                          function ($scope, $http, settings, credentials,
+                                    wallet, electrum) {
+                            return new AppController($scope, $http, settings,
+                                                     credentials, wallet,
+                                                     electrum);
+                          }]);

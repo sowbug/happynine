@@ -435,13 +435,6 @@
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
-        <li ng-if="credentials.hasMultipleChildNodes()">
-          <div class="btn-group navbar-pagination">
-            <button id="account-prev" class="btn btn-default navbar-btn" ng-click="prevChildNode()">&laquo;</button>
-            <button id="account" class="btn btn-default navbar-btn disabled" ng-bind="account.name()"></button>
-            <button id="account-next" class="btn btn-default navbar-btn" ng-click="nextChildNode()">&raquo;</button>
-          </div>
-        </li>
         <li ng-if="getCurrentChildNode()">
           <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentChildNodeFingerprint()"></p>
         </li>
@@ -530,18 +523,6 @@
     <script type="text/javascript" src="js/jquery/jquery.qrcode.min.js"></script>
     <script type="text/javascript" src="js/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/angular/angular.min.js"></script>
-    <script type="text/javascript" src="utils.js"></script>
-    <script type="text/javascript" src="storage.js"></script>
-    <script type="text/javascript" src="settings.js"></script>
-    <script type="text/javascript" src="credentials.js"></script>
-    <script type="text/javascript" src="node.js"></script>
-    <script type="text/javascript" src="wallet.js"></script>
-    <script type="text/javascript" src="address.js"></script>
-    <script type="text/javascript" src="electrum.js"></script>
-    <script type="text/javascript" src="messaging.js"></script>
-    <script type="text/javascript" src="index.js"></script>
-    <script type="text/javascript" src="directives.js"></script>
-    <script type="text/javascript" src="controllers.js"></script>
-    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript" src="compiled.js"></script>
   </body>
 </html>
