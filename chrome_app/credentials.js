@@ -37,124 +37,125 @@ function Credentials() {
     this.isLocked = true;
   };
   this.init();
-
-  this.toStorableObject = function() {
-    var o = {};
-    o["check"] = this.check;
-    o["ekey_enc"] = this.ephemeralKeyEncrypted;
-    o["salt"] = this.salt;
-    return o;
-  };
-
-  this.loadStorableObject = function(o) {
-    return new Promise(function(resolve, reject) {
-      this.init();
-      this.check = o["check"];
-      this.ephemeralKeyEncrypted = o["ekey_enc"];
-      this.salt = o["salt"];
-      this.loadCredentials().then(resolve);
-    }.bind(this));
-  };
-
-  this.isPassphraseSet = function() {
-    return !!this.check;
-  };
-
-  // TODO(miket): rename to just isLocked (& avoid collision)
-  this.isWalletLocked = function() {
-    return this.isLocked;
-  };
-
-  this.setPassphrase = function(newPassphrase,
-                                relockCallbackVoid) {
-    return new Promise(function(resolve, reject) {
-      if (this.isPassphraseSet() && this.isWalletLocked()) {
-        reject("passphrase set/wallet is unlocked; can't set passphrase");
-        return;
-      }
-
-      var success = function(response) {
-        this.check = response.check;
-        this.ephemeralKeyEncrypted = response.ekey_enc;
-        this.salt = response.salt;
-        this.setRelockTimeout(relockCallbackVoid);
-        resolve();
-      };
-
-      var params = {
-        'new_passphrase': newPassphrase
-      };
-      postRPC('set-passphrase', params).then(success.bind(this), reject);
-    }.bind(this));
-  };
-
-  this.loadCredentials = function() {
-    return new Promise(function(resolve, reject) {
-      var params = {
-        'check': this.check,
-        'ekey_enc': this.ephemeralKeyEncrypted,
-        'salt': this.salt
-      };
-      postRPC('set-credentials', params).then(resolve);
-    }.bind(this));
-  };
-
-  this.clearRelockTimeout = function() {
-    if (this.relockTimeoutId) {
-      window.clearTimeout(this.relockTimeoutId);
-      this.relockTimeoutId = undefined;
-    }
-  };
-
-  this.setRelockTimeout = function(callbackVoid) {
-    this.clearRelockTimeout();
-    this.isLocked = false;
-    this.relockTimeoutId = window.setTimeout(function() {
-      this.lock(callbackVoid);
-    }.bind(this), 1000 * 60 * 1);
-  };
-
-  this.lock = function() {
-    return new Promise(function(resolve, reject) {
-      this.isLocked = true;
-      postRPC('lock', {}).then(resolve);
-    }.bind(this));
-  };
-
-  this.unlock = function(passphrase, relockCallbackVoid) {
-    return new Promise(function(resolve, reject) {
-      postRPC('unlock',
-              {'passphrase': passphrase}).then(function(response) {
-                if (response.success) {
-                  this.setRelockTimeout(relockCallbackVoid);
-                  resolve();
-                } else {
-                  reject();
-                }
-              }.bind(this), reject);
-    }.bind(this));
-  };
-
-  this.STORAGE_NAME = 'credentials';
-  this.load = function() {
-    return new Promise(function(resolve, reject) {
-      var success = function(response) {
-        if (response) {
-          this.loadStorableObject(response).then(resolve);
-        } else {
-          this.init();
-          resolve();
-        }
-      };
-      var failure = function(response) {
-        reject(response);
-      };
-      loadStorage(this.STORAGE_NAME).then(success.bind(this),
-                                          failure.bind(this));
-    }.bind(this));
-  };
-
-  this.save = function() {
-    saveStorage(this.STORAGE_NAME, this.toStorableObject());
-  };
 }
+
+Credentials.prototype.toStorableObject = function() {
+  var o = {};
+  o["check"] = this.check;
+  o["ekey_enc"] = this.ephemeralKeyEncrypted;
+  o["salt"] = this.salt;
+  return o;
+};
+
+Credentials.prototype.loadStorableObject = function(o) {
+  return new Promise(function(resolve, reject) {
+    this.init();
+    this.check = o["check"];
+    this.ephemeralKeyEncrypted = o["ekey_enc"];
+    this.salt = o["salt"];
+    this.loadCredentials().then(resolve);
+  }.bind(this));
+};
+
+Credentials.prototype.isPassphraseSet = function() {
+  return !!this.check;
+};
+
+// TODO(miket): rename to just isLocked (& avoid collision)
+Credentials.prototype.isWalletLocked = function() {
+  return this.isLocked;
+};
+
+Credentials.prototype.setPassphrase = function(newPassphrase,
+                                               relockCallbackVoid) {
+  return new Promise(function(resolve, reject) {
+    if (this.isPassphraseSet() && this.isWalletLocked()) {
+      reject("passphrase set/wallet is unlocked; can't set passphrase");
+      return;
+    }
+
+    var success = function(response) {
+      this.check = response.check;
+      this.ephemeralKeyEncrypted = response.ekey_enc;
+      this.salt = response.salt;
+      this.setRelockTimeout(relockCallbackVoid);
+      resolve();
+    };
+
+    var params = {
+      'new_passphrase': newPassphrase
+    };
+    postRPC('set-passphrase', params).then(success.bind(this), reject);
+  }.bind(this));
+};
+
+Credentials.prototype.loadCredentials = function() {
+  return new Promise(function(resolve, reject) {
+    var params = {
+      'check': this.check,
+      'ekey_enc': this.ephemeralKeyEncrypted,
+      'salt': this.salt
+    };
+    postRPC('set-credentials', params).then(resolve);
+  }.bind(this));
+};
+
+Credentials.prototype.clearRelockTimeout = function() {
+  if (this.relockTimeoutId) {
+    window.clearTimeout(this.relockTimeoutId);
+    this.relockTimeoutId = undefined;
+  }
+};
+
+Credentials.prototype.setRelockTimeout = function(callbackVoid) {
+  this.clearRelockTimeout();
+  this.isLocked = false;
+  this.relockTimeoutId = window.setTimeout(function() {
+    this.lock(callbackVoid);
+  }.bind(this), 1000 * 60 * 1);
+};
+
+Credentials.prototype.lock = function() {
+  return new Promise(function(resolve, reject) {
+    this.isLocked = true;
+    postRPC('lock', {}).then(resolve);
+  }.bind(this));
+};
+
+Credentials.prototype.unlock = function(passphrase, relockCallbackVoid) {
+  return new Promise(function(resolve, reject) {
+    postRPC('unlock',
+            {'passphrase': passphrase}).then(function(response) {
+              if (response.success) {
+                this.setRelockTimeout(relockCallbackVoid);
+                resolve();
+              } else {
+                reject();
+              }
+            }.bind(this), reject);
+  }.bind(this));
+};
+
+Credentials.STORAGE_NAME = 'credentials';
+Credentials.prototype.load = function() {
+  return new Promise(function(resolve, reject) {
+    var success = function(response) {
+      if (response) {
+        this.loadStorableObject(response).then(resolve);
+      } else {
+        this.init();
+        resolve();
+      }
+    };
+    var failure = function(response) {
+      reject(response);
+    };
+    loadStorage(Credentials.STORAGE_NAME).then(success.bind(this),
+                                               failure.bind(this));
+  }.bind(this));
+};
+
+Credentials.prototype.save = function() {
+  saveStorage(Credentials.STORAGE_NAME, this.toStorableObject());
+};
+

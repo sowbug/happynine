@@ -36,72 +36,73 @@ function Settings() {
     "sats": "Satoshis"
   };
 
-  this.init = function() {
-    this.units = "mbtc";
-  };
   this.init();
-
-  this.toStorableObject = function() {
-    var o = {};
-    o["units"] = this.units;
-    return o;
-  };
-
-  this.loadStorableObject = function(o) {
-    this.init();
-    this.units = o["units"];
-  };
-
-  this.satoshiToUnit = function(satoshis) {
-    switch (this.units) {
-    case "btc":
-      return satoshis / 100000000;
-    case "mbtc":
-       return satoshis / 100000;
-    case "ubtc":
-       return satoshis / 100;
-    default:
-      return satoshis;
-    }
-  };
-
-  this.unitToSatoshi = function(units) {
-    switch (this.units) {
-    case "btc":
-      return units * 100000000;
-    case "mbtc":
-       return units * 100000;
-    case "ubtc":
-       return units * 100;
-    default:
-      return units;
-    }
-  };
-
-  this.unitLabel = function() {
-    return this.availableUnits[this.units];
-  };
-
-  this.STORAGE_NAME = 'settings';
-  this.load = function() {
-    return new Promise(function(resolve, reject) {
-      var success = function(response) {
-        if (response) {
-          this.loadStorableObject(response);
-        } else {
-          this.init();
-        }
-        resolve();
-      };
-      var failure = function(response) {
-        reject(response);
-      };
-      loadStorage(this.STORAGE_NAME).then(success.bind(this),
-                                          failure.bind(this));
-    }.bind(this));
-  };
-
-  this.save = function() {
-    saveStorage(this.STORAGE_NAME, this.toStorableObject());
-  };
 }
+
+Settings.prototype.init = function() {
+  this.units = "mbtc";
+};
+
+Settings.prototype.toStorableObject = function() {
+  var o = {};
+  o["units"] = this.units;
+  return o;
+};
+
+Settings.prototype.loadStorableObject = function(o) {
+  this.init();
+  this.units = o["units"];
+};
+
+Settings.prototype.satoshiToUnit = function(satoshis) {
+  switch (this.units) {
+  case "btc":
+    return satoshis / 100000000;
+  case "mbtc":
+    return satoshis / 100000;
+  case "ubtc":
+    return satoshis / 100;
+  default:
+    return satoshis;
+  }
+};
+
+Settings.prototype.unitToSatoshi = function(units) {
+  switch (this.units) {
+  case "btc":
+    return units * 100000000;
+  case "mbtc":
+    return units * 100000;
+  case "ubtc":
+    return units * 100;
+  default:
+    return units;
+  }
+};
+
+Settings.prototype.unitLabel = function() {
+  return this.availableUnits[this.units];
+};
+
+Settings.STORAGE_NAME = 'settings';
+Settings.prototype.load = function() {
+  return new Promise(function(resolve, reject) {
+    var success = function(response) {
+      if (response) {
+        this.loadStorableObject(response);
+      } else {
+        this.init();
+      }
+      resolve();
+    };
+    var failure = function(response) {
+      reject(response);
+    };
+    loadStorage(Settings.STORAGE_NAME).then(success.bind(this),
+                                            failure.bind(this));
+  }.bind(this));
+};
+
+Settings.prototype.save = function() {
+  saveStorage(Settings.STORAGE_NAME, this.toStorableObject());
+};
