@@ -25,7 +25,7 @@ I've listed the apt packages I needed for my bare-bones Debian-based Linux box (
 
 * Core development: `sudo apt-get install libc6-i386 lib32stdc++6 gcc binutils make unzip zip`
 * Closure Compiler: `sudo apt-get install openjdk-7-jre`
-* Unit tests: `sudo apt-get install libssl-dev`
+* Unit tests: `sudo apt-get install libssl-dev libjsoncpp-dev`
 
 Development Cycle
 ===
