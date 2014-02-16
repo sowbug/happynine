@@ -392,11 +392,21 @@
                   <div class="panel-heading">Danger</div>
                   <div class="panel-body">
                     <form class="form-horizontal" role="form">
+
                       <div class="form-group">
                         <div class="col-md-offset-2 col-md-10">
-                          <button class="btn btn-danger" ng-click="clearEverything()">Clear Everything</button>
+                          <button class="btn btn-danger" ng-click="clearEverything()" ng-disabled="!w.doIUnderstand">Clear Everything</button>
                         </div>
                       </div>
+
+                      <div class="checkbox">
+                        <div class="col-md-offset-2 col-md-10">
+                          <label>
+                            <input type="checkbox" ng-model="w.doIUnderstand"><strong>I understand that "Clear Everything" clears all data from this application.</strong>
+                          </label>
+                        </div>
+                      </div>
+
                     </form>
                   </div>
                 </div><!-- panel-danger -->
