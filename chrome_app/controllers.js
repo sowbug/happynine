@@ -39,6 +39,7 @@ function AppController($scope,
   // object and hang stuff off it. I picked w for wallet.
   $scope.w = {};
   $scope.w.selectedAddress = undefined;
+  $scope.w.isCheckingPassphrase = false;
   $scope.w.enableLogging = SHOULD_LOG;  // First time through, pick it up
 
   if (chrome && chrome.runtime) {
@@ -202,21 +203,32 @@ function AppController($scope,
     });
   };
 
-  $scope.unlockWallet = function() {
+  $scope.resetIsCheckingPassphrase = function() {
+    $scope.w.isCheckingPassphrase = false;
+  };
+
+  $scope.unlockWallet = function(secondsUntilRelock) {
     var unlockSuccessful = function() {
-      $("#unlock-wallet-modal").modal('hide');
       $scope.w.passphraseNew = null;
+      $scope.resetIsCheckingPassphrase();
+      $scope.w.didPassphraseCheckFail = false;
+      $("#unlock-wallet-modal").modal('hide');
       $scope.$apply();
     };
     var unlockFailed = function() {
       $scope.w.passphraseNew = null;
+      $scope.resetIsCheckingPassphrase();
+      $scope.w.didPassphraseCheckFail = true;
       $scope.$apply();
     };
     var relockCallback = function() {
       $scope.$apply();
     };
 
+    $scope.w.isCheckingPassphrase = true;
+    $scope.w.didPassphraseCheckFail = false;
     $scope.credentials.unlock($scope.w.passphraseNew,
+                              secondsUntilRelock,
                               relockCallback.bind(this))
       .then(unlockSuccessful, unlockFailed);
   };

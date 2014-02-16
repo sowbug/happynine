@@ -107,12 +107,13 @@ Credentials.prototype.clearRelockTimeout = function() {
   }
 };
 
-Credentials.prototype.setRelockTimeout = function(callbackVoid) {
+Credentials.prototype.setRelockTimeout = function(secondsUntilRelock,
+                                                  callbackVoid) {
   this.clearRelockTimeout();
   this.isLocked = false;
   this.relockTimeoutId = window.setTimeout(function() {
     this.lock().then(callbackVoid.call(this));
-  }.bind(this), 1000 * 60 * 1);
+  }.bind(this), 1000 * secondsUntilRelock);
 };
 
 Credentials.prototype.lock = function() {
@@ -122,12 +123,14 @@ Credentials.prototype.lock = function() {
   }.bind(this));
 };
 
-Credentials.prototype.unlock = function(passphrase, relockCallbackVoid) {
+Credentials.prototype.unlock = function(passphrase,
+                                        secondsUntilRelock,
+                                        relockCallbackVoid) {
   return new Promise(function(resolve, reject) {
     postRPC('unlock',
             {'passphrase': passphrase}).then(function(response) {
               if (response.success) {
-                this.setRelockTimeout(relockCallbackVoid);
+                this.setRelockTimeout(secondsUntilRelock, relockCallbackVoid);
                 resolve();
               } else {
                 reject();
