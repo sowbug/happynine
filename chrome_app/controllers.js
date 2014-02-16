@@ -161,19 +161,23 @@ function AppController($scope,
 
   $scope.importMasterKey = function() {
     var success = function() {
+      $scope.w.didImportFail = false;
       $scope.w.importMasterKey = null;
       $("#import-master-key-modal").modal('hide');
       $scope.$apply();
     };
     var failure = function(err) {
+      $scope.w.didImportFail = true;
       logFatal("importMasterKey", err);
+      $scope.$apply();
     };
+    $scope.w.didImportFail = false;
     $scope.wallet.importMasterKey($scope.w.importMasterKey)
       .then(success.bind(this),
             failure.bind(this));
   };
 
-  $scope.removeMasterKey = function() {
+  $scope.removeMasterNode = function() {
     // TODO(miket): ideally we'll track whether this key was backed
     // up, and make this button available only if yes. Then we'll
     // confirm up the wazoo before actually deleting.
@@ -281,6 +285,10 @@ function AppController($scope,
 
   $scope.isWalletUnlocked = function() {
     return $scope.isPassphraseSet() && !$scope.credentials.isWalletLocked();
+  };
+
+  $scope.isChildNodeInstalled = function() {
+    return $scope.wallet.nodes.length != 0;
   };
 
   $scope.isWalletKeySet = function() {

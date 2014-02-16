@@ -82,7 +82,7 @@ function Wallet(electrum) {
       };
       postRPC('describe-node', params)
         .then(function(response) {
-          if (response.ext_pub_b58) {
+          if (response['ext_pub_b58']) {
             var dnode = Node.fromStorableObject(response);
             // If we had the private key, pass it through.
             if (node.extendedPrivateEncrypted) {
@@ -110,7 +110,7 @@ function Wallet(electrum) {
       };
       postRPC('restore-node', params)
         .then(function(response) {
-          if (response.fp) {
+          if (response['fp']) {
             var node = Node.fromStorableObject(response);
             if (node.isMaster()) {
               resolve();
@@ -191,13 +191,14 @@ function Wallet(electrum) {
       };
       postRPC('import-master-node', params)
         .then(function(response) {
-          if (response.fp) {
+          if (response['fp']) {
             var node = Node.fromStorableObject(response);
             this.describeNode(node).then(resolve);
           } else {
-            reject();
+            reject(response['error']['message']);
           }
-        }.bind(this));
+        }.bind(this),
+              reject);
     }.bind(this));
   };
 
@@ -212,8 +213,8 @@ function Wallet(electrum) {
       };
       postRPC('describe-private-node', params)
         .then(function(response) {
-          if (response.ext_prv_b58) {
-            resolve(response.ext_prv_b58);
+          if (response['ext_prv_b58']) {
+            resolve(response['ext_prv_b58']);
           } else {
             reject();
           }
@@ -244,9 +245,9 @@ function Wallet(electrum) {
       };
       postRPC('create-tx', params)
         .then(function(response) {
-          if (response.tx) {
-            logImportant("got", response.tx);
-            electrum.issueTransactionBroadcast(response.tx)
+          if (response['tx']) {
+            logImportant("GENERATED TX", response['tx']);
+            electrum.issueTransactionBroadcast(response['tx'])
               .then(resolve);
           } else {
             reject("create-tx failed");
@@ -368,9 +369,9 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       postRPC('get-addresses', {})
         .then(function(response) {
-          for (var i in response.addresses) {
-            var addr = response.addresses[i];
-            this.watchAddress(addr.addr_b58, addr.is_public);
+          for (var i in response['addresses']) {
+            var addr = response['addresses'][i];
+            this.watchAddress(addr['addr_b58'], addr['is_public']);
             this.updateAddress(addr);
           }
           this.recalculateWalletBalance();
@@ -383,7 +384,7 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       postRPC('get-history', {})
         .then(function(response) {
-          this.recentTransactions = response.history;
+          this.recentTransactions = response['history'];
           resolve();
         }.bind(this));
     }.bind(this));
