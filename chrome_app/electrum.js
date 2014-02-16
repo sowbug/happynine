@@ -151,9 +151,6 @@ Electrum.prototype.pickRandomServer = function() {
       Electrum.SERVERS[Math.floor(Math.random() * Electrum.SERVERS.length)];
   } while (newHostname == this.currentServerHostname);
   this.currentServerHostname = newHostname;
-  if (this.currentServerHostname != 'b.1209k.com') {
-    this.currentServerHostname += 'xxx';
-  }
 };
 
 Electrum.prototype.connectToServer = function() {
