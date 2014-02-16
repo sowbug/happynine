@@ -16,9 +16,9 @@ Technologies
 Installation Requirements for Development
 ===
 
-* `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory (pepper_31 as of today) in the [Native Client SDK](https://developers.google.com/native-client/sdk/download)
+* `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory (pepper_32 as of today) in the [Native Client SDK](https://developers.google.com/native-client/sdk/download)
 * `GOOGLE_CLOSURE_JAR` pointing to compiler.jar from [Google Closure Compiler](https://developers.google.com/closure/compiler/)
-* [naclports](https://code.google.com/p/naclports/) with `./make_all.sh openssl` successfully executed on the local system. For what it's worth, I had to exclude the glibc versions to get it to build with unit tests. And now that we're using PNaCl exclusively, you can probably get away with just `NACL_ARCH=pnacl ; make openssl`. In fact, if you really want to live dangerously, disable the unit tests in the make script and save a whole bunch of PNaCl translation time.
+* [naclports](https://code.google.com/p/naclports/) with `./make_all.sh openssl` and `./make_all jsoncpp` successfully executed on the local system. For what it's worth, I had to exclude the glibc versions to get openssl to build with unit tests. And now that we're using PNaCl exclusively, you can probably get away with just `NACL_ARCH=pnacl ; make openssl`. In fact, if you really want to live dangerously, disable the unit tests in the make script and save a whole bunch of PNaCl translation time.
 * [googletest](https://code.google.com/p/googletest/) (a.k.a. gtest)
 
 I've listed the apt packages I needed for my bare-bones Debian-based Linux box (similar to Ubuntu 13.04). You might need to map them to different package names on other distributions.
