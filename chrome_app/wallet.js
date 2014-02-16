@@ -272,6 +272,10 @@ function Wallet(electrum) {
 
   this.handleAddressGetHistory = function(txs) {
     return new Promise(function(resolve, reject) {
+      if (txs.length == 0) {
+        resolve();
+        return;
+      }
       postRPC('report-tx-statuses', { 'tx_statuses': txs })
         .then(function(response) {
           var tx_hashes = [];
