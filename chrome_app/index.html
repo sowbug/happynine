@@ -292,22 +292,6 @@
                         </div>
                       </div>
                       <div ng-if="isWalletUnlocked()">
-                        <div class="form-group" ng-if="isWalletKeyPrivateSet()">
-                          <div class="col-md-4 col-md-offset-2">
-                            <div class="checkbox">
-                              <label>
-                                <input type="checkbox" ng-model="w.showPrivateKey">Show Private Key
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="form-group" ng-if="w.showPrivateKey && isWalletKeyPrivateSet()">
-                          <label for="xprv-readonly" class="col-md-2 control-label">Private Key</label>
-                          <div class="col-md-10">
-                            <textarea class="form-control" id="xprv-readonly" readonly ng-bind="getWalletKeyPrivate()"></textarea>
-                          </div>
-                        </div>
-
                         <div class="form-group">
                           <div class="col-md-6 col-md-offset-2">
                             <button class="btn btn-danger" ng-click="removeMasterNode()">Remove Master Key</button>
@@ -315,6 +299,14 @@
                           </div>
                         </div>
                       </div><!-- isWalletUnlocked -->
+
+                      <div ng-if="!isWalletUnlocked()">
+                        <div class="form-group">
+                          <div class="col-md-6 col-md-offset-2">
+                            <button class="btn btn-warning" data-toggle="modal" data-target="#unlock-wallet-modal"><span class="glyphicon glyphicon-lock ok"></span> Unlock Wallet to Manage Key</button>
+                          </div>
+                        </div>
+                      </div><!-- !isWalletUnlocked -->
 
                     </form>
                   </div>
@@ -368,6 +360,7 @@
                           <td>
                             <button class="btn btn-primary" ng-click="selectChildNodeByIndex($index)" ng-disabled="node == getCurrentChildNode()">Use</button>
                             <button class="btn btn-info" ng-click="exportNode(node)" ng-if="isWalletUnlocked() && node.hasPrivateKey()">Export</button>
+                            <button class="btn btn-warning" ng-if="!isWalletUnlocked() && node.hasPrivateKey()" data-toggle="modal" data-target="#unlock-wallet-modal"><span class="glyphicon glyphicon-lock ok"></span></button>
                             <button class="btn btn-danger" ng-click="removeChildNode(node)">Remove</button>
                           </td>
                         </tr>
