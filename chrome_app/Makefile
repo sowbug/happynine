@@ -36,8 +36,8 @@ compiled.js: $(JS_SOURCES)
 		--js $(JS_SOURCES) \
 		--js js/externs/angular-1.2.js \
 		--js js/externs/chrome_extensions.js \
-		--js_output_file $(ZIPBASE)/happynine-min.js \
-		--create_source_map $(ZIPBASE)/happynine-min.js.map \
+		--js_output_file $(ZIPBASE)/happynine.min.js \
+		--create_source_map $(ZIPBASE)/happynine.min.js.map \
 		--source_map_format=V3 \
 		--language_in ECMASCRIPT5_STRICT \
 		--compilation_level SIMPLE_OPTIMIZATIONS

@@ -26,161 +26,215 @@
  * @constructor
  */
 function Electrum() {
-  this.SERVERS = [
-    "b.1209k.com"
-  ];
-  this.currentServerHostname = this.SERVERS[0];
   this.callbacks = {};
   this.callbackId = 1;
+  this.isSocketConnected = false;
   this.socketId = undefined;
   this.stringBuffer = "";
-
-  this.issueAddressGetHistory = function(addr_b58) {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.address.get_history", [addr_b58])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.issueAddressSubscribe = function(addr_b58) {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.address.subscribe", [addr_b58])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.issueTransactionGet = function(tx_hash) {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.transaction.get", [tx_hash])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.issueTransactionBroadcast = function(tx) {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.transaction.broadcast", [tx])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.issueHeadersSubscribe = function() {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.headers.subscribe", [])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.issueBlockGetHeader = function(block_num) {
-    return new Promise(function(resolve, reject) {
-      this._enqueueRpc("blockchain.block.get_header", [block_num])
-        .then(resolve);
-    }.bind(this));
-  };
-
-  this.handleResponse = function(o) {
-    var id = o["id"];
-    if (this.callbacks[id]) {
-      this.callbacks[id].resolve(o["result"]);
-      delete this.callbacks[id];
-      this.pendingRpcCount--;
-      this.$scope.$apply();
-    } else {
-      logInfo("notification from electrum", o);
-      var ALLOWED_METHODS = [
-        "blockchain.address.subscribe",
-        "blockchain.headers.subscribe",
-        "blockchain.numblocks.subscribe"
-      ];
-      if (ALLOWED_METHODS.indexOf(o["method"]) != -1) {
-        $.event.trigger({
-          "type": o["method"],
-          "message": o["params"],
-          time: new Date()
-        });
-      }
-    }
-  };
-
-  this.onSocketReceive = function(receiveInfo) {
-    arrayBuffer2String(receiveInfo.data, function(str) {
-      this.stringBuffer += str;
-      var parts = this.stringBuffer.split("\n");
-      if (parts.length > 1) {
-        for (var i = 0; i < parts.length - 1; ++i) {
-          var part = parts[i];
-          if (part.length == 0) {
-            continue;
-          }
-          this.handleResponse(JSON.parse(part));
-        }
-        if (parts[parts.length - 1].length > 0) {
-          this.stringBuffer = parts[parts.length - 1];
-        }
-      }
-    }.bind(this));
-  };
-
-  this.onSocketReceiveError = function(receiveErrorInfo) {
-    logFatal("receive error", receiveErrorInfo);
-  };
-
-  this.onSendComplete = function(sendInfo) {
-  };
-
-  this.connectToServer = function() {
-    return new Promise(function(resolve, reject) {
-      function onConnectComplete(result) {
-        if (result != 0) {
-          logFatal("onConnectComplete", result);
-          reject(result);
-        } else {
-          resolve();
-        }
-      };
-
-      function onSocketCreate(socketInfo) {
-        this.socketId = socketInfo.socketId;
-        chrome.sockets.tcp.onReceive.addListener(
-          this.onSocketReceive.bind(this));
-        chrome.sockets.tcp.onReceiveError.addListener(
-          this.onSocketReceiveError.bind(this));
-        chrome.sockets.tcp.connect(this.socketId,
-                                   this.currentServerHostname,
-                                   50001,
-                                   onConnectComplete.bind(this));
-      }
-
-      chrome.sockets.tcp.create({
-        "name": "electrum",
-        "persistent": true,
-        "bufferSize": 16384
-      }, onSocketCreate.bind(this));
-    }.bind(this));
-  }
+  this.outgoingQueue = [];
 
   // TODO(miket): there's just no way this will work
   this.pendingRpcCount = 0;
+};
 
-  this.areRequestsPending = function() {
-    return this.pendingRpcCount > 0;
-  };
+Electrum.SERVERS = [
+  "b.1209k.com",
+  "cube.l0g.in",
+  "ecdsa.org",
+  "electrum.be",
+  "electrum.drollette.com",
+  "electrum.no-ip.org",
+  "electrum.novit.ro",
+  "electrum.stepkrav.pw",
+  "electrum.stupidfoot.com",
+  "sspc1000.homeip.net",
+];
 
-  this._enqueueRpc = function(method, params) {
-    return new Promise(function(resolve, reject) {
-      var rpc = {
-        "id": this.callbackId++,
-        "method": method,
-        "params": params
-      };
-      string2ArrayBuffer(
-        JSON.stringify(rpc) + "\n",
-        function(arrayBuffer) {
-          chrome.sockets.tcp.send(this.socketId,
-                                  arrayBuffer,
-                                  this.onSendComplete.bind(this));
-        }.bind(this));
-      this.callbacks[rpc["id"]] = {"resolve": resolve, "reject": reject};
-      this.pendingRpcCount++;
-    }.bind(this));
-  };
+Electrum.prototype.issueAddressGetHistory = function(addr_b58) {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.address.get_history", [addr_b58])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.issueAddressSubscribe = function(addr_b58) {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.address.subscribe", [addr_b58])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.issueTransactionGet = function(tx_hash) {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.transaction.get", [tx_hash])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.issueTransactionBroadcast = function(tx) {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.transaction.broadcast", [tx])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.issueHeadersSubscribe = function() {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.headers.subscribe", [])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.issueBlockGetHeader = function(block_num) {
+  return new Promise(function(resolve, reject) {
+    this._enqueueRpc("blockchain.block.get_header", [block_num])
+      .then(resolve);
+  }.bind(this));
+};
+
+Electrum.prototype.handleResponse = function(o) {
+  var id = o["id"];
+  if (this.callbacks[id]) {
+    this.callbacks[id].resolve(o["result"]);
+    delete this.callbacks[id];
+    this.pendingRpcCount--;
+    this.$scope.$apply();
+  } else {
+    logInfo("notification from electrum", o);
+    var ALLOWED_METHODS = [
+      "blockchain.address.subscribe",
+      "blockchain.headers.subscribe",
+      "blockchain.numblocks.subscribe"
+    ];
+    if (ALLOWED_METHODS.indexOf(o["method"]) != -1) {
+      $.event.trigger({
+        "type": o["method"],
+        "message": o["params"],
+        time: new Date()
+      });
+    }
+  }
+};
+
+Electrum.prototype.onSocketReceive = function(receiveInfo) {
+  arrayBuffer2String(receiveInfo.data, function(str) {
+    this.stringBuffer += str;
+    var parts = this.stringBuffer.split("\n");
+    if (parts.length > 1) {
+      for (var i = 0; i < parts.length - 1; ++i) {
+        var part = parts[i];
+        if (part.length == 0) {
+          continue;
+        }
+        this.handleResponse(JSON.parse(part));
+      }
+      if (parts[parts.length - 1].length > 0) {
+        this.stringBuffer = parts[parts.length - 1];
+      }
+    }
+  }.bind(this));
+};
+
+Electrum.prototype.onSocketReceiveError = function(receiveErrorInfo) {
+  logFatal("receive error", receiveErrorInfo);
+  this.isSocketConnected = false;
+  this.connectToServer();
+};
+
+Electrum.prototype.onSendComplete = function(sendInfo) {
+};
+
+Electrum.prototype.pickRandomServer = function() {
+  var newHostname;
+  do {
+    newHostname =
+      Electrum.SERVERS[Math.floor(Math.random() * Electrum.SERVERS.length)];
+  } while (newHostname == this.currentServerHostname);
+  this.currentServerHostname = newHostname;
+  if (this.currentServerHostname != 'b.1209k.com') {
+    this.currentServerHostname += 'xxx';
+  }
+};
+
+Electrum.prototype.connectToServer = function() {
+  return new Promise(function(resolve, reject) {
+    var retryDelay = 100;
+
+    function onConnectComplete(result) {
+      if (result != 0) {
+        logFatal("onConnectComplete", result);
+        retryDelay *= 2;
+        if (retryDelay > 3200) {
+          retryDelay = 3200;
+        }
+        window.setTimeout(tryConnection.bind(this), retryDelay);
+      } else {
+        logImportant("Successfully connected:", this.currentServerHostname);
+        this.isSocketConnected = true;
+        this.flushOutgoingQueue();
+        resolve();
+      }
+    }
+
+    function tryConnection() {
+      this.pickRandomServer();
+      logImportant("Attempting connection:",
+                   this.currentServerHostname);
+      chrome.sockets.tcp.connect(this.socketId,
+                                 this.currentServerHostname,
+                                 50001,
+                                 onConnectComplete.bind(this));
+    }
+
+    function onSocketCreate(socketInfo) {
+      this.socketId = socketInfo.socketId;
+      chrome.sockets.tcp.onReceive.addListener(
+        this.onSocketReceive.bind(this));
+      chrome.sockets.tcp.onReceiveError.addListener(
+        this.onSocketReceiveError.bind(this));
+      tryConnection.call(this);
+    }
+
+    chrome.sockets.tcp.create({
+      "name": "electrum",
+      "persistent": true,
+      "bufferSize": 16384
+    }, onSocketCreate.bind(this));
+  }.bind(this));
 }
+
+Electrum.prototype.areRequestsPending = function() {
+  return this.pendingRpcCount > 0;
+};
+
+Electrum.prototype.flushOutgoingQueue = function() {
+  if (this.outgoingQueue.length == 0) {
+    return;
+  }
+  if (!this.isSocketConnected) {
+    return;
+  }
+  while (this.outgoingQueue.length != 0) {
+    string2ArrayBuffer(
+      this.outgoingQueue.shift(),
+      function(arrayBuffer) {
+        chrome.sockets.tcp.send(this.socketId,
+                                arrayBuffer,
+                                this.onSendComplete.bind(this));
+      }.bind(this));
+  }
+};
+
+Electrum.prototype._enqueueRpc = function(method, params) {
+  return new Promise(function(resolve, reject) {
+    var rpc = {
+      "id": this.callbackId++,
+      "method": method,
+      "params": params
+    };
+    this.outgoingQueue.push(JSON.stringify(rpc) + "\n");
+    this.callbacks[rpc["id"]] = {"resolve": resolve, "reject": reject};
+    this.pendingRpcCount++;
+    this.flushOutgoingQueue();
+  }.bind(this));
+};
