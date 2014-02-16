@@ -42,7 +42,6 @@ Electrum.SERVERS = [
   "cube.l0g.in",
   "ecdsa.org",
   "electrum.be",
-  "electrum.drollette.com",
   "electrum.no-ip.org",
   "electrum.novit.ro",
   "electrum.stepkrav.pw",
