@@ -97,7 +97,11 @@ Electrum.prototype.handleResponse = function(o) {
     this.callbacks[id].resolve(o["result"]);
     delete this.callbacks[id];
     this.pendingRpcCount--;
-    this.$scope.$apply();
+    $.event.trigger({
+      "type": "apply",
+      "message": undefined,
+      time: new Date()
+    });
   } else {
     logInfo("notification from electrum", o);
     var ALLOWED_METHODS = [

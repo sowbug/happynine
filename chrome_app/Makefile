@@ -4,6 +4,12 @@ IMAGES := img
 TOOLCHAIN ?= pnacl
 CONFIG ?= Release
 
+ifeq ($(WS),1)
+CLOSURE_COMPILATION_LEVEL=WHITESPACE_ONLY
+else
+CLOSURE_COMPILATION_LEVEL=SIMPLE_OPTIMIZATIONS
+endif
+
 JS_SOURCES = \
 	api_client.js \
 	app.js \
@@ -41,7 +47,7 @@ compiled.js: $(JS_SOURCES)
 		--create_source_map $(ZIPBASE)/happynine.min.js.map \
 		--source_map_format=V3 \
 		--language_in ECMASCRIPT5_STRICT \
-		--compilation_level SIMPLE_OPTIMIZATIONS
+		--compilation_level $(CLOSURE_COMPILATION_LEVEL)
 
 clean:
 	rm -f $(ZIPBASE)/*.html
