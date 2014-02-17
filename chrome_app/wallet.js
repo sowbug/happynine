@@ -42,13 +42,27 @@ function Wallet(api_client, electrum) {
     this.initAddresses();
   };
   this.init();
-  electrum.connectToServer()
-    .then(function() {
-      electrum.issueHeadersSubscribe()
-        .then(function(response) {
-          this.handleBlockGetHeader(response);
-        });
-    });
+
+  $(document).on("blockchain.address.subscribe", function(evt) {
+    var params = evt.message;
+    electrum.issueAddressGetHistory(params[0])
+      .then(this.handleAddressGetHistory.bind(this));
+  }.bind(this));
+
+  $(document).on("blockchain.headers.subscribe", function(evt) {
+    var params = evt.message;
+    this.handleBlockGetHeader(params[0]);
+  }.bind(this));
+
+  this.startElectrum = function() {
+    electrum.connectToServer()
+      .then(function() {
+        electrum.issueHeadersSubscribe()
+          .then(function(response) {
+            this.handleBlockGetHeader(response);
+          });
+      });
+  };
 
   this.toStorableObject = function() {
     var o = {};
@@ -377,17 +391,6 @@ function Wallet(api_client, electrum) {
         .then(resolve);
     }.bind(this));
   };
-
-  $(document).on("blockchain.address.subscribe", function(evt) {
-    var params = evt.message;
-    electrum.issueAddressGetHistory(params[0])
-      .then(this.handleAddressGetHistory.bind(this));
-  }.bind(this));
-
-  $(document).on("blockchain.headers.subscribe", function(evt) {
-    var params = evt.message;
-    this.handleBlockGetHeader(params[0]);
-  }.bind(this));
 
   this.setActiveMasterNode = function(node) {
     return new Promise(function(resolve, reject) {

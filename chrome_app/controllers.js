@@ -79,16 +79,19 @@ function AppController($scope,
   };
 
   $scope.startLoading = function() {
-    $scope.settings.load().then(function() {
-      return $scope.credentials.load();
-    }).then(function() {
-      return $scope.wallet.load();
-    }).then(function() {
-      $scope.$apply();
-      $scope.addPostLoadWatchers();
-    }).catch(function(err) {
-      logFatal("startLoading", err);
-    });
+    $scope.settings.load()
+      .then(function() {
+        return $scope.credentials.load();
+      }).then(function() {
+        return $scope.wallet.load();
+      }).then(function() {
+        $scope.$apply();
+        $scope.addPostLoadWatchers();
+      }).then(function() {
+        $scope.wallet.startElectrum();
+      }).catch(function(err) {
+        logFatal("startLoading", err);
+      });
   };
 
   $scope.$watch('getChildNodeCount()', function(newVal, oldVal) {
