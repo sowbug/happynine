@@ -39,7 +39,7 @@ $(eval $(call NMF_RULE,$(TARGET),))
 all: force_look
 	cp $(OUTBASE)/$(TOOLCHAIN)/$(CONFIG)/$(TARGET).nmf \
 		$(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
-	cp $(OUTBASE)/$(TOOLCHAIN)/$(CONFIG)/$(TARGET)_*.*exe \
+	cp $(OUTBASE)/$(TOOLCHAIN)/$(CONFIG)/$(TARGET).pexe \
 		$(ZIPBASE)/$(TOOLCHAIN)/$(CONFIG)
 
 force_look:
