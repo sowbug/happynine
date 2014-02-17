@@ -65,7 +65,17 @@ html, body {
   color: green;
 }
 
-.recent-tx.ng-enter, .recent-tx.ng-leave  {
+.recent-tx.ng-enter,
+.recent-tx.ng-leave  {
   -webkit-transition: 0.5s linear all;
-  transition: 0.5s linear all;
+  transition: 1s linear all;
+}
+
+.recent-tx.ng-enter,
+.recent-tx.ng-leave.ng-leave-active {
+  opacity: 0;
+}
+.recent-tx.ng-leave,
+.recent-tx.ng-enter.ng-enter-active {
+  opacity: 1;
 }

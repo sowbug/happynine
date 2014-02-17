@@ -97,11 +97,6 @@ Electrum.prototype.handleResponse = function(o) {
     this.callbacks[id].resolve(o["result"]);
     delete this.callbacks[id];
     this.pendingRpcCount--;
-    $.event.trigger({
-      "type": "apply",
-      "message": undefined,
-      time: new Date()
-    });
   } else {
     logInfo("notification from electrum", o);
     var ALLOWED_METHODS = [
@@ -117,6 +112,11 @@ Electrum.prototype.handleResponse = function(o) {
       });
     }
   }
+  $.event.trigger({
+    "type": "apply",
+    "message": undefined,
+    time: new Date()
+  });
 };
 
 Electrum.prototype.onSocketReceive = function(receiveInfo) {

@@ -22,7 +22,7 @@
 
 'use strict';
 
-angular.module('app', [])
+angular.module('app', ['ngAnimate'])
   .factory('api_client', function() {
     return new ApiClient();
   })

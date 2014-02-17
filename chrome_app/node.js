@@ -36,10 +36,6 @@ function Node() {
     this.extendedPublicBase58 = undefined;
     this.fingerprint = undefined;
     this.parentFingerprint = undefined;
-    this.path = undefined;
-
-    this.nextChangeAddressIndex = 8;
-    this.nextPublicAddressIndex = 8;
 
     this.publicAddresses = {};
     this.changeAddresses = {};
@@ -58,10 +54,7 @@ function Node() {
     o["ext_prv_enc"] = this.extendedPrivateEncrypted;
     o["ext_pub_b58"] = this.extendedPublicBase58;
     o["fp"] = this.fingerprint;
-    o["next_change_addr"] = this.nextChangeAddressIndex;
-    o["next_pub_addr"] = this.nextPublicAddressIndex;
     o["pfp"] = this.parentFingerprint;
-    o["path"] = this.path;
     return o;
   };
 
@@ -92,12 +85,6 @@ Node.fromStorableObject = function(o) {
     s.extendedPublicBase58 = o["ext_pub_b58"];
   if (o["fp"] != undefined)
     s.fingerprint = o["fp"];
-  if (o["next_change_addr"] != undefined)
-    s.nextChangeAddressIndex = o["next_change_addr"];
-  if (o["next_pub_addr"] != undefined)
-    s.nextPublicAddressIndex = o["next_pub_addr"];
-  if (o["path"] != undefined)
-    s.path = o["path"];
   if (o["pfp"] != undefined)
     s.parentFingerprint = o["pfp"];
 
