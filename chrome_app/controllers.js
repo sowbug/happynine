@@ -43,11 +43,11 @@ function AppController($scope,
 
   if (chrome && chrome.runtime) {
     var manifest = chrome.runtime.getManifest();
-    $scope.app_name = manifest.name;
-    $scope.app_version = "v" + manifest.version;
+    $scope.appName = manifest.name;
+    $scope.appVersion = "v" + manifest.version;
   } else {
-    $scope.app_name = "[name]";
-    $scope.app_version = "v0.0.0.0";
+    $scope.appName = "[name]";
+    $scope.appVersion = "v0.0.0.0";
   }
 
   $scope.addPostLoadWatchers = function() {
@@ -307,6 +307,10 @@ function AppController($scope,
 
   $scope.getWalletBalance = function() {
     return $scope.wallet.getBalance();
+  };
+
+  $scope.getCurrentHeight = function() {
+    return $scope.wallet.currentHeight;
   };
 
   $scope.getCurrentMasterNodeFingerprint = function() {

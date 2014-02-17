@@ -55,17 +55,14 @@ Wallet.prototype.initAddresses = function() {
 Wallet.prototype.init = function() {
   this.masterNodes = [];
   this.nodes = [];
+  this.currentHeight = 0;
   this.initAddresses();
 };
 
 Wallet.prototype.startElectrum = function() {
   this.electrum.connectToServer()
-    .then(function() {
-      this.electrum.issueHeadersSubscribe()
-        .then(function(response) {
-          this.handleBlockGetHeader(response);
-        });
-    });
+    .then(this.electrum.issueHeadersSubscribe.bind(this.electrum))
+    .then(this.handleBlockGetHeader.bind(this));
 };
 
 Wallet.prototype.toStorableObject = function() {
@@ -78,6 +75,7 @@ Wallet.prototype.toStorableObject = function() {
   for (var i in this.nodes) {
     o['nodes'].push(this.nodes[i].toStorableObject());
   }
+  o['height'] = this.currentHeight;
   return o;
 };
 
@@ -90,6 +88,7 @@ Wallet.prototype.loadStorableObject = function(o) {
   for (var i in o['nodes']) {
     nodes.push(Node.fromStorableObject(o['nodes'][i]));
   }
+  this.currentHeight = o['height'];
   return Promise.all(nodes.map(this.describeNode.bind(this)));
 };
 
@@ -391,7 +390,12 @@ Wallet.prototype.getHistory = function() {
 Wallet.prototype.handleBlockGetHeader = function(h) {
   logInfo("new block", h);
   return new Promise(function(resolve, reject) {
-    this.api_client.confirmBlock(h.block_height, h.timestamp)
+    var height = h['block_height'];
+    var timestamp = h['timestamp'];
+    if (this.currentHeight == undefined || height > this.currentHeight) {
+      this.currentHeight = height;
+    }
+    this.api_client.confirmBlock(height, timestamp)
       .then(resolve);
   }.bind(this));
 };

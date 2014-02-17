@@ -2,7 +2,7 @@
 <html data-ng-app="app">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title ng-bind="app_name"></title>
+    <title ng-bind="appName"></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="text/javascript" src="common.js"></script>
     <link href="js/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="#" ng-bind="app_name"></a>
+        <a class="navbar-brand" href="#" ng-bind="appName"></a>
       </div>
 
       <div class="label label-danger navbar-fixed-top">
@@ -80,7 +80,7 @@
             <div class="panel panel-success" ng-if="!isChildNodeInstalled()">
               <div class="panel-heading">Get Started</div>
               <div class="panel-body">
-                <p class="lead">Welcome to {{app_name}}! Let's set up your wallet.</p>
+                <p class="lead">Welcome to {{appName}}! Let's set up your wallet.</p>
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
@@ -100,7 +100,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr ng-repeat="tx in getRecentTransactions() track by $index">
+                    <tr ng-repeat="tx in getRecentTransactions() track by $index" class="recent-tx">
                       <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td><bitcoin-address addr-b58="tx.addr_b58" ng-click="setAddress(tx.addr_b58)"></bitcoin-address></td><td>{{satoshiToUnit(tx.value)}}</td>
                     </tr>
                   </tbody>
@@ -433,8 +433,11 @@
             <span class="glyphicon glyphicon-exclamation-sign danger" title="Your wallet is unlocked"></span>
           </a>
         </li>
-        <li>
-          <p class="navbar-text text-info small" ng-bind="app_version"></p>
+         <li>
+          <p class="navbar-text text-info small"><span ng-bind="appName"></span>&nbsp;<span ng-bind="appVersion"></span></p>
+        </li>
+         <li>
+          <p class="navbar-text text-info small" ng-if="getCurrentHeight() != 0">Block <span ng-bind="getCurrentHeight()"></span></p>
         </li>
       </ul>
 
