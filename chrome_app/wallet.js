@@ -27,7 +27,7 @@
 /**
  * @constructor
  */
-function Wallet(electrum) {
+function Wallet(api_client, electrum) {
   this.initAddresses = function() {
     this.watchedAddresses = {};
     this.publicAddresses = [];
@@ -77,10 +77,7 @@ function Wallet(electrum) {
 
   this.describeNode = function(node) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'ext_pub_b58': node.extendedPublicBase58
-      };
-      postRPC('describe-node', params)
+      api_client.describeNode(node.extendedPublicBase58)
         .then(function(response) {
           if (response['ext_pub_b58']) {
             var dnode = Node.fromStorableObject(response);
@@ -104,11 +101,8 @@ function Wallet(electrum) {
 
   this.restoreNode = function(node) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'ext_pub_b58': node.extendedPublicBase58,
-        'ext_prv_enc': node.extendedPrivateEncrypted
-      };
-      postRPC('restore-node', params)
+      api_client.restoreNode(node.extendedPublicBase58,
+                             node.extendedPrivateEncrypted)
         .then(function(response) {
           if (response['fp']) {
             var node = Node.fromStorableObject(response);
@@ -176,7 +170,7 @@ function Wallet(electrum) {
 
   this.addRandomMasterKey = function() {
     return new Promise(function(resolve, reject) {
-      postRPC('generate-master-node', {})
+      api_client.generateMasterNode()
         .then(function(response) {
           var node = Node.fromStorableObject(response);
           this.describeNode(node).then(resolve);
@@ -184,12 +178,9 @@ function Wallet(electrum) {
     }.bind(this));
   };
 
-  this.importMasterKey = function(ext_prv_b58) {
+  this.importMasterKey = function(extendedPrivateBase58) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'ext_prv_b58': ext_prv_b58
-      };
-      postRPC('import-master-node', params)
+      api_client.importMasterNode(extendedPrivateBase58)
         .then(function(response) {
           if (response['fp']) {
             var node = Node.fromStorableObject(response);
@@ -208,10 +199,7 @@ function Wallet(electrum) {
 
   this.retrievePrivateKey = function(node) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'ext_prv_enc': node.extendedPrivateEncrypted
-      };
-      postRPC('describe-private-node', params)
+      api_client.describePrivateNode(node.extendedPrivateEncrypted)
         .then(function(response) {
           if (response['ext_prv_b58']) {
             resolve(response['ext_prv_b58']);
@@ -224,11 +212,7 @@ function Wallet(electrum) {
 
   this.deriveChildNode = function(childNum, isWatchOnly) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'path': "m/" + childNum + "'",
-        'is_watch_only': isWatchOnly
-      };
-      postRPC('derive-child-node', params)
+      api_client.deriveChildNode(childNum, isWatchOnly)
         .then(function(response) {
           var node = Node.fromStorableObject(response);
           this.describeNode(node).then(resolve);
@@ -238,12 +222,8 @@ function Wallet(electrum) {
 
   this.sendFunds = function(sendTo, sendValue, sendFee) {
     return new Promise(function(resolve, reject) {
-      var params = {
-        'sign': true,
-        'fee': sendFee,
-        'recipients': [{'addr_b58': sendTo, 'value': sendValue}]
-      };
-      postRPC('create-tx', params)
+      api_client.createTx([{'addr_b58': sendTo, 'value': sendValue}],
+                          sendFee, true)
         .then(function(response) {
           if (response['tx']) {
             logImportant("GENERATED TX", response['tx']);
@@ -277,7 +257,7 @@ function Wallet(electrum) {
         resolve();
         return;
       }
-      postRPC('report-tx-statuses', { 'tx_statuses': txs })
+      api_client.reportTxStatuses(txs)
         .then(function(response) {
           var tx_hashes = [];
           var heights = [];
@@ -305,7 +285,7 @@ function Wallet(electrum) {
     return new Promise(function(resolve, reject) {
       electrum.issueTransactionGet(tx_hash)
         .then(function(response) {
-          postRPC('report-txs', { 'txs': [{ 'tx': response }] })
+          api_client.reportTxs([{ 'tx': response }])
             .then(function(response) {
               this.getHistory()  // TODO: move this to caller so less waste
                 .then(this.getAddresses.bind(this))
@@ -367,7 +347,7 @@ function Wallet(electrum) {
 
   this.getAddresses = function() {
     return new Promise(function(resolve, reject) {
-      postRPC('get-addresses', {})
+      api_client.getAddresses()
         .then(function(response) {
           for (var i in response['addresses']) {
             var addr = response['addresses'][i];
@@ -382,7 +362,7 @@ function Wallet(electrum) {
 
   this.getHistory = function() {
     return new Promise(function(resolve, reject) {
-      postRPC('get-history', {})
+      api_client.getHistory()
         .then(function(response) {
           this.recentTransactions = response['history'];
           resolve();
@@ -393,11 +373,7 @@ function Wallet(electrum) {
   this.handleBlockGetHeader = function(h) {
     logInfo("new block", h);
     return new Promise(function(resolve, reject) {
-      var params = {
-        'timestamp': h.timestamp,
-        'block_height': h.block_height
-      };
-      postRPC('confirm-block', params)
+      api_client.confirmBlock(h.block_height, h.timestamp)
         .then(resolve);
     }.bind(this));
   };

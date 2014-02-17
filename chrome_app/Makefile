@@ -5,6 +5,7 @@ TOOLCHAIN ?= pnacl
 CONFIG ?= Release
 
 JS_SOURCES = \
+	api_client.js \
 	app.js \
 	controllers.js \
 	credentials.js \

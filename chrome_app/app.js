@@ -23,6 +23,9 @@
 'use strict';
 
 angular.module('app', [])
+  .factory('api_client', function() {
+    return new ApiClient();
+  })
   .factory('settings', function() {
     return new Settings();
   })
@@ -32,9 +35,11 @@ angular.module('app', [])
   .factory('electrum', function() {
     return new Electrum();
   })
-  .factory('wallet', ['electrum', function(electrum) {
-    return new Wallet(electrum);
-  }])
+  .factory('wallet', ['api_client',
+                      'electrum',
+                      function(api_client, electrum) {
+                        return new Wallet(api_client, electrum);
+                      }])
   .directive('bitcoinAddress', function() {
     return new BitcoinAddress();
   })
