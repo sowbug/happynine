@@ -127,7 +127,6 @@ function AppController($scope,
     function(newVal, oldVal) {
       if (newVal != oldVal) {
         $scope.w.masterNodeIconURL = $scope.getIconDataURL(newVal);
-        console.log("new master", $scope.w.masterNodeIconURL);
       }
     }
   );
@@ -137,7 +136,6 @@ function AppController($scope,
     function(newVal, oldVal) {
       if (newVal != oldVal) {
         $scope.w.childNodeIconURL = $scope.getIconDataURL(newVal);
-        console.log("new child", $scope.w.childNodeIconURL);
       }
     });
 
