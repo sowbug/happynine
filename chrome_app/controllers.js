@@ -64,14 +64,23 @@ function AppController($scope,
       }
     }, true);
 
-    $scope.$watch("wallet", function(newVal, oldVal) {
-      if (newVal != oldVal) {
+    // TODO(miket): haven't figured out how to elegantly watch the
+    // right set of things in Wallet (i.e., the ones that will trigger
+    // a difference in serialization).
+    $scope.$watchCollection('getMasterNodes()', function(newItems, oldItems) {
+      if (newItems != oldItems) {
         $scope.wallet.save();
       }
-    }, true);
+    });
 
     $scope.$watchCollection('getChildNodes()', function(newItems, oldItems) {
       if (newItems != oldItems) {
+        $scope.wallet.save();
+      }
+    });
+
+    $scope.$watch('$scope.wallet.currentHeight', function(newVal, oldVal) {
+      if (newVal != oldVal) {
         $scope.wallet.save();
       }
     });
@@ -105,24 +114,20 @@ function AppController($scope,
     }
   });
 
+  $scope.getIconDataURL = function(val) {
+    if (val) {
+      return new Retricon().create(val, Retricon.STYLE.window).toDataURL();
+    } else {
+      return '';
+    }
+  };
+
   $scope.$watch(
     'getCurrentMasterNodeFingerprint()',
     function(newVal, oldVal) {
       if (newVal != oldVal) {
-        if (newVal) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'http://robohash.org/' + newVal +
-                   '.png?set=set3&bgset=any&size=64x64', true);
-          xhr.responseType = 'blob';
-          xhr.onload = function(e) {
-            $("#master-key-fingerprint-img").attr(
-              "src",
-              window.webkitURL.createObjectURL(this.response));
-          };
-          xhr.send();
-        } else {
-          $("#master-key-fingerprint-img").attr("src", "");
-        }
+        $scope.w.masterNodeIconURL = $scope.getIconDataURL(newVal);
+        console.log("new master", $scope.w.masterNodeIconURL);
       }
     }
   );
@@ -131,20 +136,8 @@ function AppController($scope,
     'getCurrentChildNodeFingerprint()',
     function(newVal, oldVal) {
       if (newVal != oldVal) {
-        if (newVal) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'http://robohash.org/' + newVal +
-                   '.png?set=set3&bgset=any&size=64x64', true);
-          xhr.responseType = 'blob';
-          xhr.onload = function(e) {
-            $("#account-fingerprint-img").attr(
-              "src",
-              window.webkitURL.createObjectURL(this.response));
-          };
-          xhr.send();
-        } else {
-          $("#account-fingerprint-img").attr("src", "");
-        }
+        $scope.w.childNodeIconURL = $scope.getIconDataURL(newVal);
+        console.log("new child", $scope.w.childNodeIconURL);
       }
     });
 
@@ -202,11 +195,10 @@ function AppController($scope,
 
   $scope.watchNextChildNode = function() {
     $scope.wallet.deriveChildNode($scope.wallet.getNextChildNodeNumber(),
-                                  true, function(succeeded) {
-      if (succeeded) {
+                                  true)
+      .then(function() {
         $scope.$apply();
-      }
-    });
+      });
   };
 
   $scope.resetIsCheckingPassphrase = function() {
@@ -332,6 +324,10 @@ function AppController($scope,
       return $scope.getCurrentMasterNode().extendedPublicBase58;
     }
     return undefined;
+  };
+
+  $scope.getMasterNodes = function() {
+    return $scope.wallet.getMasterNodes();
   };
 
   $scope.getChildNodeCount = function() {

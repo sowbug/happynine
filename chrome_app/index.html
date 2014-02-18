@@ -282,7 +282,7 @@
                           <input type="text" class="form-control" id="fingerprint-readonly" readonly value="{{getCurrentMasterNodeFingerprint()}}">
                         </div>
                         <div class="col-md-2">
-                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getCurrentMasterNodeFingerprint()}}"/>
+                          <img id="master-key-fingerprint-img" class="img-thumbnail" width="64" height="64" alt="Fingerprint {{getCurrentMasterNodeFingerprint()}}" ng-src="{{w.masterNodeIconURL}}"/>
                         </div>
                       </div>
                       <div class="form-group">
@@ -446,7 +446,7 @@
           <p class="navbar-text" id="fingerprint-navbar" ng-bind="getCurrentChildNodeFingerprint()"></p>
         </li>
         <li>
-          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentChildNodeFingerprint()}}" ng-if="getCurrentChildNode()"/>
+          <img id="account-fingerprint-img" class="img-thumbnail navbar-icon" width="38" height="38" alt="Fingerprint {{getCurrentChildNodeFingerprint()}}" ng-src="{{w.childNodeIconURL}}" ng-if="getCurrentChildNode()"/>
         </li>
       </ul>
     </div><!-- footer -->

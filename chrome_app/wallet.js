@@ -171,6 +171,10 @@ Wallet.prototype.isKeySet = function() {
   return this.masterNodes.length > 0;
 };
 
+Wallet.prototype.getMasterNodes = function() {
+  return this.masterNodes;
+};
+
 Wallet.prototype.getChildNodes = function() {
   return this.nodes;
 };

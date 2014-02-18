@@ -21,7 +21,9 @@ JS_SOURCES = \
 	index.js \
 	messaging.js \
 	node.js \
+	retricon.js \
 	settings.js \
+	sha512.js \
 	storage.js \
 	utils.js \
 	wallet.js \

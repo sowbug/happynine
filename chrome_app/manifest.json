@@ -11,9 +11,7 @@
   "permissions": [
     {"fileSystem": ["write"]},
     "storage",
-    "unlimitedStorage",
-
-    "http://robohash.org/"
+    "unlimitedStorage"
   ],
   "sockets": {
     "tcp":  {"connect": "*:50001"}
