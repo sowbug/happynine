@@ -42,7 +42,7 @@ ApiClient.prototype.describeNode = function(extendedPublicBase58) {
 ApiClient.prototype.describePrivateNode = function(extendedPrivateEncrypted) {
   return new Promise(function(resolve, reject) {
     var params = {
-      'ext_prv_enc': node.extendedPrivateEncrypted
+      'ext_prv_enc': extendedPrivateEncrypted
     };
     postRPC('describe-private-node', params).then(resolve);
   });
