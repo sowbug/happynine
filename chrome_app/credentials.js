@@ -78,7 +78,7 @@ Credentials.prototype.setPassphrase = function(newPassphrase,
       this.check = response.check;
       this.ephemeralKeyEncrypted = response.ekey_enc;
       this.salt = response.salt;
-      this.setRelockTimeout(relockCallbackVoid);
+      this.setRelockTimeout(60, relockCallbackVoid);
       resolve();
     };
 
