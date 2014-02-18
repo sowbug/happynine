@@ -79,7 +79,7 @@ function AppController($scope,
       }
     });
 
-    $scope.$watch('$scope.wallet.currentHeight', function(newVal, oldVal) {
+    $scope.$watch('wallet.currentHeight', function(newVal, oldVal) {
       if (newVal != oldVal) {
         $scope.wallet.save();
       }
