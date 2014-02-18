@@ -13,7 +13,9 @@ Great Big Warning
 Overall Status
 ===
 
-As of 0.0.9.0, Happynine can send and receive bitcoin using Electrum servers. It is missing many features and UI affordances that users will expect from a complete wallet. See the [issue list](https://github.com/sowbug/happynine/issues) for detail on project status.
+Happynine can send and receive bitcoin using Electrum servers. It is missing many features and UI affordances that users will expect from a complete wallet. See the [issue list](https://github.com/sowbug/happynine/issues) for detail on project status.
+
+Did you read the great big warning above? If yes and you wish to proceed, [install Happynine from the Chrome Web Store](https://chrome.google.com/webstore/detail/happynine/pgelmjigdabeindnekfmkafinejdknki).
 
 User Requirements
 ===
