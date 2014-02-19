@@ -30,19 +30,31 @@ function Exporter(wallet) {
 }
 
 Exporter.prototype.generateText = function(node, privateKey) {
-  var nodeType = node.isMaster() ? "Master" : "Child";
-  var text =
-    "Happynine Export for BIP 0038 " + nodeType +" Node " +
-    node.fingerprint + "\r\n" +
-    " PUBLIC KEY: " + node.extendedPublicBase58 + "\r\n" +
-    "PRIVATE KEY: " + privateKey + "\r\n" +
-    "Print with a small monospace (fixed-width) typeface. Scan at angle.\r\n\r\n";
-  var qr = $('<div></div>');
-  qr.qrcode({'text': privateKey,
-             'render': 'text',
-             'correctLevel': QRErrorCorrectLevel.L});
-  text += qr.text();
-  return text;
+  return new Promise(function(resolve, reject) {
+    var nodeType = node.isMaster() ? "Master" : "Child";
+    var div = document.createElement("div");
+    var qr = $(div).qrcode({
+      'width': 256,
+      'height': 256,
+      'correctLevel': QRErrorCorrectLevel.L,
+      'text': privateKey});
+    var canvas = div.children[0];
+    var dataURL = canvas.toDataURL();
+    console.log(canvas, dataURL);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', chrome.runtime.getURL("export_template.html"), true);
+    xhr.onload = function(e) {
+      var text = this.response
+        .replace('{{NODE_TYPE}}', nodeType)
+        .replace('{{FINGERPRINT}}', node.fingerprint)
+        .replace('{{PUBLIC_KEY}}', node.extendedPublicBase58)
+        .replace('{{PRIVATE_KEY}}', privateKey)
+        .replace('{{QR_CODE_DATA_URL}}', dataURL);
+      resolve(text);
+  };
+  xhr.send();
+  });
 }
 
 Exporter.prototype.exportToEntry = function(node, privateKey, entry) {
@@ -50,19 +62,20 @@ Exporter.prototype.exportToEntry = function(node, privateKey, entry) {
     logFatal("file export", e);
   };
 
-  var text = this.generateText(node, privateKey);
-  entry.createWriter(function(writer) {
-    writer.onerror = errorHandler;
-    var blob = new Blob([text], {type: 'text/plain; charset=utf-8'});
-    writer.write(blob);
-  }, errorHandler);
+  this.generateText(node, privateKey)
+    .then(function(text) {
+      entry.createWriter(function(writer) {
+        writer.onerror = errorHandler;
+        var blob = new Blob([text], {type: 'text/plain; charset=utf-8'});
+        writer.write(blob);
+      }, errorHandler);
+    });
 };
 
 Exporter.prototype.exportNode = function(node, privateKey) {
   chrome.fileSystem.chooseEntry(
     {'type': 'saveFile',
-     'suggestedName': 'Happynine-Export-' +
-     node.fingerprint + '.txt'
+     'suggestedName': 'Happynine-Export-' + node.fingerprint + '.html'
     },
     this.exportToEntry.bind(this, node, privateKey));
 };
