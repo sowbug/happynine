@@ -46,12 +46,12 @@ Exporter.prototype.generateText = function(node, privateKey) {
     xhr.open('GET', chrome.runtime.getURL("export_template.html"), true);
     xhr.onload = function(e) {
       var text = this.response
-        .replace('{{GENERATION_DATE}}', new Date().toString())
-        .replace('{{NODE_TYPE}}', nodeType)
-        .replace('{{FINGERPRINT}}', node.fingerprint)
-        .replace('{{PUBLIC_KEY}}', node.extendedPublicBase58)
-        .replace('{{PRIVATE_KEY}}', privateKey)
-        .replace('{{QR_CODE_DATA_URL}}', dataURL);
+        .replace(/{{GENERATION_DATE}}/g, new Date().toString())
+        .replace(/{{NODE_TYPE}}/g, nodeType)
+        .replace(/{{FINGERPRINT}}/g, node.fingerprint)
+        .replace(/{{PUBLIC_KEY}}/g, node.extendedPublicBase58)
+        .replace(/{{PRIVATE_KEY}}/g, privateKey)
+        .replace(/{{QR_CODE_DATA_URL}}/g, dataURL);
       resolve(text);
   };
   xhr.send();

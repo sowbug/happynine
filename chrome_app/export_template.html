@@ -17,6 +17,7 @@
     max-width: 512pt;
     margin-left: auto;
     margin-right: auto;
+    word-wrap: break-word;
     }
 
     .key-list {
@@ -28,6 +29,10 @@
     .centered {
     margin: auto;
     text-align: center;
+    }
+
+    img {
+    margin: 2em;
     }
   </style>
 </head>
@@ -42,7 +47,6 @@
     </dl>
     <div class="centered">
       <img height="256" width="256" src="{{QR_CODE_DATA_URL}}" />
-      <div>QR Code, Extended Private Key</div>
     </div>
     <hr>
     <p>Generated {{GENERATION_DATE}}. <strong>Keep this document private.</strong></p>
