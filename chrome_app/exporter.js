@@ -46,6 +46,7 @@ Exporter.prototype.generateText = function(node, privateKey) {
     xhr.open('GET', chrome.runtime.getURL("export_template.html"), true);
     xhr.onload = function(e) {
       var text = this.response
+        .replace('{{GENERATION_DATE}}', new Date().toString())
         .replace('{{NODE_TYPE}}', nodeType)
         .replace('{{FINGERPRINT}}', node.fingerprint)
         .replace('{{PUBLIC_KEY}}', node.extendedPublicBase58)

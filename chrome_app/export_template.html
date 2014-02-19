@@ -1,18 +1,51 @@
 <!DOCTYPE html>
 <head>
-<style type="text/javascript">
-body {
-  font-family: "Helvetica Neue", helvetica, "sans serif"
-  font-size: 14px;
-}
-</style>
+  <title>BIP 0032 {{NODE_TYPE}} Node {{FINGERPRINT}}</title>
+  <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+  <style type="text/css">
+    html, body {
+    font-family: "Roboto", "Helvetica Neue", "Helvetica", "sans serif";
+    font-size: 14px;
+    }
+
+    .ocr {
+    font-family: "OCR-A", "OCR", "Droid Sans Mono", "Courier New", monospace;
+    }
+
+    .container {
+    max-width: 512pt;
+    margin-left: auto;
+    margin-right: auto;
+    }
+
+    .key-list {
+    border: 1px solid black;
+    margin: 1em 0 2em 0;
+    padding: 1em;
+    }
+
+    .centered {
+    margin: auto;
+    text-align: center;
+    }
+  </style>
 </head>
 <body>
-<h1>Backup of BIP 0032 {{NODE_TYPE}} Node {{FINGERPRINT}}</h1>
-<ul>
-<li>{{PUBLIC_KEY}}</li>
-<li>{{PRIVATE_KEY}}</li>
-</ul>
-<img height="256" width="256" src="{{QR_CODE_DATA_URL}}" />
+  <div class="container">
+    <h1>BIP 0032 {{NODE_TYPE}} Node {{FINGERPRINT}}</h1>
+    <dl class="key-list">
+      <dt>Extended Public Key</dt>
+      <dd class="ocr">{{PUBLIC_KEY}}</dd>
+      <dt>Extended Private Key</dt>
+      <dd class="ocr">{{PRIVATE_KEY}}</dd>
+    </dl>
+    <div class="centered">
+      <img height="256" width="256" src="{{QR_CODE_DATA_URL}}" />
+      <div>QR Code, Extended Private Key</div>
+    </div>
+    <hr>
+    <p>Generated {{GENERATION_DATE}}. <strong>Keep this document private.</strong></p>
+  </div>
 </body>
 </html>
