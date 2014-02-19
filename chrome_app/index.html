@@ -35,7 +35,7 @@
           </li>
           <li>
             <p class="navbar-text">
-              <span ng-bind="satoshiToUnit(getWalletBalance())"></span>
+              <span ng-bind="satoshiToUnit(getWalletBalance()) | number"></span>
               <span ng-bind="unitLabel()"></span>
             </p>
           </li>
@@ -96,12 +96,12 @@
                 <table id="transaction-table" class="table table-striped" ng-if="getRecentTransactions().length != 0">
                   <thead>
                     <tr>
-                      <th>Date</th><th>Address</th><th>Amount</th>
+                      <th>Date</th><th>Address</th><th class="num-align">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr ng-repeat="tx in getRecentTransactions() track by $index" class="recent-tx">
-                      <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td><bitcoin-address addr-b58="tx.addr_b58" ng-click="setAddress(tx.addr_b58)"></bitcoin-address></td><td>{{satoshiToUnit(tx.value)}}</td>
+                      <td><a href="https://blockchain.info/tx/{{tx.tx_hash}}" target="_blank">{{friendlyTimestamp(tx.timestamp)}}</a></td><td><bitcoin-address addr-b58="tx.addr_b58" ng-click="setAddress(tx.addr_b58)"></bitcoin-address></td><td class="num-align">{{satoshiToUnit(tx.value) | number}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -166,8 +166,8 @@
                       <td>
                         <bitcoin-address addr-b58="addr" ng-click="setAddress(addr)"></bitcoin-address>
                       </td>
-                      <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
-                      <td>{{getAddressTxCount(addr)}}</td>
+                      <td>{{satoshiToUnit(getAddressBalance(addr)) | number}}</td>
+                      <td>{{getAddressTxCount(addr) | number}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -183,8 +183,8 @@
                       <td>
                         <bitcoin-address addr-b58="addr" ng-click="setAddress(addr)"></bitcoin-address>
                       </td>
-                      <td>{{satoshiToUnit(getAddressBalance(addr))}}</td>
-                      <td>{{getAddressTxCount(addr)}}</td>
+                      <td>{{satoshiToUnit(getAddressBalance(addr)) | number}}</td>
+                      <td>{{getAddressTxCount(addr) | number}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -402,7 +402,7 @@
                       <div class="checkbox">
                         <div class="col-md-offset-2 col-md-10">
                           <label>
-                            <input type="checkbox" ng-model="w.doIUnderstand"><strong>I understand that "Clear Everything" clears all data from this application.</strong>
+                            <input type="checkbox" ng-model="w.doIUnderstand"><strong>I understand that <span class="label label-danger">Clear Everything</span> clears all data from this application.</strong>
                           </label>
                         </div>
                       </div>
@@ -437,7 +437,7 @@
           <p class="navbar-text text-info small"><span ng-bind="appVersion"></span></p>
         </li>
          <li>
-          <p class="navbar-text text-info small" ng-if="getCurrentHeight() != 0">Block <span ng-bind="getCurrentHeight()"></span></p>
+          <p class="navbar-text text-info small" ng-if="getCurrentHeight() != 0">Block <span ng-bind="getCurrentHeight() | number"></span></p>
         </li>
       </ul>
 
