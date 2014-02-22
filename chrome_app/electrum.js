@@ -35,6 +35,11 @@ function Electrum() {
 
   // TODO(miket): there's just no way this will work
   this.pendingRpcCount = 0;
+
+  chrome.sockets.tcp.onReceive.addListener(
+    this.onSocketReceive.bind(this));
+  chrome.sockets.tcp.onReceiveError.addListener(
+    this.onSocketReceiveError.bind(this));
 };
 
 Electrum.SERVERS = [
@@ -122,18 +127,24 @@ Electrum.prototype.handleResponse = function(o) {
 Electrum.prototype.onSocketReceive = function(receiveInfo) {
   arrayBuffer2String(receiveInfo.data, function(str) {
     this.stringBuffer += str;
+    var isLastComplete = (this.stringBuffer.substr(-1) == "\n");
     var parts = this.stringBuffer.split("\n");
-    if (parts.length > 1) {
-      for (var i = 0; i < parts.length - 1; ++i) {
-        var part = parts[i];
-        if (part.length == 0) {
-          continue;
-        }
-        this.handleResponse(JSON.parse(part));
+    for (var i = 0; i < parts.length; ++i) {
+      var part = parts[i];
+      if (part.length == 0) {
+        continue;
       }
-      if (parts[parts.length - 1].length > 0) {
-        this.stringBuffer = parts[parts.length - 1];
+      if (i == parts.length - 1 && !isLastComplete) {
+        logInfo("received partial", part);
+        continue;
       }
+      logInfo("received & processing", part);
+      this.handleResponse(JSON.parse(part));
+    }
+    if (isLastComplete) {
+      this.stringBuffer = "";
+    } else {
+      this.stringBuffer = parts[parts.length - 1];
     }
   }.bind(this));
 };
@@ -141,7 +152,9 @@ Electrum.prototype.onSocketReceive = function(receiveInfo) {
 Electrum.prototype.onSocketReceiveError = function(receiveErrorInfo) {
   logFatal("receive error", receiveErrorInfo);
   this.isSocketConnected = false;
-  this.connectToServer();
+  chrome.sockets.tcp.disconnect(this.socketId, function() {
+    this.connectToServer();
+  }.bind(this));
 };
 
 Electrum.prototype.onSendComplete = function(sendInfo) {
@@ -188,18 +201,19 @@ Electrum.prototype.connectToServer = function() {
 
     function onSocketCreate(socketInfo) {
       this.socketId = socketInfo.socketId;
-      chrome.sockets.tcp.onReceive.addListener(
-        this.onSocketReceive.bind(this));
-      chrome.sockets.tcp.onReceiveError.addListener(
-        this.onSocketReceiveError.bind(this));
       tryConnection.call(this);
     }
 
-    chrome.sockets.tcp.create({
-      "name": "electrum",
-      "persistent": true,
-      "bufferSize": 16384
-    }, onSocketCreate.bind(this));
+    if (this.socketId) {
+      logImportant("Reconnection; isConnected", this.isSocketConnected);
+      tryConnection.call(this);
+    } else {
+      chrome.sockets.tcp.create({
+        "name": "electrum",
+        "persistent": true,
+        "bufferSize": 16384
+      }, onSocketCreate.bind(this));
+    }
   }.bind(this));
 }
 
