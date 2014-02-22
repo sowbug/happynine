@@ -52,3 +52,8 @@ Yes, it's quite possible to develop an app like Happynine on a $199 Chromebook. 
 * Load Unpacked Extension.
 * Pick `h9/zip/` as the directory to load.
 * You should see the app appear at the top of the extensions list.
+
+Misc Debugging Tips
+===
+
+* To get back most of the application state when in the Chrome debugger, try `angular.element(document.body).scope()`. Thanks to http://stackoverflow.com/a/13172087/344467 for this tip.
