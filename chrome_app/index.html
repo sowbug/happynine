@@ -73,14 +73,15 @@
 
           <!-- Home -->
           <div class="tab-pane fade active in" id="home">
-            <div class="panel panel-success" ng-if="!isChildNodeInstalled()">
+            <div class="panel panel-success" ng-if="isWalletReady() && !isChildNodeInstalled()">
               <div class="panel-heading">Get Started</div>
               <div class="panel-body">
                 <p class="lead">Welcome to {{appName}}! Let's set up your wallet.</p>
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
-                  <li><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
+                  <li ng-if="!isMasterKeyInstalled()"><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
+                  <li ng-if="!isChildNodeInstalled()"><strong>Generate an account.</strong> Use your master key to generate an account. Go to <span class="label label-primary">Accounts</span> and generate or watch an account.</li>
                 </ul>
               </div>
             </div>

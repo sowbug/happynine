@@ -29,9 +29,9 @@ function moduleDidLoad() {
 
 var hideLoading = function() {
   $("#loading-container").fadeOut(250, function() {
+    $('#main-tabs a:first').tab('show');
+    $('#settings-tabs a:first').tab('show');
     $("#main-container").fadeIn(500, function() {
-      $('#main-tabs a:first').tab('show');
-      $('#settings-tabs a:first').tab('show');
     });
   });
 };

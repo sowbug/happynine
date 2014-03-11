@@ -461,6 +461,10 @@ function AppController($scope,
     return $scope.electrum.isConnected();
   };
 
+  $scope.isWalletReady = function() {
+    return $scope.wallet.isReady;
+  };
+
   $scope.satoshiToUnit = function(satoshis) {
     return $scope.settings.satoshiToUnit(satoshis);
   };

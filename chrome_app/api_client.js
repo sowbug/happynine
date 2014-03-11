@@ -61,7 +61,7 @@ ApiClient.prototype.restoreNode = function(extendedPublicBase58,
 
 ApiClient.prototype.generateMasterNode = function() {
   return new Promise(function(resolve, reject) {
-    postRPC('generate-master-node', params).then(resolve);
+    postRPC('generate-master-node', {}).then(resolve);
   });
 };
 

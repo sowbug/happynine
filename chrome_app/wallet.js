@@ -27,8 +27,9 @@
 /**
  * @constructor
  */
-function Wallet(api_client, electrum) {
-  this.api_client = api_client;
+function Wallet(apiClient, electrum) {
+  this.isReady = false;
+  this.apiClient = apiClient;
   this.electrum = electrum;
   this.init();
 
@@ -89,12 +90,25 @@ Wallet.prototype.loadStorableObject = function(o) {
     nodes.push(Node.fromStorableObject(o['nodes'][i]));
   }
   this.currentHeight = o['height'];
+
+  // https://github.com/sowbug/happynine/issues/59
+  //
+  // At this point, we know whether there is a child node and thus
+  // whether the welcome message should be displayed. Ping the event
+  // loop to give it a chance to draw the right view.
+  this.isReady = true;
+  $.event.trigger({
+    "type": "apply",
+    "message": undefined,
+    time: new Date()
+  });
+
   return Promise.all(nodes.map(this.describeNode.bind(this)));
 };
 
 Wallet.prototype.describeNode = function(node) {
   return new Promise(function(resolve, reject) {
-    this.api_client.describeNode(node.extendedPublicBase58)
+    this.apiClient.describeNode(node.extendedPublicBase58)
       .then(function(response) {
         if (response['ext_pub_b58']) {
           var dnode = Node.fromStorableObject(response);
@@ -118,8 +132,8 @@ Wallet.prototype.describeNode = function(node) {
 
 Wallet.prototype.restoreNode = function(node) {
   return new Promise(function(resolve, reject) {
-    this.api_client.restoreNode(node.extendedPublicBase58,
-                                node.extendedPrivateEncrypted)
+    this.apiClient.restoreNode(node.extendedPublicBase58,
+                               node.extendedPrivateEncrypted)
       .then(function(response) {
         if (response['fp']) {
           var node = Node.fromStorableObject(response);
@@ -191,7 +205,7 @@ Wallet.prototype.getNextChildNodeNumber = function() {
 
 Wallet.prototype.addRandomMasterKey = function() {
   return new Promise(function(resolve, reject) {
-    this.api_client.generateMasterNode()
+    this.apiClient.generateMasterNode()
       .then(function(response) {
         var node = Node.fromStorableObject(response);
         this.describeNode(node).then(resolve);
@@ -201,7 +215,7 @@ Wallet.prototype.addRandomMasterKey = function() {
 
 Wallet.prototype.importMasterKey = function(extendedPrivateBase58) {
   return new Promise(function(resolve, reject) {
-    this.api_client.importMasterNode(extendedPrivateBase58)
+    this.apiClient.importMasterNode(extendedPrivateBase58)
       .then(function(response) {
         if (response['fp']) {
           var node = Node.fromStorableObject(response);
@@ -220,7 +234,7 @@ Wallet.prototype.removeMasterKey = function() {
 
 Wallet.prototype.retrievePrivateKey = function(node) {
   return new Promise(function(resolve, reject) {
-    this.api_client.describePrivateNode(node.extendedPrivateEncrypted)
+    this.apiClient.describePrivateNode(node.extendedPrivateEncrypted)
       .then(function(response) {
         if (response['ext_prv_b58']) {
           resolve(response['ext_prv_b58']);
@@ -233,7 +247,7 @@ Wallet.prototype.retrievePrivateKey = function(node) {
 
 Wallet.prototype.deriveChildNode = function(childNum, isWatchOnly) {
   return new Promise(function(resolve, reject) {
-    this.api_client.deriveChildNode(childNum, isWatchOnly)
+    this.apiClient.deriveChildNode(childNum, isWatchOnly)
       .then(function(response) {
         var node = Node.fromStorableObject(response);
         this.describeNode(node).then(resolve);
@@ -243,8 +257,8 @@ Wallet.prototype.deriveChildNode = function(childNum, isWatchOnly) {
 
 Wallet.prototype.sendFunds = function(sendTo, sendValue, sendFee) {
   return new Promise(function(resolve, reject) {
-    this.api_client.createTx([{'addr_b58': sendTo, 'value': sendValue}],
-                             sendFee, true)
+    this.apiClient.createTx([{'addr_b58': sendTo, 'value': sendValue}],
+                            sendFee, true)
       .then(function(response) {
         if (response['tx']) {
           logImportant("GENERATED TX", response['tx']);
@@ -278,7 +292,7 @@ Wallet.prototype.handleAddressGetHistory = function(txs) {
       resolve();
       return;
     }
-    this.api_client.reportTxStatuses(txs)
+    this.apiClient.reportTxStatuses(txs)
       .then(function(response) {
         var tx_hashes = [];
         var heights = [];
@@ -306,7 +320,7 @@ Wallet.prototype.handleTransactionGet = function(tx_hash) {
   return new Promise(function(resolve, reject) {
     this.electrum.issueTransactionGet(tx_hash)
       .then(function(response) {
-        this.api_client.reportTxs([{ 'tx': response }])
+        this.apiClient.reportTxs([{ 'tx': response }])
           .then(function(response) {
             this.getHistory()  // TODO: move this to caller so less waste
               .then(this.getAddresses.bind(this))
@@ -374,7 +388,7 @@ Wallet.prototype.getBalance = function() {
 // which should be Promises. Instead it returns more or less immediately.
 Wallet.prototype.getAddresses = function() {
   return new Promise(function(resolve, reject) {
-    this.api_client.getAddresses()
+    this.apiClient.getAddresses()
       .then(function(response) {
         var watchOneAddress = function(addr) {
           return new Promise(function(resolveInner, rejectInner) {
@@ -396,7 +410,7 @@ Wallet.prototype.getAddresses = function() {
 
 Wallet.prototype.getHistory = function() {
   return new Promise(function(resolve, reject) {
-    this.api_client.getHistory()
+    this.apiClient.getHistory()
       .then(function(response) {
         this.recentTransactions = response['history'];
         resolve();
@@ -412,7 +426,7 @@ Wallet.prototype.handleBlockGetHeader = function(h) {
     if (this.currentHeight == undefined || height > this.currentHeight) {
       this.currentHeight = height;
     }
-    this.api_client.confirmBlock(height, timestamp)
+    this.apiClient.confirmBlock(height, timestamp)
       .then(resolve);
   }.bind(this));
 };
@@ -495,6 +509,7 @@ Wallet.prototype.load = function() {
           .catch(function(err) { logFatal(err); });
       } else {
         this.init();
+        this.isReady = true;
         resolve();
       }
     };
