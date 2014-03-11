@@ -366,6 +366,8 @@ Wallet.prototype.getBalance = function() {
   return this.balance;
 };
 
+// TODO(miket): this method fires off a bunch of watchAddress calls,
+// which should be Promises. Instead it returns more or less immediately.
 Wallet.prototype.getAddresses = function() {
   return new Promise(function(resolve, reject) {
     this.api_client.getAddresses()
@@ -460,13 +462,13 @@ Wallet.prototype.setActiveChildNodeByIndex = function(index) {
 
 Wallet.prototype.restoreInitialMasterNode = function() {
   return new Promise(function(resolve, reject) {
-    this.setActiveMasterNode(0).then(resolve);
+    this.setActiveMasterNodeByIndex(0).then(resolve);
   }.bind(this));
 };
 
 Wallet.prototype.restoreInitialChildNode = function() {
   return new Promise(function(resolve, reject) {
-    this.setActiveChildNode(0).then(resolve);
+    this.setActiveChildNodeByIndex(0).then(resolve);
   }.bind(this));
 };
 
