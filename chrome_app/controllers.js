@@ -91,12 +91,12 @@ function AppController($scope,
       .then(function() {
         return $scope.credentials.load();
       }).then(function() {
+        $scope.wallet.startElectrum();
+      }).then(function() {
         return $scope.wallet.load();
       }).then(function() {
         $scope.$apply();
         $scope.addPostLoadWatchers();
-      }).then(function() {
-        $scope.wallet.startElectrum();
       }).catch(function(err) {
         logFatal("startLoading", err);
       });

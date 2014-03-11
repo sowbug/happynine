@@ -313,7 +313,7 @@ Wallet.prototype.handleTransactionGet = function(tx_hash) {
               .then(resolve);
           }.bind(this));
       }.bind(this));
-  }.bind(this))
+  }.bind(this));
 };
 
 Wallet.prototype.recalculateWalletBalance = function() {
@@ -328,20 +328,24 @@ Wallet.prototype.isWatching = function(addr_b58) {
 }
 
 Wallet.prototype.watchAddress = function(addr_b58, is_public) {
-  if (this.isWatching(addr_b58)) {
-    return;
-  }
-  this.watchedAddresses[addr_b58] = {};
-  if (is_public) {
-    // We assume the backend will always tell us about these
-    // addresses in order.
-    this.publicAddresses.push(addr_b58);
-  } else {
-    this.changeAddresses.push(addr_b58);
-  }
-  this.electrum.issueAddressGetHistory(addr_b58)
-    .then(this.handleAddressGetHistory.bind(this));
-  this.electrum.issueAddressSubscribe(addr_b58);
+  return new Promise(function(resolve, reject) {
+    if (this.isWatching(addr_b58)) {
+      resolve();
+      return;
+    }
+    this.watchedAddresses[addr_b58] = {};
+    if (is_public) {
+      // We assume the backend will always tell us about these
+      // addresses in order.
+      this.publicAddresses.push(addr_b58);
+    } else {
+      this.changeAddresses.push(addr_b58);
+    }
+    this.electrum.issueAddressGetHistory(addr_b58)
+      .then(this.handleAddressGetHistory.bind(this))
+      .then(this.electrum.issueAddressSubscribe(addr_b58))
+      .then(resolve);
+  }.bind(this));
 };
 
 Wallet.prototype.updateAddress = function(addr_status) {
@@ -372,13 +376,20 @@ Wallet.prototype.getAddresses = function() {
   return new Promise(function(resolve, reject) {
     this.api_client.getAddresses()
       .then(function(response) {
-        for (var i in response['addresses']) {
-          var addr = response['addresses'][i];
-          this.watchAddress(addr['addr_b58'], addr['is_public']);
-          this.updateAddress(addr);
-        }
-        this.recalculateWalletBalance();
-        resolve();
+        var watchOneAddress = function(addr) {
+          return new Promise(function(resolveInner, rejectInner) {
+            this.watchAddress(addr['addr_b58'], addr['is_public'])
+              .then(function(result) {
+                this.updateAddress(addr);
+                resolveInner();
+              }.bind(this));
+          }.bind(this));
+        };
+        Promise.all(response['addresses'].map(watchOneAddress.bind(this)))
+          .then(function(results) {
+            this.recalculateWalletBalance();
+            resolve();
+          }.bind(this));
       }.bind(this));
   }.bind(this));
 };
