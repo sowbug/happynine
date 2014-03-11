@@ -433,10 +433,15 @@
             <span class="glyphicon glyphicon-exclamation-sign danger" title="Your wallet is unlocked"></span>
           </a>
         </li>
-         <li>
+        <li>
+          <a href="#" class="disabled">
+            <span title="{{connectionStateDescription()}}" ng-class="{'glyphicon': true, 'glyphicon-cloud': true, 'disabled': !isConnected()}"></span>
+          </a>
+        </li>
+        <li>
           <p class="navbar-text text-info small"><span ng-bind="appVersion"></span></p>
         </li>
-         <li>
+        <li>
           <p class="navbar-text text-info small" ng-if="getCurrentHeight() != 0">Block <span ng-bind="getCurrentHeight() | number"></span></p>
         </li>
       </ul>

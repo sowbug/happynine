@@ -453,6 +453,14 @@ function AppController($scope,
       'text': a});
   };
 
+  $scope.connectionStateDescription = function() {
+    return $scope.electrum.getConnectionStateDescription();
+  };
+
+  $scope.isConnected = function() {
+    return $scope.electrum.isConnected();
+  };
+
   $scope.satoshiToUnit = function(satoshis) {
     return $scope.settings.satoshiToUnit(satoshis);
   };

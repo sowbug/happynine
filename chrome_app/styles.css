@@ -65,6 +65,10 @@ html, body {
   color: green;
 }
 
+.disabled {
+  color: #ccc;
+}
+
 .icon-brand {
   margin-right: 8px;
 }

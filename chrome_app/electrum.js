@@ -32,6 +32,7 @@ function Electrum() {
   this.socketId = undefined;
   this.stringBuffer = "";
   this.outgoingQueue = [];
+  this.connectionStateDescription = "";
 
   // TODO(miket): there's just no way this will work
   this.pendingRpcCount = 0;
@@ -124,6 +125,18 @@ Electrum.prototype.handleResponse = function(o) {
   });
 };
 
+Electrum.prototype.getConnectionStateDescription = function() {
+  return this.connectionStateDescription;
+};
+
+Electrum.prototype.setConnectionStateDescription = function(d) {
+  this.connectionStateDescription = d;
+};
+
+Electrum.prototype.isConnected = function() {
+  return this.isSocketConnected;
+};
+
 Electrum.prototype.onSocketReceive = function(receiveInfo) {
   arrayBuffer2String(receiveInfo.data, function(str) {
     this.stringBuffer += str;
@@ -152,6 +165,7 @@ Electrum.prototype.onSocketReceive = function(receiveInfo) {
 Electrum.prototype.onSocketReceiveError = function(receiveErrorInfo) {
   logFatal("receive error", receiveErrorInfo);
   this.isSocketConnected = false;
+  this.connectionStateDescription = "Not connected";
   chrome.sockets.tcp.disconnect(this.socketId, function() {
     this.connectToServer();
   }.bind(this));
@@ -175,14 +189,16 @@ Electrum.prototype.connectToServer = function() {
 
     function onConnectComplete(result) {
       if (result != 0) {
-        logFatal("onConnectComplete", result);
+        this.connectionStateDescription = ("Waiting to reconnect (" +
+                                           result + ")");
         retryDelay *= 2;
         if (retryDelay > 3200) {
           retryDelay = 3200;
         }
         window.setTimeout(tryConnection.bind(this), retryDelay);
       } else {
-        logImportant("Successfully connected:", this.currentServerHostname);
+        this.connectionStateDescription = ("Connected to " +
+                                           this.currentServerHostname);
         this.isSocketConnected = true;
         this.flushOutgoingQueue();
         resolve();
@@ -191,8 +207,8 @@ Electrum.prototype.connectToServer = function() {
 
     function tryConnection() {
       this.pickRandomServer();
-      logImportant("Attempting connection:",
-                   this.currentServerHostname);
+      this.connectionStateDescription = ("Attempting connection to " +
+                                         this.currentServerHostname);
       chrome.sockets.tcp.connect(this.socketId,
                                  this.currentServerHostname,
                                  50001,
@@ -205,7 +221,6 @@ Electrum.prototype.connectToServer = function() {
     }
 
     if (this.socketId) {
-      logImportant("Reconnection; isConnected", this.isSocketConnected);
       tryConnection.call(this);
     } else {
       chrome.sockets.tcp.create({
