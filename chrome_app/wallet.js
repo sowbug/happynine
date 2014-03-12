@@ -91,18 +91,6 @@ Wallet.prototype.loadStorableObject = function(o) {
   }
   this.currentHeight = o['height'];
 
-  // https://github.com/sowbug/happynine/issues/59
-  //
-  // At this point, we know whether there is a child node and thus
-  // whether the welcome message should be displayed. Ping the event
-  // loop to give it a chance to draw the right view.
-  this.isReady = true;
-  $.event.trigger({
-    "type": "apply",
-    "message": undefined,
-    time: new Date()
-  });
-
   return Promise.all(nodes.map(this.describeNode.bind(this)));
 };
 
@@ -401,7 +389,7 @@ Wallet.prototype.getAddresses = function() {
         };
         Promise.all(response['addresses'].map(watchOneAddress.bind(this)))
           .then(function(results) {
-            this.recalculateWalletBalance();
+            this.recalculateWalletBalance().bind(this);
             resolve();
           }.bind(this));
       }.bind(this));
@@ -500,11 +488,26 @@ Wallet.prototype.restoreInitialChildNode = function() {
 Wallet.STORAGE_NAME = 'wallet';
 Wallet.prototype.load = function() {
   return new Promise(function(resolve, reject) {
+    var sendReadyPing = function() {
+      // https://github.com/sowbug/happynine/issues/59
+      //
+      // At this point, we know whether there is a child node and thus
+      // whether the welcome message should be displayed. Ping the
+      // event loop to give it a chance to draw the right view.
+      this.isReady = true;
+      $.event.trigger({
+        "type": "apply",
+        "message": undefined,
+        time: new Date()
+      });
+    };
+
     var success = function(response) {
       if (response) {
         this.loadStorableObject(response)
           .then(this.restoreInitialMasterNode.bind(this))
           .then(this.restoreInitialChildNode.bind(this))
+          .then(sendReadyPing.bind(this))
           .then(resolve)
           .catch(function(err) { logFatal(err); });
       } else {
