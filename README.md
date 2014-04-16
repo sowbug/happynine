@@ -10,6 +10,11 @@ Great Big Warning
 
 **This project is early and under heavy development! Do not use it for real transactions! Do not let real bitcoin anywhere near it! Even if/when this warning is removed, the applicable license still applies. Read it!**
 
+Heartbleed!
+===
+
+Although Happynine uses OpenSSL for its ECDSA functionality, it's not vulnerable to the [Heartbleed flaw in OpenSSL](http://heartbleed.com/), which involved a buggy implementation of a part of the TLS protocol. TLS has nothing to do with Bitcoin, so Happynine is and always has been safe from Heartbleed. Nonetheless, to allay fears, version 0.0.29.0 of [Happynine in the Chrome Web Store](https://chrome.google.com/webstore/detail/happynine/pgelmjigdabeindnekfmkafinejdknki) has been updated to version 1.0.1g of OpenSSL, which has the Heartbleed patch.
+
 Overall Status
 ===
 
