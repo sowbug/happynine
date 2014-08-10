@@ -160,6 +160,18 @@ bool Crypto::Sign(const bytes_t& key,
   return true;
 }
 
+bytes_t Crypto::SHA256(const bytes_t& input) {
+  bytes_t digest;
+  digest.resize(SHA256_DIGEST_LENGTH);
+
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, &input[0], input.size());
+  SHA256_Final(&digest[0], &sha256);
+
+  return digest;
+}
+
 bytes_t Crypto::DoubleSHA256(const bytes_t& input) {
   bytes_t digest;
   digest.resize(SHA256_DIGEST_LENGTH);

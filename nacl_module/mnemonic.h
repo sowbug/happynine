@@ -24,15 +24,22 @@
 #define __MNEMONIC_H__
 
 #include <string>
+#include <vector>
 
 #include "types.h"
+
+#define BIP_0039_DICTIONARY_SIZE (2048)
 
 class Mnemonic {
  public:
   Mnemonic();
   virtual ~Mnemonic();
 
+  bool CodeToEntropy(const std::string& code, bytes_t& entropy);
   bool CodeToSeed(const std::string& code, bytes_t& seed);
+
+ private:
+  std::vector<std::string> words_;
 
   DISALLOW_EVIL_CONSTRUCTORS(Mnemonic);
 };

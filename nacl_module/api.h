@@ -56,8 +56,9 @@ class API {
 
   // BIP 0039 Mnemonic Codes
   //
+  // Entropy = sequence of random bytes, must be multiple of 32 bits
   // Code = user-visible checksummed string, e.g. "abandon ability able zoo"
-  // Seed = byte sequence implied by code, with checksum stripped
+  // Seed = 512-bit sequence that is roughly PBKDF2(code, 2048)
   bool HandleDeriveSeedFromCode(const Json::Value& args, Json::Value& result);
 
   // Master Nodes

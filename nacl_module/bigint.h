@@ -88,6 +88,8 @@ public:
 
     void clear() { if (this->bn) BN_clear(this->bn); }
 
+    void maskBits(int n) { if (this->bn) BN_mask_bits(this->bn, n); }
+
     // Assignment operations
     //BigInt& operator=(BN_ULONG rhs) { if (!BN_set_word(this->bn, rhs)) throw std::runtime_error("BIGNUM Error."); return *this; }
     BigInt& operator=(const BigInt& bigint)
