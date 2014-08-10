@@ -109,9 +109,10 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
 bool API::HandleDeriveSeedFromCode(const Json::Value& args,
                                    Json::Value& result) {
   const std::string code = args["code"].asString();
+  const std::string passphrase = args["passphrase"].asString();
   if (code.size() != 0) {
     bytes_t seed;
-    bool success = mnemonic_->CodeToSeed(code, seed);
+    bool success = mnemonic_->CodeToSeed(code, passphrase, seed);
     result["success"] = success;
     if (success) {
       result["seed"] = to_hex(seed);

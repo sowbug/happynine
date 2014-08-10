@@ -123,6 +123,13 @@ bool Mnemonic::CodeToEntropy(const std::string& code,
   return true;
 }
 
-bool Mnemonic::CodeToSeed(const std::string& /*code*/, bytes_t& /*seed*/) {
-  return false;
+bool Mnemonic::CodeToSeed(const std::string& code,
+                          const std::string& passphrase,
+                          bytes_t& seed) {
+  bytes_t entropy;
+  if (!CodeToEntropy(code, entropy)) {
+    return false;
+  }
+
+  return Crypto::DeriveBIP0039Seed(code, passphrase, seed);
 }

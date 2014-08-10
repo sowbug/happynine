@@ -36,7 +36,9 @@ class Mnemonic {
   virtual ~Mnemonic();
 
   bool CodeToEntropy(const std::string& code, bytes_t& entropy);
-  bool CodeToSeed(const std::string& code, bytes_t& seed);
+  bool CodeToSeed(const std::string& code,
+                  const std::string& passphrase,
+                  bytes_t& seed);
 
  private:
   std::vector<std::string> words_;

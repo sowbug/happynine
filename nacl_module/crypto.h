@@ -41,6 +41,10 @@ class Crypto {
                         const bytes_t& salt,
                         bytes_t& key);
 
+  static bool DeriveBIP0039Seed(const std::string& mnemonic,
+                                const std::string& passphrase,
+                                bytes_t& seed);
+
   static bool Encrypt(const bytes_t& key,
                       const bytes_t& plaintext,
                       bytes_t& ciphertext);

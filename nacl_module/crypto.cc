@@ -47,6 +47,9 @@ extern "C" {
 const int ROUNDS = 32768;
 const size_t AES_BLOCK_SIZE = 256 / 8;
 
+// https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
+const int BIP0039_ROUNDS = 2048;
+
 bool Crypto::GetRandomBytes(bytes_t& bytes) {
   return RAND_bytes(&bytes[0], bytes.capacity()) == 1;
 }
@@ -70,6 +73,25 @@ bool Crypto::DeriveKey(const std::string& passphrase,
     return true;
   }
   return false;
+}
+
+bool Crypto::DeriveBIP0039Seed(const std::string& mnemonic,
+                               const std::string& passphrase,
+                               bytes_t& seed) {
+  std::string salt("mnemonic");
+  salt += passphrase;
+  bytes_t salt_bytes(salt.begin(), salt.end());
+
+  seed.resize(512 / 8);
+  int error = PKCS5_PBKDF2_HMAC(mnemonic.c_str(),
+                                mnemonic.size(),
+                                &salt_bytes[0],
+                                salt_bytes.size(),
+                                BIP0039_ROUNDS,
+                                EVP_sha512(),
+                                seed.capacity(),
+                                &seed[0]);
+  return (error == 1);
 }
 
 bool Crypto::Encrypt(const bytes_t& key,

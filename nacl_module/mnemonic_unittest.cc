@@ -58,14 +58,14 @@ TEST(MnemonicTest, BIP0039TestVectors) {
     const Json::Value test_vector(single_dict[(int)i]);
     const bytes_t entropy(unhexlify(test_vector[0].asString()));
     const std::string code(test_vector[1].asString());
-    const bytes_t seed(unhexlify(test_vector[0].asString()));
+    const bytes_t seed(unhexlify(test_vector[2].asString()));
 
     bytes_t derived_entropy;
     EXPECT_TRUE(m.CodeToEntropy(code, derived_entropy));
     EXPECT_EQ(entropy, derived_entropy);
 
-    //    bytes_t derived_seed;
-    //    EXPECT_TRUE(m.CodeToSeed(code, derived_seed));
-    //    EXPECT_EQ(seed, derived_seed);
+    bytes_t derived_seed;
+    EXPECT_TRUE(m.CodeToSeed(code, "TREZOR", derived_seed));
+    EXPECT_EQ(seed, derived_seed);
   }
 }
