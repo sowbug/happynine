@@ -30,6 +30,7 @@
 #include "gtest/gtest.h"
 #include "jsoncpp/json/reader.h"
 #include "jsoncpp/json/writer.h"
+#include "mnemonic.h"
 #include "test_constants.h"
 #include "types.h"
 #include "wallet.h"
@@ -117,7 +118,8 @@ GetHistoryResponseContains(const Json::Value& response,
 TEST(ApiTest, HappyPath) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
-  std::auto_ptr<API> api(new API(b.get(), c.get()));
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
   Json::Value request;
   Json::Value response;
 
@@ -286,7 +288,8 @@ TEST(ApiTest, HappyPath) {
 TEST(ApiTest, BadExtPrvB58) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
-  std::auto_ptr<API> api(new API(b.get(), c.get()));
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
   Json::Value request;
   Json::Value response;
 
@@ -305,7 +308,8 @@ TEST(ApiTest, BadExtPrvB58) {
 TEST(ApiTest, BadSeedWhenDeriving) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
-  std::auto_ptr<API> api(new API(b.get(), c.get()));
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
   Json::Value request;
   Json::Value response;
 
@@ -323,7 +327,8 @@ TEST(ApiTest, BadSeedWhenDeriving) {
 TEST(ApiTest, RestoreWithLockedWallet) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
-  std::auto_ptr<API> api(new API(b.get(), c.get()));
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
   Json::Value request;
   Json::Value response;
 
@@ -392,7 +397,8 @@ TEST(ApiTest, RestoreWithLockedWallet) {
 TEST(ApiTest, ReportActualTransactions) {
   std::auto_ptr<Blockchain> b(new Blockchain);
   std::auto_ptr<Credentials> c(new Credentials);
-  std::auto_ptr<API> api(new API(b.get(), c.get()));
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
   Json::Value request;
   Json::Value response;
   Address::addresses_t public_addresses;

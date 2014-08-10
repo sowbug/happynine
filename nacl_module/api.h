@@ -37,12 +37,13 @@ class Address;
 class Blockchain;
 class Credentials;
 class HistoryItem;
+class Mnemonic;
 class Node;
 class Wallet;
 
 class API {
  public:
-  API(Blockchain* blockchain, Credentials* credentials);
+  API(Blockchain* blockchain, Credentials* credentials, Mnemonic* mnemonic);
 
   // Credentials
   bool HandleSetPassphrase(const Json::Value& args, Json::Value& result);
@@ -52,6 +53,12 @@ class API {
   bool HandleLock(const Json::Value& args, Json::Value& result);
 
   bool HandleUnlock(const Json::Value& args, Json::Value& result);
+
+  // BIP 0039 Mnemonic Codes
+  //
+  // Code = user-visible checksummed string, e.g. "abandon ability able zoo"
+  // Seed = byte sequence implied by code, with checksum stripped
+  bool HandleDeriveSeedFromCode(const Json::Value& args, Json::Value& result);
 
   // Master Nodes
   bool HandleDeriveMasterNode(const Json::Value& args, Json::Value& result);
@@ -115,6 +122,8 @@ class API {
   Blockchain* blockchain_;
   Credentials* credentials_;
   std::auto_ptr<Wallet> wallet_;
+
+  Mnemonic* mnemonic_;
 
   // Master node
   std::auto_ptr<Node> master_node_;

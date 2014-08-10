@@ -29,6 +29,7 @@
 #include "api.h"
 #include "blockchain.h"
 #include "credentials.h"
+#include "mnemonic.h"
 #include "node.h"
 
 class HDWalletDispatcherInstance : public pp::Instance {
@@ -36,7 +37,7 @@ public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance), blockchain_(new Blockchain),
     credentials_(new Credentials),
-    api_(new API(blockchain_.get(), credentials_.get())) {
+    api_(new API(blockchain_.get(), credentials_.get(), mnemonic_.get())) {
   }
 
   virtual ~HDWalletDispatcherInstance() {}
@@ -133,6 +134,7 @@ public:
 private:
   std::auto_ptr<Blockchain> blockchain_;
   std::auto_ptr<Credentials> credentials_;
+  std::auto_ptr<Mnemonic> mnemonic_;
   std::auto_ptr<API> api_;
 };
 

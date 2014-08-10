@@ -3,6 +3,8 @@ VALID_TOOLCHAINS := pnacl
 NACL_SDK_ROOT ?= $(abspath $(CURDIR)/../..)i
 include $(NACL_SDK_ROOT)/tools/common.mk
 
+ZIPBASE ?= ../out/zip
+
 TARGET = hd_wallet
 LIBS = $(DEPS) ppapi_cpp ppapi pthread crypto jsoncpp
 
@@ -15,6 +17,7 @@ SOURCES = \
   credentials.cc \
   crypto.cc \
   encrypting_node_factory.cc \
+  mnemonic.cc \
   node.cc \
   node_factory.cc \
   scrypt/crypto_scrypt-ref.c \

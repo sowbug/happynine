@@ -39,6 +39,7 @@
 #include "credentials.h"
 #include "crypto.h"
 #include "errors.h"
+#include "mnemonic.h"
 #include "node.h"
 #include "encrypting_node_factory.h"
 #include "tx.h"
@@ -49,8 +50,8 @@
 const std::string PASSPHRASE_CHECK_HEX =
   "df3bc110ce022d64a20503502a9edfd8acda8a39868e5dff6601c0bb9b6f9cf9";
 
-API::API(Blockchain* blockchain, Credentials* credentials)
-  : blockchain_(blockchain), credentials_(credentials) {
+API::API(Blockchain* blockchain, Credentials* credentials, Mnemonic* mnemonic)
+  : blockchain_(blockchain), credentials_(credentials), mnemonic_(mnemonic) {
 }
 
 bool API::HandleSetPassphrase(const Json::Value& args, Json::Value& result) {
@@ -101,6 +102,24 @@ bool API::HandleUnlock(const Json::Value& args, Json::Value& result) {
     GenerateMasterNode();
   } else {
     SetError(result, ERROR_MISSING_PARAM, "missing valid passphrase param");
+  }
+  return true;
+}
+
+bool API::HandleDeriveSeedFromCode(const Json::Value& args,
+                                   Json::Value& result) {
+  const std::string code = args["code"].asString();
+  if (code.size() != 0) {
+    bytes_t seed;
+    bool success = mnemonic_->CodeToSeed(code, seed);
+    result["success"] = success;
+    if (success) {
+      result["seed"] = to_hex(seed);
+    } else {
+      SetError(result, ERROR_INVALID_PARAM, "invalid code param");
+    }
+  } else {
+    SetError(result, ERROR_MISSING_PARAM, "missing code param");
   }
   return true;
 }

@@ -87,6 +87,7 @@ SOURCES = \
   crypto.cc \
   crypto_unittest.cc \
   encrypting_node_factory.cc \
+  mnemonic.cc \
   node.cc \
   node_factory.cc \
   node_unittest.cc \
