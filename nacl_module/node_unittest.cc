@@ -29,6 +29,7 @@
 #include "jsoncpp/json/reader.h"
 
 #include "base58.h"
+#include "mnemonic.h"
 #include "node.h"
 #include "node_factory.h"
 #include "types.h"
@@ -157,4 +158,19 @@ TEST(NodeTest, BIP0032TestVectorsPublicOnly) {
                 Base58::toBase58Check(child_node->toSerializedPublic()));
     }
   }
+}
+
+TEST(NodeTest, BIP0039AndBIP0044) {
+  const std::string code("basic paper rain item hawk region decline "
+                         "diary differ already sick blanket");
+  bytes_t seed;
+  Mnemonic m;
+  EXPECT_TRUE(m.CodeToSeed(code, "", seed));
+
+  std::auto_ptr<Node> parent_node(NodeFactory::CreateNodeFromSeed(seed));
+  std::auto_ptr<Node> child_node(NodeFactory::
+                                 DeriveChildNodeWithPath(*parent_node,
+                                                         "m/44'/0'/0'/0/0"));
+  EXPECT_EQ("1HdTg7hSZCSzEvYJ9DJPAnw2TnVdqdLYMP",
+            Base58::toAddress(child_node->public_key()));
 }
