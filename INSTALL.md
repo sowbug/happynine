@@ -19,14 +19,21 @@ Technologies
 Development Requirements
 ===
 
-* `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory (pepper_33 as of today) in the [Native Client SDK](https://developers.google.com/native-client/sdk/download)
+* `NACL_SDK_ROOT` pointing to the appropriate `pepper_NN` directory (pepper_35 as of today) in the [Native Client SDK](https://developers.google.com/native-client/sdk/download)
 * `GOOGLE_CLOSURE_JAR` pointing to compiler.jar from Google Closure Compiler
 * `GTEST_DIR` pointing to the root directory of [googletest](https://code.google.com/p/googletest/) (a.k.a. gtest)
 * [naclports](https://code.google.com/p/naclports/) with `./make_all.sh openssl` and `./make_all jsoncpp` successfully executed on the local system. For what it's worth, I had to exclude the glibc versions to get openssl to build with unit tests. And now that we're using PNaCl exclusively, you can probably get away with just `NACL_ARCH=pnacl ; make openssl`. In fact, if you really want to live dangerously, disable the unit tests in the make script and save a whole bunch of PNaCl translation time.
 
 I've listed the apt packages I needed for my bare-bones Debian-based Linux box (similar to Ubuntu 13.04). You might need to map them to different package names on other distributions.
 
-* Core development: `sudo apt-get install git libc6-i386 lib32stdc++6 gcc binutils make unzip zip`
+For posterity, here's what I have in my .bash_profile:
+
+    export NACL_SDK_ROOT=~/tools/nacl_sdk/pepper_35
+    export GOOGLE_CLOSURE_JAR=~/tools/google-closure/compiler.jar
+    export GTEST_DIR=~/tools/gtest-1.7.0
+    export PATH=$PATH:~/tools/depot_tools
+
+* Core development: `sudo apt-get install git libc6-i386 libstdc++6:i386 lib32stdc++6 gcc binutils make unzip zip`
 * Closure Compiler: `sudo apt-get install openjdk-7-jre`
 * Unit tests: `sudo apt-get install libssl-dev libjsoncpp-dev` Note that the unit tests currently build a pure Linux version of the code, rather than a NaCl nexe. This is why we need the dependent libraries installed both for the host system and from naclports. This isn't great for a lot of skew-related reasons, but so far it hasn't caused trouble.
 
@@ -39,6 +46,8 @@ Development Cycle
 3. Back in the top level of the source directory, `make`.
 4. In Chrome, load the unpacked extension in `out/zip`.
 5. If you want to see how an official build is created for upload to the Chrome Web Store, `./build_official`, which does a bunch of tagging, version-bumping, and extra-clean building.
+
+If you are on OSX and have a remote Linux machine, you can `sshfs me@myremote.example.com:src/happynine/out/zip ~/mnt/myremote` and then point to ~/mnt/myremote to load the unpacked app that you've built remotely.
 
 Crouton Development
 ===
