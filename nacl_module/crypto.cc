@@ -44,7 +44,6 @@ extern "C" {
 #include <openssl/ripemd.h>
 #include <openssl/sha.h>
 
-const int ROUNDS = 32768;
 const size_t AES_BLOCK_SIZE = 256 / 8;
 
 // https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
