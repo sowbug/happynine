@@ -168,6 +168,8 @@ TEST(NodeTest, BIP0039AndBIP0044) {
   EXPECT_TRUE(m.CodeToSeed(code, "", seed));
 
   std::auto_ptr<Node> parent_node(NodeFactory::CreateNodeFromSeed(seed));
+  EXPECT_EQ(3651264596, parent_node->fingerprint());  // 0xd9a1e054
+
   std::auto_ptr<Node> child_node(NodeFactory::
                                  DeriveChildNodeWithPath(*parent_node,
                                                          "m/44'/0'/0'/0/0"));

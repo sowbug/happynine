@@ -498,3 +498,26 @@ TEST(ApiTest, ReportActualTransactions) {
   EXPECT_TRUE(api->DidResponseSucceed(response));
   EXPECT_TRUE(GetAddressResponseContains(response, ADDR_1Guw_B58, 0));
 }
+
+TEST(ApiTest, BIP0039Recovery) {
+  std::auto_ptr<Blockchain> b(new Blockchain);
+  std::auto_ptr<Credentials> c(new Credentials);
+  std::auto_ptr<Mnemonic> m(new Mnemonic);
+  std::auto_ptr<API> api(new API(b.get(), c.get(), m.get()));
+  Json::Value request;
+  Json::Value response;
+
+  request["new_passphrase"] = "foo";
+  EXPECT_TRUE(api->HandleSetPassphrase(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+
+  request = Json::Value();
+  response = Json::Value();
+  request["code"] = "basic paper rain item hawk region decline "
+    "diary differ already sick blanket";
+  request["passphrase"] = "";
+  EXPECT_TRUE(api->HandleImportMasterNode(request, response));
+  EXPECT_TRUE(api->DidResponseSucceed(response));
+
+  EXPECT_EQ("0xd9a1e054", response["fp"].asString());
+}

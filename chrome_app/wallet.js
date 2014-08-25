@@ -220,6 +220,21 @@ Wallet.prototype.removeMasterKey = function() {
   this.masterNodes = [];
 };
 
+Wallet.prototype.importMnemonic = function(code, passphrase) {
+  return new Promise(function(resolve, reject) {
+    this.apiClient.importMnemonic(code, passphrase)
+      .then(function(response) {
+        if (response['fp']) {
+          var node = Node.fromStorableObject(response);
+          this.describeNode(node).then(resolve);
+        } else {
+          reject(response['error']['message']);
+        }
+      }.bind(this),
+            reject);
+  }.bind(this));
+};
+
 Wallet.prototype.retrievePrivateKey = function(node) {
   return new Promise(function(resolve, reject) {
     this.apiClient.describePrivateNode(node.extendedPrivateEncrypted)

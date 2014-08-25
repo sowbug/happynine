@@ -36,7 +36,7 @@ class HDWalletDispatcherInstance : public pp::Instance {
 public:
   explicit HDWalletDispatcherInstance(PP_Instance instance)
   : pp::Instance(instance), blockchain_(new Blockchain),
-    credentials_(new Credentials),
+    credentials_(new Credentials), mnemonic_(new Mnemonic),
     api_(new API(blockchain_.get(), credentials_.get(), mnemonic_.get())) {
   }
 

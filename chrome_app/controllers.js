@@ -156,6 +156,7 @@ function AppController($scope,
     var success = function() {
       $scope.w.didImportFail = false;
       $scope.w.importMasterKey = null;
+      $scope.w.importMnemonic = null;
       $("#import-master-key-modal").modal('hide');
       $scope.$apply();
     };
@@ -165,9 +166,15 @@ function AppController($scope,
       $scope.$apply();
     };
     $scope.w.didImportFail = false;
-    $scope.wallet.importMasterKey($scope.w.importMasterKey)
-      .then(success.bind(this),
-            failure.bind(this));
+    if ($scope.w.importMasterKey) {
+      $scope.wallet.importMasterKey($scope.w.importMasterKey)
+        .then(success.bind(this),
+              failure.bind(this));
+    } else {
+      $scope.wallet.importMnemonic($scope.w.importMnemonic, "")
+        .then(success.bind(this),
+              failure.bind(this));
+    }
   };
 
   $scope.removeMasterNode = function() {

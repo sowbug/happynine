@@ -80,7 +80,7 @@
                 <ul>
                   <li ng-if="!isPassphraseSet()"><strong>Set a passphrase.</strong> Go to <span class="label label-primary">Settings</span> and enter a passphrase that will protect your wallet.</li>
                   <li ng-if="isPassphraseSet() && !isWalletUnlocked()"><strong>Unlock your wallet.</strong> You'll need your wallet unlocked to add a master key to it. Click the lock icon <span class="glyphicon glyphicon-lock ok"></span> to enter your wallet passphrase.</li>
-                  <li ng-if="!isMasterKeyInstalled()"><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key, import it.</li>
+                  <li ng-if="!isMasterKeyInstalled()"><strong>Create or import a master key.</strong> Go to <span class="label label-primary">Master Key</span> and create a new master key. Or, if you already have an xprv-formatted BIP0032 master key or BIP0039 recovery key, import it.</li>
                   <li ng-if="!isChildNodeInstalled()"><strong>Generate an account.</strong> Use your master key to generate an account. Go to <span class="label label-primary">Accounts</span> and generate or watch an account.</li>
                 </ul>
               </div>
@@ -510,6 +510,11 @@
                 <label for="imported-master-key" class="col-md-3 control-label">Master Key</label>
                 <div class="col-md-9">
                   <textarea rows="3" class="form-control" id="imported-master-key" placeholder="xprv-formatted BIP0032 master key" ng-model="w.importMasterKey"></textarea>
+                </div>
+                <div class="col-md-12">&hellip; or &hellip;</div>
+                <label for="imported-mnemonic" class="col-md-3 control-label">Recovery Seed</label>
+                <div class="col-md-9">
+                  <textarea rows="3" class="form-control" id="imported-mnemonic" placeholder="BIP0039 mnemonic (space-separated English words)" ng-model="w.importMnemonic"></textarea>
                 </div>
               </div>
               <div class="form-group" ng-if="w.didImportFail">

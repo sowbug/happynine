@@ -74,6 +74,16 @@ ApiClient.prototype.importMasterNode = function(extendedPrivateBase58) {
   });
 };
 
+ApiClient.prototype.importMnemonic = function(code, passphrase) {
+  return new Promise(function(resolve, reject) {
+    var params = {
+      'code': code,
+      'passphrase': passphrase,
+    };
+    postRPC('import-master-node', params).then(resolve);
+  });
+};
+
 ApiClient.prototype.deriveChildNode = function(childNum, isWatchOnly) {
   return new Promise(function(resolve, reject) {
     var params = {

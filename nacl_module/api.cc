@@ -172,9 +172,9 @@ bool API::HandleGenerateMasterNode(const Json::Value& /*args*/,
 
 bool API::HandleImportMasterNode(const Json::Value& args,
                                  Json::Value& result) {
+  bytes_t ext_prv_enc;
   if (args.isMember("ext_prv_b58")) {
     const std::string ext_prv_b58(args["ext_prv_b58"].asString());
-    bytes_t ext_prv_enc;
     if (EncryptingNodeFactory::ImportMasterNode(credentials_,
                                                 ext_prv_b58,
                                                 ext_prv_enc)) {
@@ -184,10 +184,36 @@ bool API::HandleImportMasterNode(const Json::Value& args,
     } else {
       SetError(result, ERROR_INVALID_PARAM, "Extended key failed validation");
     }
-  } else {
-    SetError(result, ERROR_MISSING_PARAM,
-             "Missing required ext_prv_b58 param");
+    return true;
   }
+  // BIP0039
+  if (args.isMember("code") && args.isMember("passphrase")) {
+    const std::string code = args["code"].asString();
+    const std::string passphrase = args["passphrase"].asString();
+    bytes_t seed;
+    bool success = mnemonic_->CodeToSeed(code, passphrase, seed);
+
+    result["success"] = success;
+    if (!success) {
+      SetError(result, ERROR_MISSING_PARAM, "mnemonic conversion failed");
+      return true;
+    }
+
+    bytes_t ext_prv_enc;
+    if (EncryptingNodeFactory::DeriveMasterNode(credentials_,
+                                                seed,
+                                                ext_prv_enc)) {
+      std::auto_ptr<Node>
+        node(EncryptingNodeFactory::RestoreNode(credentials_, ext_prv_enc));
+      GenerateNodeResponse(result, node.get(), ext_prv_enc, true);
+    } else {
+      SetError(result, ERROR_INVALID_PARAM, "Master node derivation failed");
+    }
+    return true;
+  }
+
+  SetError(result, ERROR_MISSING_PARAM,
+           "Missing required ext_prv_b58 or code/passphrase param");
   return true;
 }
 
